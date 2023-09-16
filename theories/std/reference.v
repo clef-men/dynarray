@@ -60,3 +60,5 @@ Section heapGS.
     iSmash.
   Qed.
 End heapGS.
+
+#[global] Opaque reference_type.
