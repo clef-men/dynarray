@@ -1,6 +1,5 @@
 Makefile.coq
 Makefile.coq.conf
-_CoqProject
 _opam
 
 # Vim
