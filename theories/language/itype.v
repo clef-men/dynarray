@@ -4,7 +4,7 @@ From ml.language Require Export
   base.
 
 Class iType (PROP : bi) (τ : val → PROP) :=
-  itype v :> Persistent (τ v).
+  itype_persistent v :> Persistent (τ v).
 
 Section basic_types.
   Context {PROP : bi}.
