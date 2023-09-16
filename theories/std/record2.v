@@ -39,7 +39,7 @@ Section heapGS.
     l.[1] ↦{dq} v₁ -∗
     record2_model l dq v₀ v₁.
   Proof.
-    rewrite /record2_model. iSmash.
+    iSmash.
   Qed.
 
   #[global] Instance record2_model_timeless l dq v₀ v₁ :
@@ -143,7 +143,8 @@ Section heapGS.
   Lemma record2_make_spec v₀ v₁ :
     {{{ True }}}
       record2_make v₀ v₁
-    {{{ l, RET #l;
+    {{{ l,
+      RET #l;
       record2_model l (DfracOwn 1) v₀ v₁ ∗
       meta_token l ⊤
     }}}.
@@ -162,7 +163,8 @@ Section heapGS.
       record2_model l dq v₀ v₁
     }}}
       !#l.[0]
-    {{{ RET v₀;
+    {{{
+      RET v₀;
       record2_model l dq v₀ v₁
     }}}.
   Proof.
@@ -174,16 +176,22 @@ Section heapGS.
     }}}
       !#l.[1]
     {{{
-      RET v₁; record2_model l dq v₀ v₁
+      RET v₁;
+      record2_model l dq v₀ v₁
     }}}.
   Proof.
     iSmash.
   Qed.
 
   Lemma record2_set0_spec l v₀ v₁ v :
-    {{{ record2_model l (DfracOwn 1) v₀ v₁ }}}
+    {{{
+      record2_model l (DfracOwn 1) v₀ v₁
+    }}}
       #l.[0] <- v
-    {{{ RET #(); record2_model l (DfracOwn 1) v v₁ }}}.
+    {{{
+      RET #();
+      record2_model l (DfracOwn 1) v v₁
+    }}}.
   Proof.
     iSmash.
   Qed.
@@ -193,7 +201,8 @@ Section heapGS.
     }}}
       #l.[1] <- v
     {{{
-      RET #(); record2_model l (DfracOwn 1) v₀ v
+      RET #();
+      record2_model l (DfracOwn 1) v₀ v
     }}}.
   Proof.
     iSmash.
