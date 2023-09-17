@@ -129,6 +129,12 @@ AllocN "sz" "v"
       split; [done | apply _].
     Qed.
 
+    Lemma chunk_model_nil l dq :
+      ⊢ chunk_model l dq [].
+    Proof.
+      rewrite /chunk_model //.
+    Qed.
+
     Lemma chunk_model_singleton l dq v :
       l ↦{dq} v ⊣⊢
       chunk_model l dq [v].
