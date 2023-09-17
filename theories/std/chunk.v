@@ -3,11 +3,12 @@ From ml Require Import
 From ml.bi Require Import
   big_op.
 From ml.language Require Import
-  diverge
   notations
   proofmode.
 From ml.std Require Export
   base.
+From ml.std Require Import
+  diverge.
 
 Section heapGS.
   Context `{!heapGS Σ}.

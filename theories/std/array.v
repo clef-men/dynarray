@@ -8,6 +8,7 @@ From ml.language Require Import
 From ml.std Require Export
   base.
 From ml.std Require Import
+  diverge
   chunk.
 
 Section heapGS.
