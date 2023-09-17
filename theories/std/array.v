@@ -1242,8 +1242,8 @@ Context `{!heapGS Σ}.
 
   Context τ `{!iType (iPropI Σ) τ}.
 
-  Definition array_type t : iProp Σ :=
-    ∃ l (sz : nat),
+  Definition array_type (sz : nat) t : iProp Σ :=
+    ∃ l,
     ⌜t = #l⌝ ∗
     l.[size] ↦□ #sz ∗
     inv nroot (
@@ -1251,8 +1251,8 @@ Context `{!heapGS Σ}.
       ⌜sz = length vs⌝ ∗
       chunk_model l.[data] (DfracOwn 1) vs ∗ [∗list] v ∈ vs, τ v
     ).
-  #[global] Instance array_type_itype :
-    iType _ array_type.
+  #[global] Instance array_type_itype sz :
+    iType _ (array_type sz).
   Proof.
     intros ?. apply _.
   Qed.
@@ -1261,7 +1261,7 @@ Context `{!heapGS Σ}.
     {{{ True }}}
       array_create #()
     {{{ t,
-      RET t; array_type t
+      RET t; array_type 0 t
     }}}.
   Proof.
     iIntros "%Φ _ HΦ".
@@ -1270,50 +1270,48 @@ Context `{!heapGS Σ}.
     wp_apply (chunk_make_spec with "[//]"); first lia. iIntros "%l (Hl & _)".
     iDestruct (chunk_model_cons_2 with "Hl") as "(Hsz & _)".
     rewrite -{1}(Loc.add_0 l). iMod (mapsto_persist with "Hsz") as "#Hsz".
-    iApply "HΦ". iExists l, 0. repeat iSplitR; [iSmash.. |].
+    iApply "HΦ". iExists l. repeat iSplitR; [iSmash.. |].
     iApply inv_alloc. iExists []. iStep 2. rewrite right_id.
     iApply chunk_model_nil.
   Qed.
 
-  Lemma array_make_type sz v :
+  Lemma array_make_type (sz : Z) v :
     {{{
-      int_type sz ∗
       τ v
     }}}
-      array_make sz v
+      array_make #sz v
     {{{ t,
-      RET t; array_type t
+      RET t; array_type (Z.to_nat sz) t
     }}}.
   Proof.
-    iIntros "%Φ ((%sz_ & ->) & #Hv) HΦ".
+    iIntros "%Φ #Hv HΦ".
     wp_rec. wp_pures.
     case_bool_decide; wp_pures; first wp_apply wp_diverge.
-    Z_to_nat sz_ as sz.
+    Z_to_nat sz. rewrite Nat2Z.id.
     wp_apply (chunk_make_spec with "[//]"); first lia. iIntros "%l (Hl & _)".
     rewrite Z2Nat.inj_succ; last lia. rewrite Nat2Z.id.
     iDestruct (chunk_model_cons_2 with "Hl") as "(Hsz & Hdata)".
     rewrite -{1}(Loc.add_0 l).
     wp_store.
     iMod (mapsto_persist with "Hsz") as "#Hsz".
-    iApply "HΦ". iExists l, _. repeat iSplitR; [iSmash.. |].
+    iApply "HΦ". iExists l. repeat iSplitR; [iSmash.. |].
     iApply inv_alloc. iExists _. iFrame. rewrite replicate_length. iSteps.
     iApply big_sepL_intro. iIntros "%k %_v" ((-> & Hk)%lookup_replicate). iSmash.
   Qed.
 
-  Lemma array_init_type sz fn :
+  Lemma array_init_type (sz : Z) fn :
     {{{
-      int_type sz ∗
       function_type nat_type τ fn
     }}}
-      array_init sz fn
+      array_init #sz fn
     {{{ t,
-      RET t; array_type t
+      RET t; array_type (Z.to_nat sz) t
     }}}.
   Proof.
-    iIntros "%Φ ((%sz_ & ->) & #Hfn) HΦ".
+    iIntros "%Φ #Hfn HΦ".
     wp_rec. wp_pures.
     case_bool_decide; wp_pures; first wp_apply wp_diverge.
-    Z_to_nat sz_ as sz.
+    Z_to_nat sz. rewrite Nat2Z.id.
     iApply wp_fupd.
     pose (Ψ vs := (
       match vs with
@@ -1334,19 +1332,18 @@ Context `{!heapGS Σ}.
     iDestruct (chunk_model_cons with "Hmodel") as "(Hsz & Hmodel)". rewrite -{1}(Loc.add_0 l).
     iMod (mapsto_persist with "Hsz") as "#Hsz".
     iDestruct "HΨ" as "(-> & HΨ)".
-    iApply "HΦ". iExists l, sz. repeat iSplitR; [iSmash.. |].
+    iApply "HΦ". iExists l. repeat iSplitR; [iSmash.. |].
     iApply inv_alloc. iExists vs. iFrame.
     assert (length vs = sz) as -> by (simpl in Hvs; lia). iSmash.
   Qed.
 
-  Lemma array_size_type t :
+  Lemma array_size_type t sz :
     {{{
-      array_type t
+      array_type sz t
     }}}
       array_size t
-    {{{ sz,
-      RET #sz;
-      array_inv t sz
+    {{{
+      RET #sz; True
     }}}.
   Proof.
     iSmash.
@@ -1355,16 +1352,14 @@ Context `{!heapGS Σ}.
   Lemma array_unsafe_get_type t (sz : nat) (i : Z) :
     (0 ≤ i < sz)%Z →
     {{{
-      array_inv t sz ∗
-      array_type t
+      array_type sz t
     }}}
       array_unsafe_get t #i
     {{{ v,
       RET v; τ v
     }}}.
   Proof.
-    iIntros "%Hi %Φ ((%l & -> & #Hsz) & (%_l & %_sz & %Heq & #_Hsz & #Hinv)) HΦ". injection Heq as <-.
-    iDestruct (mapsto_agree with "Hsz _Hsz") as %[= <-%(inj _)]. iClear "_Hsz".
+    iIntros "%Hi %Φ (%l & -> & #Hsz & #Hinv) HΦ".
     wp_rec. wp_pures.
     iInv "Hinv" as "(%vs & >-> & >Hmodel & #Hvs)".
     edestruct (lookup_lt_is_Some_2 vs (Z.to_nat i)) as (v & Hlookup); first lia.
@@ -1374,9 +1369,9 @@ Context `{!heapGS Σ}.
     iApply (big_sepL_lookup with "Hvs"). done.
   Qed.
 
-  Lemma array_get_type t (i : val) :
+  Lemma array_get_type t sz (i : val) :
     {{{
-      array_type t ∗
+      array_type sz t ∗
       int_type i
     }}}
       array_get t i
@@ -1387,18 +1382,17 @@ Context `{!heapGS Σ}.
     iIntros "%Φ (#Htype & (%i_ & ->)) HΦ".
     wp_rec. wp_pures.
     case_bool_decide; wp_pures; last wp_apply wp_diverge.
-    wp_apply (array_size_type with "Htype"). iIntros "%sz #Hinv".
+    wp_apply (array_size_type with "Htype"). iIntros "_".
     wp_pures.
     case_bool_decide; wp_pures; last wp_apply wp_diverge.
-    wp_apply (array_unsafe_get_type with "[$Hinv $Htype]"); first lia.
+    wp_apply (array_unsafe_get_type with "Htype"); first lia.
     iSmash.
   Qed.
 
   Lemma array_unsafe_set_type t (sz : nat) (i : Z) v :
     (0 ≤ i < sz)%Z →
     {{{
-      array_inv t sz ∗
-      array_type t ∗
+      array_type sz t ∗
       τ v
     }}}
       array_unsafe_set t #i v
@@ -1406,8 +1400,7 @@ Context `{!heapGS Σ}.
       RET #(); True
     }}}.
   Proof.
-    iIntros "%Hi %Φ ((%l & -> & #Hsz) & (%_l & %_sz & %Heq & #_Hsz & #Hinv) & #Hv) HΦ". injection Heq as <-.
-    iDestruct (mapsto_agree with "Hsz _Hsz") as %[= <-%(inj _)]. iClear "_Hsz".
+    iIntros "%Hi %Φ ((%l & ->& #Hsz & #Hinv) & #Hv) HΦ".
     wp_rec. wp_pures.
     iInv "Hinv" as "(%vs & >-> & >Hmodel & #Hvs)".
     iApply (chunk_set_spec with "Hmodel"); first done.
@@ -1420,9 +1413,9 @@ Context `{!heapGS Σ}.
     iApply ("HΦ" with "[//]").
   Qed.
 
-  Lemma array_set_type t (i : val) v :
+  Lemma array_set_type t sz (i : val) v :
     {{{
-      array_type t ∗
+      array_type sz t ∗
       int_type i ∗
       τ v
     }}}
@@ -1434,18 +1427,18 @@ Context `{!heapGS Σ}.
     iIntros "%Φ (#Htype & (%i_ & ->) & #Hv) HΦ".
     wp_rec. wp_pures.
     case_bool_decide; wp_pures; last wp_apply wp_diverge.
-    wp_apply (array_size_type with "Htype"). iIntros "%sz #Hinv".
+    wp_apply (array_size_type with "Htype"). iIntros "_".
     wp_pures.
     case_bool_decide; wp_pures; last wp_apply wp_diverge.
-    wp_apply (array_unsafe_set_type with "[$Hinv $Htype $Hv]"); first lia.
+    wp_apply (array_unsafe_set_type with "[$Htype $Hv]"); first lia.
     iSmash.
   Qed.
 
-  Lemma array_blit_type (t1 i1 t2 i2 n : val) :
+  Lemma array_blit_type t1 sz1 (i1 : val) t2 sz2 (i2 n : val) :
     {{{
-      array_type t1 ∗
+      array_type sz1 t1 ∗
       int_type i1 ∗
-      array_type t2 ∗
+      array_type sz2 t2 ∗
       int_type i2 ∗
       int_type n
     }}}
@@ -1456,12 +1449,12 @@ Context `{!heapGS Σ}.
   Proof.
     iIntros "%Φ (#Htype1 & (%i1_ & ->) & #Htype2 & (%i2_ & ->) & (%n_ & ->)) HΦ".
     wp_rec.
-    wp_smart_apply (array_size_type with "Htype1"). iIntros "%sz1 #Hinv1".
-    wp_smart_apply (array_size_type with "Htype2"). iIntros "%Sz2 #Hinv2".
+    wp_smart_apply (array_size_type with "Htype1"). iIntros "_".
+    wp_smart_apply (array_size_type with "Htype2"). iIntros "_".
     wp_pures.
     do 9 (case_bool_decide; wp_pures; last wp_apply wp_diverge).
-    iDestruct "Htype1" as "(%l1 & %_sz1 & -> & #Hsz1 & #Htype1)".
-    iDestruct "Htype2" as "(%l2 & %_sz2 & -> & #Hsz2 & #Htype2)".
+    iDestruct "Htype1" as "(%l1 & -> & #Hsz1 & #Htype1)".
+    iDestruct "Htype2" as "(%l2 & -> & #Hsz2 & #Htype2)".
     wp_pures.
   Admitted.
 End heapGS.

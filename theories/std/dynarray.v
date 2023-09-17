@@ -119,13 +119,13 @@ Section heapGS.
         dynarray_push_aux "t" "slot"
       ).
 
-  #[local] Definition dynarray_model_inner l dq (sz : nat) data vs : iProp Σ :=
-    l.[size] ↦{dq} #sz ∗
-    l.[data] ↦{dq} data ∗ array_model data dq vs.
-  Definition dynarray_model t dq vs : iProp Σ :=
+  #[local] Definition dynarray_model_inner l (sz : nat) data vs : iProp Σ :=
+    l.[size] ↦ #sz ∗
+    l.[data] ↦ data ∗ array_model data (DfracOwn 1) vs.
+  Definition dynarray_model t vs : iProp Σ :=
     ∃ l data ws,
     ⌜t = #l⌝ ∗
-    dynarray_model_inner l dq (length vs) data (vs ++ ws).
+    dynarray_model_inner l (length vs) data (vs ++ ws).
 
   Context τ `{!iType (iPropI Σ) τ}.
 
@@ -136,9 +136,9 @@ Section heapGS.
     ∃ l,
     ⌜t = #l⌝ ∗
     inv nroot (
-      ∃ (sz : nat) data,
+      ∃ (sz : nat) cap data,
       l.[size] ↦ #sz ∗
-      l.[data] ↦ data ∗ array_type slot_type data
+      l.[data] ↦ data ∗ array_type slot_type cap data
     ).
   #[global] Instance dynarray_type_itype :
     iType _ dynarray_type.
@@ -158,8 +158,7 @@ Section heapGS.
     wp_apply (array_create_type slot_type with "[//]"). iIntros "%data Hdata_type".
     iApply wp_fupd.
     wp_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)". iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
-    iApply "HΦ". iExists l. iSplitR; first iSmash.
-    iApply inv_alloc. iExists 0, data. iFrame.
+    iSmash.
   Qed.
 
   Lemma dynarray_make_type sz v :
@@ -179,8 +178,7 @@ Section heapGS.
     wp_apply (array_init_type slot_type); first iSmash. iIntros "%data Hdata_type".
     iApply wp_fupd.
     wp_smart_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)". iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
-    iApply "HΦ". iExists l. iSplitR; first iSmash.
-    iApply inv_alloc. iExists sz, data. iFrame.
+    iSmash.
   Qed.
 
   Lemma dynarray_get_type t (i : val) :
@@ -195,10 +193,9 @@ Section heapGS.
   Proof.
     iIntros "%Φ ((%l & -> & #Hinv) & (%i_ & ->)) HΦ".
     wp_rec. wp_pures.
-    wp_bind (!_)%E. iInv "Hinv" as "(%sz & %data & >Hsz & >Hdata & #Hdata_type)".
+    wp_bind (!_)%E. iInv "Hinv" as "(%sz & %cap & %data & >Hsz & >Hdata & #Hdata_type)".
     wp_load.
-    iModIntro. iSplitR "HΦ".
-    { iExists sz, data. iFrame "#∗". }
+    iModIntro. iSplitR "HΦ"; first iSmash.
     wp_apply (array_get_type with "[$Hdata_type]"); first iSmash. iIntros "%v [-> | (%ref & -> & #Href)]".
     - wp_smart_apply wp_diverge.
     - wp_smart_apply (reference_get_type with "Href"). iSmash.
@@ -217,10 +214,9 @@ Section heapGS.
   Proof.
     iIntros "%Φ ((%l & -> & #Hinv) & (%i_ & ->) & #Hv) HΦ".
     wp_rec. wp_pures.
-    wp_bind (!_)%E. iInv "Hinv" as "(%sz & %data & >Hsz & >Hdata & #Hdata_type)".
+    wp_bind (!_)%E. iInv "Hinv" as "(%sz & %cap & %data & >Hsz & >Hdata & #Hdata_type)".
     wp_load.
-    iModIntro. iSplitR "HΦ".
-    { iExists sz, data. iFrame "#∗". }
+    iModIntro. iSplitR "HΦ"; first iSmash.
     wp_apply (array_get_type with "[$Hdata_type]"); first iSmash. iIntros "%w [-> | (%ref & -> & #Href)]".
     - wp_smart_apply wp_diverge.
     - wp_smart_apply (reference_set_type with "[$Href $Hv]"). iSmash.
