@@ -12,7 +12,7 @@ From ml.std Require Import
   chunk.
 
 Section heapGS.
-Context `{!heapGS Σ}.
+  Context `{!heapGS Σ}.
 
   Implicit Types i n : nat.
   Implicit Types l : loc.
@@ -20,7 +20,7 @@ Context `{!heapGS Σ}.
   Implicit Types vs : list val.
 
   Notation "t '.[size]'" := t.[0]%stdpp
-( at level 5
+  ( at level 5
   ) : stdpp_scope.
   Notation "t '.[data]'" := t.[1]%stdpp
   ( at level 5

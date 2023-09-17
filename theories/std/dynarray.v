@@ -26,9 +26,9 @@ Section heapGS.
 
   Notation "t '.[size]'" := t.[0]%stdpp
   ( at level 5
-) : stdpp_scope.
+  ) : stdpp_scope.
   Notation "t '.[data]'" := t.[1]%stdpp
-( at level 5
+  ( at level 5
   ) : stdpp_scope.
   Notation "t '.[size]'" := t.[0]%E
   ( at level 5

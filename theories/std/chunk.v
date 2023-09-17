@@ -23,7 +23,7 @@ Section heapGS.
       if: "sz" < #0 then (
         diverge #()
       ) else if: #0 < "sz" then (
-AllocN "sz" "v"
+        AllocN "sz" "v"
       ) else (
         #(inhabitant : loc)
       ).
