@@ -35,4 +35,3 @@ theories/std/opt.v
 theories/std/chunk.v
 theories/std/array.v
 theories/std/dynarray.v
-theories/std/std.v
