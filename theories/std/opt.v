@@ -37,5 +37,3 @@ Section heapGS.
     intros ?. apply _.
   Qed.
 End heapGS.
-
-#[global] Opaque opt_type.

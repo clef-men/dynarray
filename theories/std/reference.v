@@ -23,7 +23,7 @@ Section heapGS.
     intros ?. apply _.
   Qed.
 
-  Lemma reference_make_spec_type v :
+  Lemma reference_make_type v :
     {{{
       τ v
     }}}
@@ -35,7 +35,7 @@ Section heapGS.
     iSmash.
   Qed.
 
-  Lemma reference_get_spec_type t :
+  Lemma reference_get_type t :
     {{{
       reference_type t
     }}}
@@ -47,7 +47,7 @@ Section heapGS.
     iSmash.
   Qed.
 
-  Lemma reference_set_spec_type t v :
+  Lemma reference_set_type t v :
     {{{
       reference_type t ∗
       τ v
@@ -60,5 +60,3 @@ Section heapGS.
     iSmash.
   Qed.
 End heapGS.
-
-#[global] Opaque reference_type.
