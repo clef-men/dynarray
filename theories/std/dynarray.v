@@ -26,7 +26,7 @@ Section heapGS.
 
   Notation "t '.[size]'" := t.[0]%stdpp
   ( at level 5
-  ) : stdpp_scope.
+) : stdpp_scope.
   Notation "t '.[data]'" := t.[1]%stdpp
 ( at level 5
   ) : stdpp_scope.
@@ -75,16 +75,16 @@ Section heapGS.
     λ: "n",
       maximum #8 (if: "n" ≤ #512 then #2 * "n" else "n" + "n" `quot` #2).
   Definition dynarray_reserve : val :=
-    λ: "t" "cap",
+    λ: "t" "n",
       let: "data" := !"t".[data] in
-      let: "cur_cap" := array_size "data" in
-      if: "cap" ≤ "cur_cap" then (
+      let: "cap" := array_size "data" in
+      if: "n" ≤ "cap" then (
         #()
       ) else (
-        if: "cap" < #0 then (
+        if: "n" < #0 then (
           diverge #()
         ) else (
-          let: "new_cap" := maximum "cap" (dynarray_next_capacity "cur_cap") in
+          let: "new_cap" := maximum "n" (dynarray_next_capacity "cap") in
           let: "new_data" := array_make "new_cap" &None in
           array_blit "data" #0 "new_data" #0 (dynarray_size "t") ;;
           "t".[data] <- "new_data"
@@ -259,49 +259,48 @@ Section heapGS.
     Ltac Zify.zify_post_hook ::= Z.quot_rem_to_equations.
     iSmash.
   Qed.
-  Lemma dynarray_reserve_spec t vs cap :
-    (0 ≤ cap)%Z →
+  Lemma dynarray_reserve_spec t vs n :
+    (0 ≤ n)%Z →
     {{{
       dynarray_model t vs
     }}}
-      dynarray_reserve t #cap
+      dynarray_reserve t #n
     {{{
       RET #();
       dynarray_model t vs
     }}}.
   Proof.
-    iIntros "%Hcap %Φ (%l & %data & %slots & %ws & -> & Hsz & Hdata & Hdata_model & Hslots) HΦ".
+    iIntros "%Hn %Φ (%l & %data & %slots & %ws & -> & Hsz & Hdata & Hdata_model & Hslots) HΦ".
     wp_rec. wp_load.
     wp_smart_apply (array_size_spec with "Hdata_model"). iIntros "Hdata_model".
     wp_pures.
     case_bool_decide; wp_pures; first iSmash.
     case_bool_decide; wp_pures; first wp_apply wp_diverge.
-    wp_apply (dynarray_next_capacity_spec with "[//]"); first lia. iIntros "%cap' %Hcap'".
+    wp_apply (dynarray_next_capacity_spec with "[//]"); first lia. iIntros "%n' %Hn'".
     wp_apply maximum_spec.
     wp_smart_apply (array_make_spec with "[//]"); first lia. iIntros "%data' Hdata_model'".
     rewrite /dynarray_size. wp_load.
     iDestruct (big_sepL2_length with "Hslots") as "%Hslots".
     wp_smart_apply (array_blit_spec with "[$Hdata_model $Hdata_model']"); try lia.
     { rewrite app_length. lia. }
-    { rewrite replicate_length. rewrite app_length in Hcap'. lia. }
+    { rewrite replicate_length. rewrite app_length in Hn'. lia. }
     iIntros "(Hdata_model & Hdata_model')".
     wp_store.
     iApply "HΦ". iExists l, data', slots, _. iFrame. iSplitR; first iSmash.
     rewrite !Nat2Z.id take_app_alt //.
   Qed.
-
-  Lemma dynarray_reserve_extra_spec t vs cap :
-    (0 ≤ cap)%Z →
+  Lemma dynarray_reserve_extra_spec t vs n :
+    (0 ≤ n)%Z →
     {{{
       dynarray_model t vs
     }}}
-      dynarray_reserve_extra t #cap
+      dynarray_reserve_extra t #n
     {{{
       RET #();
       dynarray_model t vs
     }}}.
   Proof.
-    iIntros "%Hcap %Φ Hmodel HΦ".
+    iIntros "%Hn %Φ Hmodel HΦ".
     wp_rec. wp_pures.
     case_bool_decide; wp_pures; last iSmash+.
     wp_apply (dynarray_size_spec with "Hmodel"). iIntros "Hmodel".
@@ -429,6 +428,18 @@ Section heapGS.
     iSmash.
   Qed.
 
+  Lemma dynarray_size_type t :
+    {{{
+      dynarray_type t
+    }}}
+      dynarray_size t
+    {{{ (sz : nat),
+      RET #sz; True
+    }}}.
+  Proof.
+    iSmash.
+  Qed.
+
   Lemma dynarray_get_type t (i : val) :
     {{{
       dynarray_type t ∗
@@ -468,6 +479,110 @@ Section heapGS.
     wp_apply (array_get_type with "[$Hdata_type]"); first iSmash. iIntros "%w [-> | (%ref & -> & #Href)]".
     - wp_smart_apply wp_diverge.
     - wp_smart_apply (reference_set_type with "[$Href $Hv]"). iSmash.
+  Qed.
+
+  Lemma dynarray_reserve_type t n :
+    {{{
+      dynarray_type t ∗
+      int_type n
+    }}}
+      dynarray_reserve t n
+    {{{
+      RET #(); True
+    }}}.
+  Proof.
+    iIntros "%Φ ((%l & -> & #Hinv) & (%n_ & ->)) HΦ".
+    wp_rec. wp_pures.
+    wp_bind (!_)%E. iInv "Hinv" as "(%sz & %cap & %data & Hsz & Hdata & #Hdata_type)".
+    wp_load.
+    iModIntro. iSplitR "HΦ"; first iSmash.
+    wp_smart_apply (array_size_type with "Hdata_type"). iIntros "_".
+    wp_pures.
+    case_bool_decide; wp_pures; first iSmash.
+    case_bool_decide; wp_pures; first wp_apply wp_diverge.
+    wp_apply (dynarray_next_capacity_spec with "[//]"); first lia. iIntros "%n' %Hn'".
+    wp_apply maximum_spec.
+    wp_smart_apply (array_make_type slot_type); first iSmash. iIntros "%data' #Hdata_type'".
+    wp_smart_apply dynarray_size_type; first iSmash. clear sz. iIntros "%sz _".
+    wp_smart_apply (array_blit_type slot_type); first iSmash. iIntros "_".
+    iSmash.
+  Qed.
+  Lemma dynarray_reserve_extra_type t n :
+    {{{
+      dynarray_type t ∗
+      int_type n
+    }}}
+      dynarray_reserve_extra t n
+    {{{
+      RET #(); True
+    }}}.
+  Proof.
+    iIntros "%Φ (#Htype & (%n_ & ->)) HΦ".
+    wp_rec. wp_pures.
+    case_bool_decide; wp_pures; last iSmash.
+    wp_apply (dynarray_size_type with "Htype"). iIntros "%sz _".
+    wp_smart_apply (dynarray_reserve_type with "[$Htype]"); first iSmash.
+    iSmash.
+  Qed.
+
+  #[local] Lemma dynarray_try_push_type t slot :
+    {{{
+      dynarray_type t ∗
+      slot_type slot
+    }}}
+      dynarray_try_push t slot
+    {{{ b,
+      RET #b; True
+    }}}.
+  Proof.
+    iIntros "%Φ ((%l & -> & #Hinv) & #Hslot) HΦ".
+    wp_rec. wp_pures.
+    wp_bind (!_)%E. iInv "Hinv" as "(%sz & % & % & Hsz & Hdata & Hdata_type)".
+    wp_load.
+    iModIntro. iSplitR "HΦ"; first iSmash.
+    wp_pures.
+    wp_bind (!_)%E. clear data. iInv "Hinv" as "(% & % & %data & Hsz & Hdata & #Hdata_type)".
+    wp_load.
+    iModIntro. iSplitR "HΦ"; first iSmash.
+    wp_smart_apply (array_size_type with "Hdata_type"). iIntros "_".
+    wp_pures.
+    case_bool_decide; wp_pures; first iSmash.
+    wp_apply (array_unsafe_set_type with "[$Hdata_type $Hslot]"); first lia. iIntros "_".
+    iSmash.
+  Qed.
+  #[local] Lemma dynarray_push_aux_type t slot :
+    {{{
+      dynarray_type t ∗
+      slot_type slot
+    }}}
+      dynarray_push_aux t slot
+    {{{
+      RET #(); True
+    }}}.
+  Proof.
+    iIntros "%Φ (#Htype & #Hslot) HΦ".
+    iLöb as "HLöb".
+    wp_rec.
+    wp_smart_apply (dynarray_reserve_extra_type with "[$Htype]"); first iSmash. iIntros "_".
+    wp_smart_apply (dynarray_try_push_type with "[$Htype $Hslot]"). iIntros ([]) "_"; first iSmash.
+    wp_smart_apply ("HLöb" with "HΦ").
+  Qed.
+  Lemma dynarray_push_type t v :
+    {{{
+      dynarray_type t ∗
+      τ v
+    }}}
+      dynarray_push t v
+    {{{
+      RET #(); True
+    }}}.
+  Proof.
+    iIntros "%Φ (#Htype & #Hv) HΦ".
+    wp_rec. wp_alloc r as "Hr".
+    iAssert (|={⊤}=> slot_type (&&Some #r))%I with "[Hr]" as ">#Hslot"; first iSmash.
+    wp_smart_apply (dynarray_try_push_type with "[$Htype $Hslot]"). iIntros ([]) "_"; first iSmash.
+    wp_smart_apply (dynarray_push_aux_type with "[$Htype $Hslot]"). iIntros "_".
+    iSmash.
   Qed.
 End heapGS.
 
