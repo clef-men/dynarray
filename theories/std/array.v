@@ -1120,7 +1120,7 @@ Context `{!heapGS Σ}.
       rewrite insert_length //.
   Qed.
 
-  Lemma array_blit_spec t1 sz1 i1 (i1' : Z) dq1 vs1 t2 sz2 i2 (i2' : Z) vs2 (n : Z) :
+  Lemma array_blit_spec'' t1 sz1 i1 (i1' : Z) dq1 vs1 t2 sz2 i2 (i2' : Z) vs2 (n : Z) :
     i1' = Z.of_nat i1 →
     i2' = Z.of_nat i2 →
     n = length vs1 →
@@ -1188,7 +1188,7 @@ Context `{!heapGS Σ}.
     iDestruct (array_slice_app_2 with "Hslice2") as "(Hslice21 & Hslice2)"; first done.
     iDestruct (array_slice_app_2 with "Hslice2") as "(Hslice22 & Hslice23)"; first done.
     rewrite !take_length !drop_length !Nat.min_l; [| lia..].
-    wp_apply (array_blit_spec with "[$Hslice12 $Hslice22 $Hinv1 $Hinv2]"); try lia.
+    wp_apply (array_blit_spec'' with "[$Hslice12 $Hslice22 $Hinv1 $Hinv2]"); try lia.
     { rewrite take_length drop_length. lia. }
     { rewrite !take_length !drop_length. lia. }
     iIntros "(Hslice12 & Hslice22)".
@@ -1203,7 +1203,7 @@ Context `{!heapGS Σ}.
     { rewrite take_length. lia. }
     rewrite -!Nat.le_add_sub //; lia.
   Qed.
-  Lemma array_blit_spec'' t1 (i1 : Z) dq1 vs1 t2 (i2 : Z) vs2 (n : Z) :
+  Lemma array_blit_spec t1 (i1 : Z) dq1 vs1 t2 (i2 : Z) vs2 (n : Z) :
     (0 ≤ n)%Z →
     (0 ≤ i1 ≤ length vs1)%Z →
     (0 ≤ i1 + n ≤ length vs1)%Z →
