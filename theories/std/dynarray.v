@@ -21,7 +21,7 @@ Section heapGS.
   Implicit Types b : bool.
   Implicit Types i : nat.
   Implicit Types l r : loc.
-  Implicit Types v t : val.
+  Implicit Types v t fn : val.
   Implicit Types vs : list val.
 
   Notation "t '.[size]'" := t.[0]%stdpp
@@ -49,9 +49,21 @@ Section heapGS.
         record2_make "sz" (array_init "sz" (λ: <>, &Some (ref "v")))
       ).
 
+  Definition dynarray_init : val :=
+    λ: "sz" "fn",
+      if: "sz" < #0 then (
+        diverge #()
+      ) else (
+        record2_make "sz" (array_init "sz" (λ: "i", &Some (ref ("fn" "i"))))
+      ).
+
   Definition dynarray_size : val :=
     λ: "t",
       !"t".[size].
+
+  Definition dynarray_is_empty : val :=
+    λ: "t",
+      dynarray_size "t" = #0.
 
   Definition dynarray_get : val :=
     λ: "t" "i",
@@ -182,6 +194,114 @@ Section heapGS.
     iApply (big_sepL2_replicate_r_2 _ _ (λ _, slot_model) with "Hslots"). lia.
   Qed.
 
+  Lemma dynarray_init_spec Ψ sz fn :
+    (0 ≤ sz)%Z →
+    {{{
+      Ψ [] ∗
+      [∗ list] i ∈ seq 0 (Z.to_nat sz), ∀ vs_done,
+        ⌜i = length vs_done⌝ -∗
+        Ψ vs_done -∗
+        WP fn #(i : nat) {{ v, Ψ (vs_done ++ [v]) }}
+    }}}
+      dynarray_init #sz fn
+    {{{ t vs,
+      RET t ;
+      ⌜length vs = Z.to_nat sz⌝ ∗
+      dynarray_model t vs ∗
+      Ψ vs
+    }}}.
+  Proof.
+    iIntros "%Hsz %Φ (HΨ & Hfn) HΦ".
+    wp_rec. wp_pures.
+    rewrite bool_decide_eq_false_2; last lia. wp_pures.
+    pose Ψ' slots := (
+      ∃ vs,
+      Ψ vs ∗
+      [∗list] slot; v ∈ slots; vs, slot_model slot v
+    )%I.
+    wp_apply (array_init_spec Ψ' with "[HΨ Hfn]"); first done.
+    { iSplitL "HΨ"; first iSmash.
+      iApply (big_sepL_impl with "Hfn"). iIntros "!> %i %_i %Hi Hfn %slots -> (%vs & HΨ & Hslots)".
+      iDestruct (big_sepL2_length with "Hslots") as %->.
+      wp_smart_apply (wp_wand with "(Hfn [//] HΨ)"). iIntros "%v HΨ".
+      wp_alloc r as "Hr". wp_pures.
+      iExists (vs ++ [v]). iFrame. iSmash.
+    }
+    iIntros "%data %slots (%Hslots & Hdata_model & (%vs & HΨ & Hslots))".
+    wp_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)".
+    iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
+    iDestruct (big_sepL2_length with "Hslots") as %Hslots'.
+    iApply "HΦ". iFrame. iSplit; first iSmash.
+    iExists l, data, slots, 0. iFrame. iSplitR; first iSmash. iSplitL "Hsz"; first iSmash.
+    rewrite right_id //.
+  Qed.
+  Lemma dynarray_init_spec' Ψ sz fn :
+    (0 ≤ sz)%Z →
+    {{{
+      Ψ [] ∗
+      ∀ i vs_done,
+      {{{ ⌜i = length vs_done ∧ i < Z.to_nat sz⌝ ∗ Ψ vs_done }}}
+        fn #i
+      {{{ v, RET v; Ψ (vs_done ++ [v]) }}}
+    }}}
+      dynarray_init #sz fn
+    {{{ t vs,
+      RET t ;
+      ⌜length vs = Z.to_nat sz⌝ ∗
+      dynarray_model t vs ∗
+      Ψ vs
+    }}}.
+  Proof.
+    iIntros "% %Φ (HΨ & #Hfn) HΦ".
+    wp_apply (dynarray_init_spec Ψ with "[$HΨ]"); try done.
+    iApply big_sepL_intro. iIntros "!> %i %_i %H_i %vs_done % HΨ". apply lookup_seq in H_i as (-> & ?).
+    iApply ("Hfn" with "[$HΨ]"); iSmash.
+  Qed.
+  Lemma dynarray_init_spec_disentangled Ψ sz fn :
+    (0 ≤ sz)%Z →
+    {{{
+      [∗ list] i ∈ seq 0 (Z.to_nat sz),
+        WP fn #(i : nat) {{ Ψ i }}
+    }}}
+      dynarray_init #sz fn
+    {{{ t vs,
+      RET t ;
+      ⌜length vs = Z.to_nat sz⌝ ∗
+      dynarray_model t vs ∗
+      ([∗ list] i ↦ v ∈ vs, Ψ i v)
+    }}}.
+  Proof.
+    iIntros "% %Φ Hfn HΦ".
+    set (Ψ' vs := ([∗ list] i ↦ v ∈ vs, Ψ i v)%I).
+    wp_apply (dynarray_init_spec Ψ' with "[Hfn]"); try done.
+    iSplit; first rewrite /Ψ' //.
+    iApply (big_sepL_mono with "Hfn"). iIntros "%i %v % Hfn %vs_done -> HΨ'".
+    iApply (wp_wand with "Hfn"). iIntros "%v HΨ". iFrame. iSplitL; last iSmash.
+    rewrite right_id //.
+  Qed.
+  Lemma dynarray_init_spec_disentangled' Ψ sz fn :
+    (0 ≤ sz)%Z →
+    {{{
+      ∀ i,
+      {{{ ⌜i < Z.to_nat sz⌝ }}}
+        fn #i
+      {{{ v, RET v; Ψ i v }}}
+    }}}
+      dynarray_init #sz fn
+    {{{ t vs,
+      RET t ;
+      ⌜length vs = Z.to_nat sz⌝ ∗
+      dynarray_model t vs ∗
+      ([∗ list] i ↦ v ∈ vs, Ψ i v)
+    }}}.
+  Proof.
+    iIntros "% %Φ #Hfn HΦ".
+    wp_apply dynarray_init_spec_disentangled; try done.
+    iApply  big_sepL_intro. iIntros "!> %i %_i %Hlookup".
+    apply lookup_seq in Hlookup as (-> & ?).
+    iApply ("Hfn" with "[//]"). iSmash.
+  Qed.
+
   Lemma dynarray_size_spec t vs :
     {{{
       dynarray_model t vs
@@ -193,6 +313,23 @@ Section heapGS.
     }}}.
   Proof.
     iSmash.
+  Qed.
+
+  Lemma dynarray_is_empty_spec t vs :
+    {{{
+      dynarray_model t vs
+    }}}
+      dynarray_is_empty t
+    {{{
+      RET #(bool_decide (vs = []));
+      dynarray_model t vs
+    }}}.
+  Proof.
+    iIntros "%Φ Hmodel HΦ".
+    wp_rec.
+    wp_smart_apply (dynarray_size_spec with "Hmodel"). iIntros "Hmodel".
+    wp_pures.
+    destruct vs; iApply ("HΦ" with "Hmodel").
   Qed.
 
   Lemma dynarray_get_spec t vs (i : Z) v :
@@ -275,7 +412,7 @@ Section heapGS.
     wp_smart_apply (array_size_spec with "Hdata_model"). iIntros "Hdata_model".
     wp_pures.
     case_bool_decide; wp_pures; first iSmash.
-    case_bool_decide; wp_pures; first wp_apply wp_diverge.
+    rewrite bool_decide_eq_false_2; last lia. wp_pures.
     wp_apply (dynarray_next_capacity_spec with "[//]"); first lia. iIntros "%n' %Hn'".
     wp_apply maximum_spec.
     wp_smart_apply (array_make_spec with "[//]"); first lia. iIntros "%data' Hdata_model'".
@@ -439,6 +576,18 @@ Section heapGS.
     iSmash.
   Qed.
 
+  Lemma dynarray_is_empty_type t :
+    {{{
+      dynarray_type t
+    }}}
+      dynarray_is_empty t
+    {{{ b,
+      RET #b; True
+    }}}.
+  Proof.
+    iSmash.
+  Qed.
+
   Lemma dynarray_get_type t (i : val) :
     {{{
       dynarray_type t ∗
@@ -587,6 +736,7 @@ End heapGS.
 
 #[global] Opaque dynarray_create.
 #[global] Opaque dynarray_make.
+#[global] Opaque dynarray_init.
 #[global] Opaque dynarray_size.
 #[global] Opaque dynarray_is_empty.
 #[global] Opaque dynarray_get.
