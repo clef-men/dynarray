@@ -1254,7 +1254,7 @@ Section heapGS.
   #[global] Instance array_type_itype sz :
     iType _ (array_type sz).
   Proof.
-    intros ?. apply _.
+    split. apply _.
   Qed.
 
   Lemma array_create_type :

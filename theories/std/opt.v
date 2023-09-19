@@ -34,6 +34,6 @@ Section heapGS.
   #[global] Instance opt_type_itype :
     iType _ opt_type.
   Proof.
-    intros ?. apply _.
+    split. apply _.
   Qed.
 End heapGS.

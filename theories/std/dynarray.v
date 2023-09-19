@@ -536,7 +536,7 @@ Section heapGS.
   #[global] Instance dynarray_type_itype :
     iType _ dynarray_type.
   Proof.
-    intros ?. apply _.
+    split. apply _.
   Qed.
 
   Lemma dynarray_create_type :

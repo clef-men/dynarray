@@ -3,8 +3,9 @@ From ml Require Import
 From ml.language Require Export
   base.
 
-Class iType (PROP : bi) (τ : val → PROP) :=
-  itype_persistent v :> Persistent (τ v).
+Class iType (PROP : bi) (τ : val → PROP) := {
+  #[global] itype_persistent v :: Persistent (τ v) ;
+}.
 
 Section basic_types.
   Context {PROP : bi}.
@@ -16,7 +17,7 @@ Section basic_types.
   #[global] Instance int_type_itype :
     iType _ int_type.
   Proof.
-    intros ?. apply _.
+    split. apply _.
   Qed.
 
   Definition nat_type v : PROP :=
@@ -24,7 +25,7 @@ Section basic_types.
   #[global] Instance nat_type_itype :
     iType _ nat_type.
   Proof.
-    intros ?. apply _.
+    split. apply _.
   Qed.
 
   Definition bool_type v : PROP :=
@@ -32,7 +33,7 @@ Section basic_types.
   #[global] Instance bool_type_itype :
     iType _ bool_type.
   Proof.
-    intros ?. apply _.
+    split. apply _.
   Qed.
 
   Definition unit_type v : PROP :=
@@ -40,7 +41,7 @@ Section basic_types.
   #[global] Instance unit_type_itype :
     iType _ unit_type.
   Proof.
-    intros ?. apply _.
+    split. apply _.
   Qed.
 End basic_types.
 
@@ -54,6 +55,6 @@ Section other_types.
   #[global] Instance function_type_itype τ1 `{!iType _ τ1} τ2 `{!iType _ τ2} :
     iType _ (function_type τ1 τ2).
   Proof.
-    intros ?. apply _.
+    split. apply _.
   Qed.
 End other_types.

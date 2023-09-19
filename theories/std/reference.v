@@ -20,7 +20,7 @@ Section heapGS.
   #[global] Instance reference_type_itype :
     iType _ reference_type.
   Proof.
-    intros ?. apply _.
+    split. apply _.
   Qed.
 
   Lemma reference_make_type v :
