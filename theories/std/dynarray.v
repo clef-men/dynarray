@@ -127,16 +127,16 @@ Section heapGS.
       ).
 
   Section dynarray_model.
-    #[local] Definition dynarray_slot v slot : iProp Σ :=
+    #[local] Definition slot_model slot v : iProp Σ :=
       ∃ r,
       ⌜slot = &&Some #r⌝ ∗
       r ↦ v.
     Definition dynarray_model t vs : iProp Σ :=
-      ∃ l data slots ws,
+      ∃ l data slots extra,
       ⌜t = #l⌝ ∗
       l.[size] ↦ #(length vs) ∗
-      l.[data] ↦ data ∗ array_model data (DfracOwn 1) (slots ++ ws) ∗
-      [∗list] v; slot ∈ vs; slots, dynarray_slot v slot.
+      l.[data] ↦ data ∗ array_model data (DfracOwn 1) (slots ++ replicate extra &&None) ∗
+      [∗list] slot; v ∈ slots; vs, slot_model slot v.
 
     #[global] Instance dynarray_model_timeless t vs :
       Timeless (dynarray_model t vs).
@@ -158,7 +158,7 @@ Section heapGS.
     wp_apply (array_create_spec with "[//]"). iIntros "%data Hdata_model".
     wp_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)".
     iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
-    iApply "HΦ". iExists l, data, [], []. iSmash.
+    iApply "HΦ". iExists l, data, [], 0. iSmash.
   Qed.
 
   Lemma dynarray_make_spec sz v :
@@ -174,12 +174,12 @@ Section heapGS.
     Z_to_nat sz. rewrite Nat2Z.id.
     wp_rec. wp_pures.
     rewrite bool_decide_eq_false_2; last lia. wp_pures.
-    wp_apply (array_init_spec_disentangled' (λ _, dynarray_slot v)); [done | iSmash |]. iIntros "%data %slots (%Hslots & Hdata_model & Hslots)".
+    wp_apply (array_init_spec_disentangled' (λ _ slot, slot_model slot v)); [done | iSmash |]. iIntros "%data %slots (%Hslots & Hdata_model & Hslots)".
     wp_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)".
     iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
-    iApply "HΦ". iExists l, data, slots, []. iFrame. iSplit; first iSmash.
+    iApply "HΦ". iExists l, data, slots, 0. iFrame. iSplit; first iSmash.
     rewrite replicate_length right_id. iFrame.
-    iApply (big_sepL2_replicate_l_2 _ _ (λ _, dynarray_slot) with "Hslots"). lia.
+    iApply (big_sepL2_replicate_r_2 _ _ (λ _, slot_model) with "Hslots"). lia.
   Qed.
 
   Lemma dynarray_size_spec t vs :
@@ -207,7 +207,7 @@ Section heapGS.
       dynarray_model t vs
     }}}.
   Proof.
-    iIntros "%Hi %Hvs_lookup %Φ (%l & %data & %slots & %ws & -> & Hsz & Hdata & Hdata_model & Hslots) HΦ".
+    iIntros "%Hi %Hvs_lookup %Φ (%l & %data & %slots & %extra & -> & Hsz & Hdata & Hdata_model & Hslots) HΦ".
     Z_to_nat i. rewrite Nat2Z.id in Hvs_lookup.
     clear Hi. pose proof Hvs_lookup as Hi%lookup_lt_Some.
     iDestruct (big_sepL2_length with "Hslots") as "%Hslots".
@@ -230,7 +230,7 @@ Section heapGS.
       dynarray_model t (<[Z.to_nat i := v]> vs)
     }}}.
   Proof.
-    iIntros "%Hi %Φ (%l & %data & %slots & %ws & -> & Hsz & Hdata & Hdata_model & Hslots) HΦ".
+    iIntros "%Hi %Φ (%l & %data & %slots & %extra & -> & Hsz & Hdata & Hdata_model & Hslots) HΦ".
     Z_to_nat i. rewrite Nat2Z.id.
     iDestruct (big_sepL2_length with "Hslots") as "%Hslots".
     feed pose proof (lookup_lookup_total vs i) as Hvs_lookup.
@@ -244,7 +244,7 @@ Section heapGS.
     wp_store.
     iDestruct ("Hslots" with "[Hr]") as "Hslots"; first iSmash.
     rewrite (list_insert_id slots) //.
-    iApply "HΦ". iExists l, data, slots, ws. rewrite insert_length. iSmash.
+    iApply "HΦ". iExists l, data, slots, extra. rewrite insert_length. iSmash.
   Qed.
 
   #[local] Lemma dynarray_next_capacity_spec n :
@@ -270,7 +270,7 @@ Section heapGS.
       dynarray_model t vs
     }}}.
   Proof.
-    iIntros "%Hn %Φ (%l & %data & %slots & %ws & -> & Hsz & Hdata & Hdata_model & Hslots) HΦ".
+    iIntros "%Hn %Φ (%l & %data & %slots & %extra & -> & Hsz & Hdata & Hdata_model & Hslots) HΦ".
     wp_rec. wp_load.
     wp_smart_apply (array_size_spec with "Hdata_model"). iIntros "Hdata_model".
     wp_pures.
@@ -287,7 +287,7 @@ Section heapGS.
     iIntros "(Hdata_model & Hdata_model')".
     wp_store.
     iApply "HΦ". iExists l, data', slots, _. iFrame. iSplitR; first iSmash.
-    rewrite !Nat2Z.id take_app_alt //.
+    rewrite !Nat2Z.id drop_replicate take_app_alt //.
   Qed.
   Lemma dynarray_reserve_extra_spec t vs n :
     (0 ≤ n)%Z →
@@ -311,7 +311,7 @@ Section heapGS.
   #[local] Lemma dynarray_try_push_spec t vs slot v :
     {{{
       dynarray_model t vs ∗
-      dynarray_slot v slot
+      slot_model slot v
     }}}
       dynarray_try_push t slot
     {{{ b,
@@ -320,10 +320,10 @@ Section heapGS.
         dynarray_model t (vs ++ [v])
       else
         dynarray_model t vs ∗
-        dynarray_slot v slot
+        slot_model slot v
     }}}.
   Proof.
-    iIntros "%Φ ((%l & %data & %slots & %ws & -> & Hsz & Hdata & Hdata_model & Hslots) & Hslot) HΦ".
+    iIntros "%Φ ((%l & %data & %slots & %extra & -> & Hsz & Hdata & Hdata_model & Hslots) & Hslot) HΦ".
     iDestruct (big_sepL2_length with "Hslots") as "%Hslots".
     wp_rec. do 2 wp_load.
     wp_smart_apply (array_size_spec with "Hdata_model"). iIntros "Hdata_model".
@@ -332,17 +332,17 @@ Section heapGS.
     { iApply "HΦ". iFrame. iSmash. }
     wp_apply (array_unsafe_set_spec with "Hdata_model"); first lia. iIntros "Hdata_model".
     wp_store.
-    iApply "HΦ". iExists l, data, (slots ++ [slot]), (tail ws). iFrame. iSplitR; first iSmash.
+    iApply "HΦ". iExists l, data, (slots ++ [slot]), (extra - 1). iFrame. iSplitR; first iSmash.
     rewrite app_length Z.add_1_r -Nat2Z.inj_succ Nat.add_comm /=. iFrame.
-    rewrite Nat2Z.id Hslots -(Nat.add_0_r (length slots)) insert_app_r.
-    destruct ws.
+    rewrite Nat2Z.id -Hslots -(Nat.add_0_r (length slots)) insert_app_r.
+    destruct extra.
     - rewrite app_length in Htest. naive_solver lia.
-    - rewrite -(assoc (++)) /=. iSmash.
+    - rewrite -(assoc (++)) /= Nat.sub_0_r. iSmash.
   Qed.
   #[local] Lemma dynarray_push_aux_spec t vs slot v :
     {{{
       dynarray_model t vs ∗
-      dynarray_slot v slot
+      slot_model slot v
     }}}
       dynarray_push_aux t slot
     {{{
@@ -378,7 +378,6 @@ Section heapGS.
 
   #[local] Definition slot_type :=
     opt_type (reference_type τ).
-
   Definition dynarray_type t : iProp Σ :=
     ∃ l,
     ⌜t = #l⌝ ∗
@@ -589,6 +588,7 @@ End heapGS.
 #[global] Opaque dynarray_create.
 #[global] Opaque dynarray_make.
 #[global] Opaque dynarray_size.
+#[global] Opaque dynarray_is_empty.
 #[global] Opaque dynarray_get.
 #[global] Opaque dynarray_set.
 #[global] Opaque dynarray_reserve.
