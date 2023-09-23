@@ -543,7 +543,8 @@ Section heapGS.
     {{{ True }}}
       dynarray_create #()
     {{{ t,
-      RET t; dynarray_type t
+      RET t;
+      dynarray_type t
     }}}.
   Proof.
     iIntros "%Φ _ HΦ".
@@ -561,7 +562,8 @@ Section heapGS.
     }}}
       dynarray_make sz v
     {{{ t,
-      RET t; dynarray_type t
+      RET t;
+      dynarray_type t
     }}}.
   Proof.
     iIntros "%Φ ((%sz_ & ->) & #Hv) HΦ".
@@ -644,7 +646,8 @@ Section heapGS.
     }}}
       dynarray_get t i
     {{{ v,
-      RET v; τ v
+      RET v;
+      τ v
     }}}.
   Proof.
     iIntros "%Φ (#Htype & (%i_ & ->)) HΦ".
