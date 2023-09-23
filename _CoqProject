@@ -5,7 +5,6 @@
 
 theories/prelude/base.v
 theories/prelude/tactics.v
-theories/prelude/tactic_flag.v
 theories/prelude/prelude.v
 
 theories/bi/big_op.v
