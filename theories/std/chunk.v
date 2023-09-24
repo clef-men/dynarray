@@ -7,8 +7,6 @@ From ml.language Require Import
   proofmode.
 From ml.std Require Export
   base.
-From ml.std Require Import
-  assume.
 
 Section heapGS.
   Context `{!heapGS Σ}.
@@ -20,7 +18,6 @@ Section heapGS.
 
   Definition chunk_make : val :=
     λ: "sz" "v",
-      assume (#0 ≤ "sz") ;;
       if: #0 < "sz" then (
         AllocN "sz" "v"
       ) else (
@@ -563,8 +560,6 @@ Section heapGS.
   Proof.
     iIntros "% %Φ _ HΦ".
     wp_rec. wp_pures.
-    wp_apply assume_spec'. iIntros "_".
-    wp_pures.
     case_bool_decide; wp_pures.
     - setoid_rewrite decide_True; [| done..].
       wp_apply (wp_allocN with "[//]"); first done. iIntros "%l (H↦ & Hmeta)".
