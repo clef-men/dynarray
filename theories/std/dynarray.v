@@ -9,6 +9,7 @@ From ml.std Require Export
   base.
 From ml.std Require Import
   diverge
+  assume
   record2
   math
   reference
@@ -43,19 +44,13 @@ Section heapGS.
 
   Definition dynarray_make : val :=
     λ: "sz" "v",
-      if: "sz" < #0 then (
-        diverge #()
-      ) else (
-        record2_make "sz" (array_init "sz" (λ: <>, &Some (ref "v")))
-      ).
+      assume (#0 ≤ "sz") ;;
+      record2_make "sz" (array_init "sz" (λ: <>, &Some (ref "v"))).
 
   Definition dynarray_init : val :=
     λ: "sz" "fn",
-      if: "sz" < #0 then (
-        diverge #()
-      ) else (
-        record2_make "sz" (array_init "sz" (λ: "i", &Some (ref ("fn" "i"))))
-      ).
+      assume (#0 ≤ "sz") ;;
+      record2_make "sz" (array_init "sz" (λ: "i", &Some (ref ("fn" "i")))).
 
   Definition dynarray_size : val :=
     λ: "t",
@@ -103,14 +98,11 @@ Section heapGS.
       if: "n" ≤ "cap" then (
         #()
       ) else (
-        if: "n" < #0 then (
-          diverge #()
-        ) else (
-          let: "new_cap" := maximum "n" (dynarray_next_capacity "cap") in
-          let: "new_data" := array_make "new_cap" &None in
-          array_blit "data" #0 "new_data" #0 (dynarray_size "t") ;;
-          dynarray_set_data "t" "new_data"
-        )
+        assume (#0 ≤ "n") ;;
+        let: "new_cap" := maximum "n" (dynarray_next_capacity "cap") in
+        let: "new_data" := array_make "new_cap" &None in
+        array_blit "data" #0 "new_data" #0 (dynarray_size "t") ;;
+        dynarray_set_data "t" "new_data"
       ).
   Definition dynarray_reserve_extra : val :=
     λ: "t" "n",
@@ -194,9 +186,9 @@ Section heapGS.
   Proof.
     iIntros "% %Φ _ HΦ".
     Z_to_nat sz. rewrite Nat2Z.id.
-    wp_rec. wp_pures.
-    rewrite bool_decide_eq_false_2; last lia. wp_pures.
-    wp_apply (array_init_spec_disentangled' (λ _ slot, slot_model slot v)); [done | iSmash |]. iIntros "%data %slots (%Hslots & Hdata_model & Hslots)".
+    wp_rec.
+    wp_smart_apply assume_spec'. iIntros "_".
+    wp_smart_apply (array_init_spec_disentangled' (λ _ slot, slot_model slot v)); [done | iSmash |]. iIntros "%data %slots (%Hslots & Hdata_model & Hslots)".
     wp_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)".
     iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
     iApply "HΦ". iExists l, data, slots, 0. iFrame. iSplit; first iSmash.
@@ -222,14 +214,14 @@ Section heapGS.
     }}}.
   Proof.
     iIntros "%Hsz %Φ (HΨ & Hfn) HΦ".
-    wp_rec. wp_pures.
-    rewrite bool_decide_eq_false_2; last lia. wp_pures.
+    wp_rec.
+    wp_smart_apply assume_spec'. iIntros "_".
     pose Ψ' slots := (
       ∃ vs,
       Ψ vs ∗
       [∗list] slot; v ∈ slots; vs, slot_model slot v
     )%I.
-    wp_apply (array_init_spec Ψ' with "[HΨ Hfn]"); first done.
+    wp_smart_apply (array_init_spec Ψ' with "[HΨ Hfn]"); first done.
     { iSplitL "HΨ"; first iSmash.
       iApply (big_sepL_impl with "Hfn"). iIntros "!> %i %_i %Hi Hfn %slots -> (%vs & HΨ & Hslots)".
       iDestruct (big_sepL2_length with "Hslots") as %->.
@@ -422,8 +414,8 @@ Section heapGS.
     wp_smart_apply (array_size_spec with "Hdata_model"). iIntros "Hdata_model".
     wp_pures.
     case_bool_decide; wp_pures; first iSmash.
-    rewrite bool_decide_eq_false_2; last lia. wp_pures.
-    wp_apply (dynarray_next_capacity_spec with "[//]"); first lia. iIntros "%n' %Hn'".
+    wp_smart_apply assume_spec'. iIntros "_".
+    wp_smart_apply (dynarray_next_capacity_spec with "[//]"); first lia. iIntros "%n' %Hn'".
     wp_apply maximum_spec.
     wp_smart_apply (array_make_spec with "[//]"); first lia. iIntros "%data' Hdata_model'".
     rewrite /dynarray_size. wp_load.
@@ -567,10 +559,10 @@ Section heapGS.
     }}}.
   Proof.
     iIntros "%Φ ((%sz_ & ->) & #Hv) HΦ".
-    wp_rec. wp_pures.
-    case_bool_decide; wp_pures; first wp_apply wp_diverge.
+    wp_rec.
+    wp_smart_apply assume_spec'. iIntros "%Hsz".
     Z_to_nat sz_ as sz.
-    wp_apply (array_init_type slot_type); first iSmash. iIntros "%data Hdata_type".
+    wp_smart_apply (array_init_type slot_type); first iSmash. iIntros "%data Hdata_type".
     iApply wp_fupd.
     wp_smart_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)". iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
     iSmash.
@@ -693,8 +685,8 @@ Section heapGS.
     wp_smart_apply (array_size_type with "Hdata_type"). iIntros "_".
     wp_pures.
     case_bool_decide; wp_pures; first iSmash.
-    case_bool_decide; wp_pures; first wp_apply wp_diverge.
-    wp_apply (dynarray_next_capacity_spec with "[//]"); first lia. iIntros "%n' %Hn'".
+    wp_apply assume_spec'. iIntros "%Hn".
+    wp_smart_apply (dynarray_next_capacity_spec with "[//]"); first lia. iIntros "%n' %Hn'".
     wp_apply maximum_spec.
     wp_smart_apply (array_make_type slot_type); first iSmash. iIntros "%data' #Hdata_type'".
     wp_smart_apply dynarray_size_type; first iSmash+. iIntros "%sz _".

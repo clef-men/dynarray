@@ -8,7 +8,7 @@ From ml.language Require Import
 From ml.std Require Export
   base.
 From ml.std Require Import
-  diverge.
+  assume.
 
 Section heapGS.
   Context `{!heapGS Σ}.
@@ -20,9 +20,8 @@ Section heapGS.
 
   Definition chunk_make : val :=
     λ: "sz" "v",
-      if: "sz" < #0 then (
-        diverge #()
-      ) else if: #0 < "sz" then (
+      assume (#0 ≤ "sz") ;;
+      if: #0 < "sz" then (
         AllocN "sz" "v"
       ) else (
         #(inhabitant : loc)
@@ -564,15 +563,14 @@ Section heapGS.
   Proof.
     iIntros "% %Φ _ HΦ".
     wp_rec. wp_pures.
-    destruct (Z.lt_trichotomy sz 0) as [Hsz | [-> | Hsz]].
-    - rewrite bool_decide_eq_true_2 //. wp_pures.
-      wp_apply wp_diverge.
-    - iSmash.
-    - rewrite bool_decide_eq_false_2; last lia. wp_pures.
-      setoid_rewrite decide_True; [| done..]. wp_pures.
+    wp_apply assume_spec'. iIntros "_".
+    wp_pures.
+    case_bool_decide; wp_pures.
+    - setoid_rewrite decide_True; [| done..].
       wp_apply (wp_allocN with "[//]"); first done. iIntros "%l (H↦ & Hmeta)".
       destruct (Z.to_nat sz) eqn:Heq; first lia. iDestruct "Hmeta" as "(Hmeta & _)". rewrite Loc.add_0.
       iApply "HΦ". rewrite /array. iFrame.
+    - assert (sz = 0) as -> by lia. iSmash.
   Qed.
 
   #[local] Lemma chunk_init_aux_spec i vs_done k Ψ l sz fn :
