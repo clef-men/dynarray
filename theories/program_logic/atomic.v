@@ -256,7 +256,7 @@ Notation "'AWP' '<<' ∀∀ x1 .. xn , α '>>' e @ E '<<' ∃∃ y1 .. yn , β |
   xn binder,
   y1 binder,
   yn binder,
-  format "'[hv' '[' 'AWP'  '<<'  ∀∀  x1 .. xn ,   '/  ' '[' α ']'   '/' '>>' ']'   '/  ' e   '/  ' @  E   '/' '[' '<<'  ∃∃ y1 .. yn ,   '/  ' '[' β  |   '/' RET v ;  Q ']'   '/' '>>' ']' ']'"
+  format "'[hv' '[' 'AWP'  '<<'  ∀∀  x1  ..  xn ,  '/  ' '[' α ']'  '/' '>>' ']'  '/  ' e  '/  ' @  E  '/' '[' '<<'  ∃∃ y1  ..  yn ,  '/  ' '[' β  |  '/' RET v ;  Q ']'  '/' '>>' ']' ']'"
 ) : bi_scope.
 Notation "'AWP' '<<' α '>>' e @ E '<<' ∃∃ y1 .. yn , β | 'RET' v ; Q '>>'" := (
   atomic_wp
@@ -273,7 +273,7 @@ Notation "'AWP' '<<' α '>>' e @ E '<<' ∃∃ y1 .. yn , β | 'RET' v ; Q '>>'"
   α, e, E, β, v, Q at level 200,
   y1 binder,
   yn binder,
-  format "'[hv' '[' 'AWP'  '<<'   '/  ' '[' α ']'   '/' '>>' ']'   '/  ' e   '/  ' @  E   '/' '[' '<<'  ∃∃ y1 .. yn ,   '/  ' '[' β  |   '/' RET v ;  Q ']'   '/' '>>' ']' ']'"
+  format "'[hv' '[' 'AWP'  '<<'  '/  ' '[' α ']'  '/' '>>' ']'  '/  ' e  '/  ' @  E  '/' '[' '<<'  ∃∃ y1  ..  yn ,  '/  ' '[' β  |  '/' RET v ;  Q ']'  '/' '>>' ']' ']'"
 ) : bi_scope.
 Notation "'AWP' '<<' ∀∀ x1 .. xn , α '>>' e @ E '<<' β | 'RET' v ; Q '>>'" := (
   atomic_wp
@@ -290,7 +290,7 @@ Notation "'AWP' '<<' ∀∀ x1 .. xn , α '>>' e @ E '<<' β | 'RET' v ; Q '>>'"
   α, e, E, β, v, Q at level 200,
   x1 binder,
   xn binder,
-  format "'[hv' '[' 'AWP'  '<<'  ∀∀  x1 .. xn ,  '/  ' '[' α ']'  '/' '>>' ']'  '/  ' e  '/  ' @  E  '/' '[' '<<'  '/  ' '[' β  |  '/' RET v ;  Q ']'  '/' '>>' ']' ']'"
+  format "'[hv' '[' 'AWP'  '<<'  ∀∀  x1  ..  xn ,  '/  ' '[' α ']'  '/' '>>' ']'  '/  ' e  '/  ' @  E  '/' '[' '<<'  '/  ' '[' β  |  '/' RET v ;  Q ']'  '/' '>>' ']' ']'"
 ) : bi_scope.
 Notation "'AWP' '<<' α '>>' e @ E '<<' β | 'RET' v ; Q '>>'" := (
   atomic_wp
@@ -324,7 +324,7 @@ Notation "'AWP' '<<' ∀∀ x1 .. xn , α '>>' e '<<' ∃∃ y1 .. yn , β | 'RE
   xn binder,
   y1 binder,
   yn binder,
-  format "'[hv' '[' 'AWP'  '<<'  ∀∀  x1 .. xn ,   '/  ' '[' α ']'   '/' '>>' ']'   '/  ' e  '/' '[' '<<'  ∃∃ y1 .. yn ,   '/  ' '[' β  |   '/' RET v ;  Q ']'   '/' '>>' ']' ']'"
+  format "'[hv' '[' 'AWP'  '<<'  ∀∀  x1  ..  xn ,  '/  ' '[' α ']'  '/' '>>' ']'  '/  ' e  '/' '[' '<<'  ∃∃ y1  ..  yn ,  '/  ' '[' β  |  '/' RET v ;  Q ']'  '/' '>>' ']' ']'"
 ) : bi_scope.
 Notation "'AWP' '<<' α '>>' e '<<' ∃∃ y1 .. yn , β | 'RET' v ; Q '>>'" := (
   atomic_wp
@@ -341,7 +341,7 @@ Notation "'AWP' '<<' α '>>' e '<<' ∃∃ y1 .. yn , β | 'RET' v ; Q '>>'" := 
   α, e, β, v, Q at level 200,
   y1 binder,
   yn binder,
-  format "'[hv' '[' 'AWP'  '<<'   '/  ' '[' α ']'   '/' '>>' ']'   '/  ' e  '/' '[' '<<'  ∃∃ y1 .. yn ,   '/  ' '[' β  |   '/' RET v ;  Q ']'   '/' '>>' ']' ']'"
+  format "'[hv' '[' 'AWP'  '<<'  '/  ' '[' α ']'  '/' '>>' ']'  '/  ' e  '/' '[' '<<'  ∃∃ y1  ..  yn ,  '/  ' '[' β  |  '/' RET v ;  Q ']'  '/' '>>' ']' ']'"
 ) : bi_scope.
 Notation "'AWP' '<<' ∀∀ x1 .. xn , α '>>' e '<<' β | 'RET' v ; Q '>>'" := (
   atomic_wp
@@ -358,7 +358,7 @@ Notation "'AWP' '<<' ∀∀ x1 .. xn , α '>>' e '<<' β | 'RET' v ; Q '>>'" := 
   α, e, β, v, Q at level 200,
   x1 binder,
   xn binder,
-  format "'[hv' '[' 'AWP'  '<<'  ∀∀  x1 .. xn ,  '/  ' '[' α ']'  '/' '>>' ']'  '/  ' e  '/' '[' '<<'  '/  ' '[' β  |  '/' RET v ;  Q ']'  '/' '>>' ']' ']'"
+  format "'[hv' '[' 'AWP'  '<<'  ∀∀  x1  ..  xn ,  '/  ' '[' α ']'  '/' '>>' ']'  '/  ' e  '/' '[' '<<'  '/  ' '[' β  |  '/' RET v ;  Q ']'  '/' '>>' ']' ']'"
 ) : bi_scope.
 Notation "'AWP' '<<' α '>>' e '<<' β | 'RET' v ; Q '>>'" := (
   atomic_wp
@@ -524,7 +524,7 @@ Notation "'<<<' P | ∀∀ x1 .. xn , α '>>>' e @ E '<<<' ∃∃ y1 .. yn , β 
   xn binder,
   y1 binder,
   yn binder,
-  format "'[hv' '[' '<<<'  '/  ' '[' P  |  '/' ∀∀  x1 .. xn ,  α ']'  '/' '>>>' ']'  '/  ' e  '/  ' @  E  '/' '[' '<<<'  ∃∃  y1 .. yn ,  '/  ' '[' β  |  '/' 'RET'  v ;  Q ']'  '/' '>>>' ']' ']'"
+  format "'[hv' '[' '<<<'  '/  ' '[' P  |  '/' ∀∀  x1  ..  xn ,  α ']'  '/' '>>>' ']'  '/  ' e  '/  ' @  E  '/' '[' '<<<'  ∃∃  y1  ..  yn ,  '/  ' '[' β  |  '/' 'RET'  v ;  Q ']'  '/' '>>>' ']' ']'"
 ) : bi_scope.
 Notation "'<<<' P | α '>>>' e @ E '<<<' ∃∃ y1 .. yn , β | 'RET' v ; Q '>>>'" := (
   atomic_triple
@@ -542,7 +542,7 @@ Notation "'<<<' P | α '>>>' e @ E '<<<' ∃∃ y1 .. yn , β | 'RET' v ; Q '>>>
   P, α, e, E, β, v, Q at level 200,
   y1 binder,
   yn binder,
-  format "'[hv' '[' '<<<'  '/  ' '[' P  |  '/' α ']'  '/' '>>>' ']'  '/  ' e  '/  ' @  E  '/' '[' '<<<'  ∃∃  y1 .. yn ,  '/  ' '[' β  |  '/' 'RET'  v ;  Q ']'  '/' '>>>' ']' ']'"
+  format "'[hv' '[' '<<<'  '/  ' '[' P  |  '/' α ']'  '/' '>>>' ']'  '/  ' e  '/  ' @  E  '/' '[' '<<<'  ∃∃  y1  ..  yn ,  '/  ' '[' β  |  '/' 'RET'  v ;  Q ']'  '/' '>>>' ']' ']'"
 ) : bi_scope.
 Notation "'<<<' P | ∀∀ x1 .. xn , α '>>>' e @ E '<<<' β | 'RET' v ; Q '>>>'" := (
   atomic_triple
@@ -560,7 +560,7 @@ Notation "'<<<' P | ∀∀ x1 .. xn , α '>>>' e @ E '<<<' β | 'RET' v ; Q '>>>
   P, α, e, E, β, v, Q at level 200,
   x1 binder,
   xn binder,
-  format "'[hv' '[' '<<<'  '/  ' '[' P  |  '/' ∀∀  x1 .. xn ,  α ']'  '/' '>>>' ']'  '/  ' e  '/  ' @  E  '/' '[' '<<<'  '/  ' '[' β  |  '/' 'RET'  v ;  Q ']'  '/' '>>>' ']' ']'"
+  format "'[hv' '[' '<<<'  '/  ' '[' P  |  '/' ∀∀  x1  ..  xn ,  α ']'  '/' '>>>' ']'  '/  ' e  '/  ' @  E  '/' '[' '<<<'  '/  ' '[' β  |  '/' 'RET'  v ;  Q ']'  '/' '>>>' ']' ']'"
 ) : bi_scope.
 Notation "'<<<' P | α '>>>' e @ E '<<<' β | 'RET' v ; Q '>>>'" := (
   atomic_triple
@@ -649,7 +649,7 @@ Notation "'<<<' P | ∀∀ x1 .. xn , α '>>>' e '<<<' ∃∃ y1 .. yn , β | 'R
   xn binder,
   y1 binder,
   yn binder,
-  format "'[hv' '[' '<<<'  '/  ' '[' P  |  '/' ∀∀  x1 .. xn ,  α ']'  '/' '>>>' ']'  '/  ' e  '/' '[' '<<<'  ∃∃  y1 .. yn ,  '/  ' '[' β  |  '/' 'RET'  v ;  Q ']'  '/' '>>>' ']' ']'"
+  format "'[hv' '[' '<<<'  '/  ' '[' P  |  '/' ∀∀  x1  ..  xn ,  α ']'  '/' '>>>' ']'  '/  ' e  '/' '[' '<<<'  ∃∃  y1  ..  yn ,  '/  ' '[' β  |  '/' 'RET'  v ;  Q ']'  '/' '>>>' ']' ']'"
 ) : bi_scope.
 Notation "'<<<' P | α '>>>' e '<<<' ∃∃ y1 .. yn , β | 'RET' v ; Q '>>>'" := (
   atomic_triple
@@ -667,7 +667,7 @@ Notation "'<<<' P | α '>>>' e '<<<' ∃∃ y1 .. yn , β | 'RET' v ; Q '>>>'" :
   P, α, e, β, v, Q at level 200,
   y1 binder,
   yn binder,
-  format "'[hv' '[' '<<<'  '/  ' '[' P  |  '/' α ']'  '/' '>>>' ']'  '/  ' e  '/' '[' '<<<'  ∃∃  y1 .. yn ,  '/  ' '[' β  |  '/' 'RET'  v ;  Q ']'  '/' '>>>' ']' ']'"
+  format "'[hv' '[' '<<<'  '/  ' '[' P  |  '/' α ']'  '/' '>>>' ']'  '/  ' e  '/' '[' '<<<'  ∃∃  y1  ..  yn ,  '/  ' '[' β  |  '/' 'RET'  v ;  Q ']'  '/' '>>>' ']' ']'"
 ) : bi_scope.
 Notation "'<<<' P | ∀∀ x1 .. xn , α '>>>' e '<<<' β | 'RET' v ; Q '>>>'" := (
   atomic_triple
@@ -685,7 +685,7 @@ Notation "'<<<' P | ∀∀ x1 .. xn , α '>>>' e '<<<' β | 'RET' v ; Q '>>>'" :
   P, α, e, β, v, Q at level 200,
   x1 binder,
   xn binder,
-  format "'[hv' '[' '<<<'  '/  ' '[' P  |  '/' ∀∀  x1 .. xn ,  α ']'  '/' '>>>' ']'  '/  ' e  '/' '[' '<<<'  '/  ' '[' β  |  '/' 'RET'  v ;  Q ']'  '/' '>>>' ']' ']'"
+  format "'[hv' '[' '<<<'  '/  ' '[' P  |  '/' ∀∀  x1  ..  xn ,  α ']'  '/' '>>>' ']'  '/  ' e  '/' '[' '<<<'  '/  ' '[' β  |  '/' 'RET'  v ;  Q ']'  '/' '>>>' ']' ']'"
 ) : bi_scope.
 Notation "'<<<' P | α '>>>' e '<<<' β | 'RET' v ; Q '>>>'" := (
   atomic_triple
