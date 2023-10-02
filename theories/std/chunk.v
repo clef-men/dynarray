@@ -246,8 +246,8 @@ Section heapGS.
       length vs1 = length vs2 →
       chunk_model l dq1 vs1 -∗
       chunk_model l dq2 vs2 -∗
-        chunk_model l (dq1 ⋅ dq2) vs1 ∗
-        ⌜vs1 = vs2⌝.
+        ⌜vs1 = vs2⌝ ∗
+        chunk_model l (dq1 ⋅ dq2) vs1.
     Proof.
       iInduction vs1 as [| v1 vs1] "IH" forall (l vs2); iIntros "% Hmodel1 Hmodel2".
       - rewrite (nil_length_inv vs2); last done. naive_solver.
@@ -255,7 +255,7 @@ Section heapGS.
         iDestruct (chunk_model_cons_2 with "Hmodel1") as "(H↦1 & Hmodel1)".
         iDestruct (chunk_model_cons_2 with "Hmodel2") as "(H↦2 & Hmodel2)".
         iDestruct (mapsto_combine with "H↦1 H↦2") as "(H↦ & ->)".
-        iDestruct ("IH" with "[] Hmodel1 Hmodel2") as "(Hmodel & ->)"; first iSmash. iSplit; last iSmash.
+        iDestruct ("IH" with "[] Hmodel1 Hmodel2") as "(-> & Hmodel)"; first iSmash. iSplit; first iSmash.
         iApply (chunk_model_cons_1 with "H↦ Hmodel").
     Qed.
     Lemma chunk_model_valid_2 l dq1 vs1 dq2 vs2 :
@@ -266,7 +266,7 @@ Section heapGS.
       ⌜✓ (dq1 ⋅ dq2) ∧ vs1 = vs2⌝.
     Proof.
       iIntros "% % Hmodel1 Hmodel2".
-      iDestruct (chunk_model_combine with "Hmodel1 Hmodel2") as "(Hmodel & ->)"; first done.
+      iDestruct (chunk_model_combine with "Hmodel1 Hmodel2") as "(-> & Hmodel)"; first done.
       iDestruct (chunk_model_valid with "Hmodel") as %?; first done.
       iSmash.
     Qed.
@@ -277,7 +277,7 @@ Section heapGS.
       ⌜vs1 = vs2⌝.
     Proof.
       iIntros "% Hmodel1 Hmodel2".
-      iDestruct (chunk_model_combine with "Hmodel1 Hmodel2") as "(_ & ->)"; first done.
+      iDestruct (chunk_model_combine with "Hmodel1 Hmodel2") as "(-> & _)"; first done.
       iSmash.
     Qed.
     Lemma chunk_model_dfrac_ne l1 dq1 vs1 l2 dq2 vs2 :
@@ -298,7 +298,8 @@ Section heapGS.
       chunk_model l2 dq2 vs2 -∗
       ⌜l1 ≠ l2⌝.
     Proof.
-      intros. iApply chunk_model_dfrac_ne; [done.. | intros []%(exclusive_l _)].
+      intros.
+      iApply chunk_model_dfrac_ne; [done.. | intros []%(exclusive_l _)].
     Qed.
     Lemma chunk_model_exclusive l vs1 vs2 :
       0 < length vs1 →
@@ -490,10 +491,10 @@ Section heapGS.
       sz1 = sz2 →
       chunk_span l dq1 sz1 -∗
       chunk_span l dq2 sz2 -∗
-        chunk_span l (dq1 ⋅ dq2) sz1.
+      chunk_span l (dq1 ⋅ dq2) sz1.
     Proof.
       iIntros (<-) "(%vs1 & % & Hmodel1) (%vs2 & % & Hmodel2)".
-      iDestruct (chunk_model_combine with "Hmodel1 Hmodel2") as "(Hmodel & <-)"; first naive_solver.
+      iDestruct (chunk_model_combine with "Hmodel1 Hmodel2") as "(<- & Hmodel)"; first naive_solver.
       iSmash.
     Qed.
     Lemma chunk_span_valid_2 l dq1 sz1 dq2 sz2 :
@@ -526,7 +527,8 @@ Section heapGS.
       chunk_span l2 dq2 sz2 -∗
       ⌜l1 ≠ l2⌝.
     Proof.
-      intros. iApply chunk_span_dfrac_ne; [done.. | intros []%(exclusive_l _)].
+      intros.
+      iApply chunk_span_dfrac_ne; [done.. | intros []%(exclusive_l _)].
     Qed.
     Lemma chunk_span_exclusive l sz1 sz2 :
       sz1 = sz2 →
