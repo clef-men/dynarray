@@ -547,7 +547,8 @@ Section heapGS.
     wp_rec.
     wp_apply (array_create_type slot_type with "[//]"). iIntros "%data Hdata_type".
     iApply wp_fupd.
-    wp_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)". iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
+    wp_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)".
+    iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
     iSmash.
   Qed.
 
@@ -568,7 +569,8 @@ Section heapGS.
     Z_to_nat sz_ as sz.
     wp_smart_apply (array_init_type slot_type); first iSmash. iIntros "%data Hdata_type".
     iApply wp_fupd.
-    wp_smart_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)". iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
+    wp_smart_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)".
+    iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
     iSmash.
   Qed.
 
