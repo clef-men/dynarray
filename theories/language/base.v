@@ -1,3 +1,5 @@
+From iris.bi Require Import
+  lib.fractional.
 From iris.heap_lang Require Export
   lang
   primitive_laws.
@@ -6,8 +8,6 @@ From iris.proofmode Require Import
 
 From ml Require Import
   prelude.
-From ml Require Export
-  base.
 
 Lemma mapsto_dfrac_relax `{heapGS Σ} dq l v :
   ✓ dq →

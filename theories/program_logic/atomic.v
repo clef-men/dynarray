@@ -1,14 +1,14 @@
 From iris.bi Require Import
   telescopes.
-From iris.bi.lib Require Export
-  atomic.
+From iris.bi Require Export
+  lib.atomic.
+From iris.base_logic Require Import
+  lib.invariants.
 From iris.program_logic Require Export
   weakestpre.
 
 From ml Require Import
   prelude
-  base.
-From ml Require Import
   proofmode.
 
 Section atomic_acc.

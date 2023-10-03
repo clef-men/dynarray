@@ -11,8 +11,6 @@ theories/bi/big_op.v
 
 theories/program_logic/atomic.v
 
-theories/base.v
-
 theories/proofmode.v
 
 theories/common/list.v
