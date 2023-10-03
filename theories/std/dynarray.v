@@ -19,16 +19,20 @@ Section heapGS.
   Implicit Types v t fn : val.
   Implicit Types vs : list val.
 
-  Notation "t '.[size]'" := t.[0]%stdpp
+  Notation "t '.[size]'" :=
+    t.[0]%stdpp
   ( at level 5
   ) : stdpp_scope.
-  Notation "t '.[data]'" := t.[1]%stdpp
+  Notation "t '.[data]'" :=
+    t.[1]%stdpp
   ( at level 5
   ) : stdpp_scope.
-Notation "t '.[size]'" := t.[0]%E
+  Notation "t '.[size]'" :=
+    t.[0]%E
   ( at level 5
   ) : expr_scope.
-  Notation "t '.[data]'" := t.[1]%E
+  Notation "t '.[data]'" :=
+    t.[1]%E
   ( at level 5
   ) : expr_scope.
 

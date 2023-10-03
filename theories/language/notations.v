@@ -12,58 +12,54 @@ Coercion val_of_option opt :=
   | Some v => SOMEV v
   end.
 
-Notation Fail := (App #() #())
-( only parsing
+Notation Fail := (
+  #() #()
 ).
 
-Notation "e .1" := (Fst e)
-( at level 2,
-  left associativity,
-  format "e .1"
+Notation "e .1" := (
+  Fst e
 ) : expr_scope.
-Notation "e .2" := (Snd e)
-( at level 2,
-  left associativity,
-  format "e .2"
+Notation "e .2" := (
+  Snd e
 ) : expr_scope.
 
-Notation "e .[0]" := (e +ₗ 0%Z)%stdpp
+Notation "e .[0]" :=
+  (e +ₗ 0)%stdpp
 ( at level 2,
-  left associativity,
-  format "e .[0]"
+  left associativity
 ) : stdpp_scope.
-Notation "e .[1]" := (e +ₗ 1%Z)%stdpp
+Notation "e .[1]" :=
+  (e +ₗ 1)%stdpp
 ( at level 2,
-  left associativity,
-  format "e .[1]"
+  left associativity
 ) : stdpp_scope.
-Notation "e .[2]" := (e +ₗ 2%Z)%stdpp
+Notation "e .[2]" :=
+  (e +ₗ 2)%stdpp
 ( at level 2,
-  left associativity,
-  format "e .[2]"
+  left associativity
 ) : stdpp_scope.
-Notation "e .[3]" := (e +ₗ 3%Z)%stdpp
+Notation "e .[3]" :=
+  (e +ₗ 3)%stdpp
 ( at level 2,
-  left associativity,
-  format "e .[3]"
+  left associativity
 ) : stdpp_scope.
-Notation "e .[0]" := (e +ₗ #0%Z)%E
+Notation "e .[0]" :=
+  (e +ₗ #0)%E
 ( at level 2,
-  left associativity,
-  format "e .[0]"
+  left associativity
 ) : expr_scope.
-Notation "e .[1]" := (e +ₗ #1%Z)%E
+Notation "e .[1]" :=
+  (e +ₗ #1)%E
 ( at level 2,
-  left associativity,
-  format "e .[1]"
+  left associativity
 ) : expr_scope.
-Notation "e .[2]" := (e +ₗ #2%Z)%E
+Notation "e .[2]" :=
+  (e +ₗ #2)%E
 ( at level 2,
-  left associativity,
-  format "e .[2]"
+  left associativity
 ) : expr_scope.
-Notation "e .[3]" := (e +ₗ #3%Z)%E
+Notation "e .[3]" :=
+  (e +ₗ #3)%E
 ( at level 2,
-  left associativity,
-  format "e .[3]"
+  left associativity
 ) : expr_scope.

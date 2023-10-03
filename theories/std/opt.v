@@ -6,22 +6,32 @@ From ml.language Require Import
 From ml.std Require Export
   base.
 
-Notation "&None" := (InjL #()).
-Notation "&&None" := (InjLV #()).
-Notation "&Some" := InjR.
-Notation "&&Some" := InjRV.
+Notation "&None" := (
+  InjL #()
+)(only parsing
+).
+Notation "&&None" := (
+  InjLV #()
+)(only parsing
+).
+Notation "&Some" :=
+  InjR
+( only parsing
+).
+Notation "&&Some" :=
+  InjRV
+( only parsing
+).
 
 Notation "'match:' e0 'with' 'None' => e1 | 'Some' x => e2 'end'" := (
   Match e0 <>%binder e1 x%binder e2
-) (
-  e0, e1, x, e2 at level 200,
-  format "'[hv' 'match:'  e0  'with'  '/  ' '[' 'None'  =>  '/  ' e1 ']'  '/' '[' |  'Some'  x  =>  '/  ' e2 ']'  '/' 'end' ']'"
+)(e0, e1, x, e2 at level 200,
+  only parsing
 ) : expr_scope.
 Notation "'match:' e0 'with' | 'None' => e1 | 'Some' x => e2 'end'" := (
   Match e0 <>%binder e1 x%binder e2
-) (
-  e0, e1, x, e2 at level 200,
-  format "'[hv' 'match:'  e0  'with'  '/' '[' |  'None'  =>  '/  ' e1 ']'  '/' '[' |  'Some'  x  =>  '/  ' e2 ']'  '/' 'end' ']'"
+)(e0, e1, x, e2 at level 200,
+  only parsing
 ) : expr_scope.
 
 Section heapGS.
