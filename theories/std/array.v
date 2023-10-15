@@ -43,16 +43,16 @@ Section heapGS.
   Definition array_make : val :=
     λ: "sz" "v",
       assume (#0 ≤ "sz") ;;
-      let: "t" := chunk_make ("sz" + #1) "v" in
+      let: "t" := chunk_make (#1 + "sz") "v" in
       "t".[size] <- "sz" ;;
       "t".
 
-  Definition array_init : val :=
+  Definition array_initi : val :=
     λ: "sz" "fn",
       assume (#0 ≤ "sz") ;;
-      chunk_init ("sz" + #1) (λ: "i",
-        if: "i" = #0 then "sz" else "fn" ("i" - #1)
-      ).
+      let: "t" := chunk_make (#1 + "sz") "sz" in
+      chunk_applyi "t".[data] "sz" (λ: "i" <>, "fn" "i") ;;
+      "t".
 
   Definition array_size : val :=
     λ: "t",
@@ -562,129 +562,144 @@ Section heapGS.
     wp_smart_apply assume_spec'. iIntros "_".
     wp_smart_apply (chunk_make_spec with "[//]"); first lia. iIntros "%l (Hmodel & _)".
     wp_pures.
-    rewrite Z.add_1_r -Nat2Z.inj_succ !Nat2Z.id.
+    rewrite Z.add_1_l -Nat2Z.inj_succ !Nat2Z.id.
     iDestruct (chunk_model_cons with "Hmodel") as "(Hsz & Hmodel)".
     iEval (setoid_rewrite <- (Loc.add_0 l)) in "Hsz". wp_store.
     iMod (mapsto_persist with "Hsz") as "#Hsz".
     iApply "HΦ". iExists l. rewrite replicate_length !Loc.add_0. iSmash.
   Qed.
 
-  Lemma array_init_spec Ψ sz fn :
+  Lemma array_initi_spec Ψ sz fn :
     (0 ≤ sz)%Z →
     {{{
-      Ψ [] ∗
-      [∗ list] i ∈ seq 0 (Z.to_nat sz), ∀ vs_done,
-        ⌜i = length vs_done⌝ -∗
-        Ψ vs_done -∗
-        WP fn #(i : nat) {{ v, Ψ (vs_done ++ [v]) }}
+      Ψ 0 [] ∗
+      □ (
+        ∀ i vs,
+        ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
+        Ψ i vs -∗
+        WP fn #i {{ v,
+          Ψ (S i) (vs ++ [v])
+        }}
+      )
     }}}
-      array_init #sz fn
+      array_initi #sz fn
     {{{ t vs,
-      RET t ;
+      RET t;
       ⌜length vs = Z.to_nat sz⌝ ∗
       array_model t (DfracOwn 1) vs ∗
-      Ψ vs
+      Ψ (Z.to_nat sz) vs
     }}}.
   Proof.
-    iIntros "% %Φ (HΨ & Hfn) HΦ".
-    Z_to_nat sz. rewrite Nat2Z.id.
+    iIntros "%Hsz %Φ (HΨ & #Hfn) HΦ".
     wp_rec.
     wp_smart_apply assume_spec'. iIntros "_".
-    iApply wp_fupd.
-    pose Ψ' vs := (
-      match vs with
-      | [] => Ψ []
-      | v :: vs => ⌜v = #sz⌝ ∗ Ψ vs
-      end
+    wp_smart_apply (chunk_make_spec with "[//]"); first lia. iIntros "%l (Hmodel & _)".
+    wp_pures.
+    rewrite Z.add_1_l Z2Nat.inj_succ //.
+    iDestruct (chunk_model_cons with "Hmodel") as "(Hsz & Hmodel)".
+    iMod (mapsto_persist with "Hsz") as "#Hsz".
+    pose Ψ' i (_ : list val) vs := (
+      Ψ i vs
     )%I.
-    wp_smart_apply (chunk_init_spec Ψ' with "[$HΨ Hfn]"); first lia.
-    { rewrite Z.add_1_r -Nat2Z.inj_succ Nat2Z.id (seq_app 1 sz) /=. iSplitR.
-      - iIntros (vs_done ->%symmetry%nil_length_inv) "HΨ'".
-        wp_pures.
-        naive_solver.
-      - iApply (big_sepL_mono_strong' with "Hfn"); first rewrite !seq_length //. iIntros "!>" (i ? ? ((-> & _)%lookup_seq & (-> & _)%lookup_seq)) "Hfn %vs_done %Hi HΨ'".
-        wp_pures.
-        rewrite Nat2Z.inj_succ Z.sub_1_r Z.pred_succ /=.
-        destruct vs_done as [| v vs_done]; first iSmash.
-        iDestruct "HΨ'" as "(-> & HΨ)".
-        iApply (wp_wand with "(Hfn [] HΨ)"); first naive_solver. iIntros "%v HΨ".
-        naive_solver.
+    wp_smart_apply (chunk_applyi_spec Ψ' with "[$Hmodel $HΨ]"); rewrite ?replicate_length; first lia.
+    { iSteps. iPureIntro.
+      erewrite <- (replicate_length (Z.to_nat sz)). eapply lookup_lt_Some. done.
     }
-    iIntros "%l %vs (%Hvs & Hmodel & HΨ' & _)".
-    destruct vs as [| v vs]; first (simpl in Hvs; lia).
-    iDestruct (chunk_model_cons with "Hmodel") as "(Hsz & Hmodel)". rewrite -{1}(Loc.add_0 l).
-    iMod (mapsto_persist with "Hsz") as "#Hsz". iModIntro.
-    iDestruct "HΨ'" as "(-> & HΨ)".
-    iApply ("HΦ" $! _ vs). iFrame.
-    iSplit. { list_simplifier. auto with lia. }
-    iExists l. iFrame. iSplit; first iSmash.
-    assert (length vs = sz) as -> by (simpl in Hvs; lia). rewrite !Loc.add_0. iSmash.
+    iIntros "%vs (%Hvs & Hmodel & HΨ)".
+    wp_pures.
+    iApply ("HΦ" $! #l vs). iFrame. iSteps.
+    rewrite !Loc.add_0 -Hvs Z2Nat.id //. iSmash.
   Qed.
-  Lemma array_init_spec' Ψ sz fn :
+  Lemma array_initi_spec' Ψ sz fn :
     (0 ≤ sz)%Z →
     {{{
-      Ψ [] ∗
-      ∀ i vs_done,
-      {{{ ⌜i = length vs_done ∧ i < Z.to_nat sz⌝ ∗ Ψ vs_done }}}
-        fn #i
-      {{{ v, RET v; Ψ (vs_done ++ [v]) }}}
+      Ψ 0 [] ∗
+      ( [∗ list] i ∈ seq 0 (Z.to_nat sz),
+        ∀ vs,
+        ⌜i = length vs⌝ -∗
+        Ψ i vs -∗
+        WP fn #i {{ v,
+          Ψ (S i) (vs ++ [v])
+        }}
+      )
     }}}
-      array_init #sz fn
+      array_initi #sz fn
     {{{ t vs,
-      RET t ;
+      RET t;
       ⌜length vs = Z.to_nat sz⌝ ∗
       array_model t (DfracOwn 1) vs ∗
-      Ψ vs
+      Ψ (Z.to_nat sz) vs
     }}}.
   Proof.
-    iIntros "% %Φ (HΨ & #Hfn) HΦ".
-    wp_apply (array_init_spec Ψ with "[$HΨ]"); try done.
-    iApply big_sepL_intro. iIntros "!> %i %_i %H_i %vs_done % HΨ". apply lookup_seq in H_i as (-> & ?).
-    iApply ("Hfn" with "[$HΨ]"); iSmash.
+    iIntros "%Hsz %Φ (HΨ & Hfn) HΦ".
+    match goal with |- context [big_opL bi_sep (λ _, ?Ξ') _] => set Ξ := Ξ' end.
+    pose (Ψ' i vs := (
+      Ψ i vs ∗
+      [∗ list] j ∈ seq i (Z.to_nat sz - i), Ξ j
+    )%I).
+    wp_apply (array_initi_spec Ψ' with "[$HΨ Hfn]"); [done | | iSmash].
+    rewrite Nat.sub_0_r. iFrame. iIntros "!> %i %vs (%Hi1 & %Hi2) (HΨ & HΞ)".
+    destruct (Nat.lt_exists_pred 0 (Z.to_nat sz - i)) as (k & Hk & _); first lia. rewrite Hk.
+    rewrite -cons_seq. iDestruct "HΞ" as "(Hfn & HΞ)".
+    wp_apply (wp_wand with "(Hfn [//] HΨ)"). iSteps.
+    rewrite Nat.sub_succ_r Hk //.
   Qed.
-  Lemma array_init_spec_disentangled Ψ sz fn :
+  Lemma array_initi_spec_disentangled Ψ sz fn :
     (0 ≤ sz)%Z →
     {{{
-      [∗ list] i ∈ seq 0 (Z.to_nat sz),
-        WP fn #(i : nat) {{ Ψ i }}
+      □ (
+        ∀ i,
+        ⌜i < Z.to_nat sz⌝ -∗
+        WP fn #i {{ v,
+          Ψ i v
+        }}
+      )
     }}}
-      array_init #sz fn
+      array_initi #sz fn
     {{{ t vs,
-      RET t ;
+      RET t;
       ⌜length vs = Z.to_nat sz⌝ ∗
       array_model t (DfracOwn 1) vs ∗
-      ([∗ list] i ↦ v ∈ vs, Ψ i v)
+      ( [∗ list] i ↦ v ∈ vs,
+        Ψ i v
+      )
     }}}.
   Proof.
-    iIntros "% %Φ Hfn HΦ".
-    set (Ψ' vs := ([∗ list] i ↦ v ∈ vs, Ψ i v)%I).
-    wp_apply (array_init_spec Ψ' with "[Hfn]"); try done.
-    iSplit; first rewrite /Ψ' //.
-    iApply (big_sepL_mono with "Hfn"). iIntros "%i %v % Hfn %vs_done -> HΨ'".
-    iApply (wp_wand with "Hfn"). iIntros "%v HΨ". iFrame. iSplitL; last iSmash.
-    rewrite right_id //.
+    iIntros "%Hsz %Φ #Hfn HΦ".
+    pose (Ψ' i vs := (
+      [∗ list] j ↦ v ∈ vs, Ψ j v
+    )%I).
+    wp_apply (array_initi_spec Ψ'); [done | | iSmash].
+    rewrite /Ψ'. iSteps.
+    rewrite big_sepL_snoc. iSmash.
   Qed.
-  Lemma array_init_spec_disentangled' Ψ sz fn :
+  Lemma array_initi_spec_disentangled' Ψ sz fn :
     (0 ≤ sz)%Z →
     {{{
-      ∀ i,
-      {{{ ⌜i < Z.to_nat sz⌝ }}}
-        fn #i
-      {{{ v, RET v; Ψ i v }}}
+      ( [∗ list] i ∈ seq 0 (Z.to_nat sz),
+        WP fn #i {{ v,
+          Ψ i v
+        }}
+      )
     }}}
-      array_init #sz fn
+      array_initi #sz fn
     {{{ t vs,
-      RET t ;
+      RET t;
       ⌜length vs = Z.to_nat sz⌝ ∗
       array_model t (DfracOwn 1) vs ∗
-      ([∗ list] i ↦ v ∈ vs, Ψ i v)
+      ( [∗ list] i ↦ v ∈ vs,
+        Ψ i v
+      )
     }}}.
   Proof.
-    iIntros "% %Φ #Hfn HΦ".
-    wp_apply array_init_spec_disentangled; try done.
-    iApply big_sepL_intro. iIntros "!> %i %_i %Hlookup".
-    apply lookup_seq in Hlookup as (-> & ?).
-    iApply ("Hfn" with "[//]"). iSmash.
+    iIntros "%Hsz %Φ Hfn HΦ".
+    pose (Ψ' i vs := (
+      [∗ list] j ↦ v ∈ vs, Ψ j v
+    )%I).
+    wp_apply (array_initi_spec' Ψ' with "[Hfn]"); [done | | iSmash].
+    rewrite /Ψ'. iSteps.
+    iApply (big_sepL_impl with "Hfn"). iSteps.
+    rewrite big_sepL_snoc. iSmash.
   Qed.
 
   Lemma array_size_spec_atomic_slice t :
@@ -1197,7 +1212,7 @@ Section heapGS.
     inv nroot (
       ∃ vs,
       ⌜sz = length vs⌝ ∗
-      chunk_model l.[data] (DfracOwn 1) vs ∗ [∗list] v ∈ vs, τ v
+      chunk_model l.[data] (DfracOwn 1) vs ∗ [∗ list] v ∈ vs, τ v
     ).
   #[global] Instance array_type_itype sz :
     iType _ (array_type sz).
@@ -1237,7 +1252,7 @@ Section heapGS.
     wp_smart_apply assume_spec'. iIntros "%Hsz".
     Z_to_nat sz. rewrite Nat2Z.id.
     wp_smart_apply (chunk_make_spec with "[//]"); first lia. iIntros "%l (Hl & _)".
-    rewrite Z2Nat.inj_succ; last lia. rewrite Nat2Z.id.
+    rewrite Z.add_1_l Z2Nat.inj_succ; last lia. rewrite Nat2Z.id.
     iDestruct (chunk_model_cons_2 with "Hl") as "(Hsz & Hdata)".
     rewrite -{1}(Loc.add_0 l).
     wp_store.
@@ -1247,11 +1262,11 @@ Section heapGS.
     iApply big_sepL_intro. iIntros "%k %_v" ((-> & Hk)%lookup_replicate). iSmash.
   Qed.
 
-  Lemma array_init_type (sz : Z) fn :
+  Lemma array_initi_type (sz : Z) fn :
     {{{
       function_type nat_type τ fn
     }}}
-      array_init #sz fn
+      array_initi #sz fn
     {{{ t,
       RET t; array_type (Z.to_nat sz) t
     }}}.
@@ -1259,30 +1274,15 @@ Section heapGS.
     iIntros "%Φ #Hfn HΦ".
     wp_rec.
     wp_smart_apply assume_spec'. iIntros "%Hsz".
-    Z_to_nat sz. rewrite Nat2Z.id.
-    iApply wp_fupd.
-    pose (Ψ vs := (
-      match vs with
-      | [] => emp
-      | v :: vs => ⌜v = #sz⌝ ∗ [∗list] w ∈ vs, τ w
-      end
-    )%I).
-    wp_smart_apply (chunk_init_spec' Ψ); first lia.
-    { clear Φ. iSplit; first iSmash.
-      iIntros ([| i] [| v vs]) "!> %Φ ((%Hi & _) & HΨ) HΦ"; try done; first iSmash.
-      iDestruct "HΨ" as "(-> & Hvs)".
-      wp_pures.
-      iApply (wp_wand with "(Hfn [])"); first iSmash. iIntros "%w Hw".
-      iApply "HΦ". iFrame. iSmash.
-    }
-    iIntros "%l %vs (%Hvs & Hmodel & HΨ & _)".
-    destruct vs as [| v vs]; first (simpl in Hvs; lia).
-    iDestruct (chunk_model_cons with "Hmodel") as "(Hsz & Hmodel)". rewrite -{1}(Loc.add_0 l).
+    wp_smart_apply (chunk_make_spec with "[//]"); first lia. iIntros "%l (Hmodel & _)".
+    rewrite Z.add_1_l Z2Nat.inj_succ //.
+    iDestruct (chunk_model_cons with "Hmodel") as "(Hsz & Hmodel)".
     iMod (mapsto_persist with "Hsz") as "#Hsz".
-    iDestruct "HΨ" as "(-> & HΨ)".
-    iApply "HΦ". iExists l. repeat iSplitR; [iSmash.. |].
-    iApply inv_alloc. iExists vs. iFrame.
-    assert (length vs = sz) as -> by (simpl in Hvs; lia). iSmash.
+    wp_smart_apply (chunk_applyi_spec_disentangled (λ _, τ) with "[$Hmodel]"); rewrite ?replicate_length; [lia | iSmash |].
+    iIntros "%vs (%Hvs & Hmodel & #Hτ)".
+    wp_pures.
+    iApply "HΦ". iExists l. repeat iSplitR; try iSmash.
+    rewrite Loc.add_0 Z2Nat.id //.
   Qed.
 
   Lemma array_size_type t sz :
@@ -1407,7 +1407,7 @@ End heapGS.
 
 #[global] Opaque array_create.
 #[global] Opaque array_make.
-#[global] Opaque array_init.
+#[global] Opaque array_initi.
 #[global] Opaque array_size.
 #[global] Opaque array_unsafe_get.
 #[global] Opaque array_get.

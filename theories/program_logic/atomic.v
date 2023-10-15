@@ -36,8 +36,12 @@ Section atomic_acc.
   Proof.
     rewrite /Frame. iIntros "%HP %HΨ (HR & H)".
     iApply (atomic_acc_wand with "[HR] H"). iSplit.
-    - iIntros "HP2". iApply HP. iFrame.
-    - iIntros "%x %y HΨ2". rewrite !tele_app_bind. iApply HΨ. iSmash.
+    - iIntros "HP2".
+      iApply HP.
+      iSmash.
+    - iIntros "%x %y HΨ2". rewrite !tele_app_bind.
+      iApply HΨ.
+      iSmash.
   Qed.
   Lemma atomic_acc_frame_l R Eo Ei α P β Ψ :
     R -∗
@@ -76,7 +80,7 @@ Section atomic_update.
     solve_proper.
   Qed.
 
-  Lemma atomic_update_wand Eo Ei α β Ψ1 Ψ2 :
+  Lemma atomic_update_mono Eo Ei α β Ψ1 Ψ2 :
     (∀.. x y, Ψ1 x y -∗ Ψ2 x y) -∗
     atomic_update Eo Ei α β Ψ1 -∗
     atomic_update Eo Ei α β Ψ2.
@@ -88,8 +92,20 @@ Section atomic_update.
     iIntros "!>" ([]) "(HΨ & H)". rewrite atomic.aupd_unfold /atomic_acc.
     iMod "H" as "(%x & Hα & H)".
     iModIntro. iExists x. iFrame. iSplit.
-    - iIntros "Hα". iFrame. iApply ("H" with "Hα").
-    - iIntros "%y Hβ". iMod ("H" with "Hβ") as "HΨ1". iApply "HΨ". iSmash.
+    - iIntros "Hα". iFrame.
+      iApply ("H" with "Hα").
+    - iIntros "%y Hβ".
+      iMod ("H" with "Hβ") as "HΨ1".
+      iApply "HΨ".
+      iSmash.
+  Qed.
+  Lemma atomic_update_wand Eo Ei α β Ψ1 Ψ2 :
+    atomic_update Eo Ei α β Ψ1 -∗
+    (∀.. x y, Ψ1 x y -∗ Ψ2 x y) -∗
+    atomic_update Eo Ei α β Ψ2.
+  Proof.
+    iIntros "H HΨ".
+    iApply (atomic_update_mono with "HΨ H").
   Qed.
 
   #[global] Instance frame_atomic_update p R Eo Ei α β Ψ1 Ψ2 :
@@ -97,8 +113,9 @@ Section atomic_update.
     Frame p R (atomic_update Eo Ei α β (λ.. x y, Ψ1 x y)) (atomic_update Eo Ei α β (λ.. x y, Ψ2 x y)).
   Proof.
     rewrite /Frame. iIntros "%HΨ (HR & H)".
-    iApply (atomic_update_wand with "[HR] H").
-    iIntros "%x %y HΨ2". rewrite !tele_app_bind. iApply HΨ. iSmash.
+    iApply (atomic_update_wand with "H"). iIntros "%x %y HΨ2". rewrite !tele_app_bind.
+    iApply HΨ.
+    iSmash.
   Qed.
   Lemma atomic_update_frame_l R Eo Ei α β Ψ :
     R -∗
@@ -158,15 +175,25 @@ Section atomic_wp.
     rewrite !tele_app_bind. f_equiv; first solve_proper. f_equiv. apply Hf.
   Qed.
 
-  Lemma atomic_wp_wand e E α β Ψ1 Ψ2 f :
+  Lemma atomic_wp_mono e E α β Ψ1 Ψ2 f :
     (∀.. x y, Ψ1 x y -∗ Ψ2 x y) -∗
     atomic_wp e E α β Ψ1 f -∗
     atomic_wp e E α β Ψ2 f.
   Proof.
     iIntros "HΨ H %Φ HΦ".
-    iApply "H". iApply (atomic_update_wand with "[HΨ] HΦ").
-    iIntros "%x %y HΨ2". rewrite !tele_app_bind. iIntros "HΨ1".
-    iApply "HΨ2". iApply "HΨ". iSmash.
+    iApply "H".
+    iApply (atomic_update_wand with "HΦ"). iIntros "%x %y HΨ2". rewrite !tele_app_bind. iIntros "HΨ1".
+    iApply "HΨ2".
+    iApply "HΨ".
+    iSmash.
+  Qed.
+  Lemma atomic_wp_wand e E α β Ψ1 Ψ2 f :
+    atomic_wp e E α β Ψ1 f -∗
+    (∀.. x y, Ψ1 x y -∗ Ψ2 x y) -∗
+    atomic_wp e E α β Ψ2 f.
+  Proof.
+    iIntros "H HΨ".
+    iApply (atomic_wp_mono with "HΨ H").
   Qed.
 
   #[global] Instance frame_atomic_wp p R e E α β Ψ1 Ψ2 f :
@@ -174,22 +201,27 @@ Section atomic_wp.
     Frame p R (atomic_wp e E α β (λ.. x y, Ψ1 x y) f) (atomic_wp e E α β (λ.. x y, Ψ2 x y) f).
   Proof.
     rewrite /Frame. iIntros "%HΨ (HR & H)".
-    iApply (atomic_wp_wand with "[HR] H").
-    iIntros "%x %y HΨ2". rewrite !tele_app_bind. iApply HΨ. iSmash.
+    iApply (atomic_wp_wand with "H"). iIntros "%x %y HΨ2". rewrite !tele_app_bind.
+    iApply HΨ.
+    iSmash.
   Qed.
   Lemma atomic_wp_frame_l R e E α β Ψ f :
     R -∗
     atomic_wp e E α β Ψ f -∗
     atomic_wp e E α β (λ x y, R ∗ Ψ x y) f.
   Proof.
-    iIntros "HR H". iApply (atomic_wp_wand with "[HR] H"). iSmash.
+    iIntros "HR H".
+    iApply (atomic_wp_wand with "H").
+    iSmash.
   Qed.
   Lemma atomic_wp_frame_r R e E α β Ψ f :
     atomic_wp e E α β Ψ f -∗
     R -∗
     atomic_wp e E α β (λ x y, Ψ x y ∗ R) f.
   Proof.
-    iIntros "H HR". iApply (atomic_wp_wand with "[HR] H"). iSmash.
+    iIntros "H HR".
+    iApply (atomic_wp_wand with "H").
+    iSmash.
   Qed.
 
   Lemma atomic_wp_mask_weaken E1 E2 e α β Ψ f :
@@ -208,9 +240,10 @@ Section atomic_wp.
     ∀ Φ, ∀.. x, α x -∗ (∀.. y, β x y -∗ Ψ x y -∗ Φ (f x y)) -∗ WP e {{ Φ }}.
   Proof.
     iIntros "H %Φ %x Hα HΦ".
-    iApply (wp_frame_wand with "HΦ"). iApply "H".
-    iAuIntro. iAaccIntro with "Hα"; first auto. iIntros "%y Hβ !>".
-    rewrite !tele_app_bind. iIntros "HΨ HΦ". iApply ("HΦ" with "Hβ HΨ").
+    iApply (wp_frame_wand with "HΦ").
+    iApply "H".
+    iAuIntro. iAaccIntro with "Hα"; first auto. iIntros "%y Hβ !>". rewrite !tele_app_bind. iIntros "HΨ HΦ".
+    iApply ("HΦ" with "Hβ HΨ").
   Qed.
   Lemma atomic_wp_seq_step e E α β Ψ f :
     to_val e = None →
@@ -230,7 +263,8 @@ Section atomic_wp.
     atomic_wp e E α β Ψ f.
   Proof.
     iIntros "% #Hinv H %Φ HΦ".
-    iApply "H". iAuIntro.
+    iApply "H".
+    iAuIntro.
     iInv "Hinv" as "HI".
     iApply (aacc_aupd_commit with "HΦ"); first solve_ndisj. iIntros "%x Hα".
     iAaccIntro with "[HI Hα]"; rewrite !tele_app_bind; [iSmash.. |].
@@ -413,15 +447,25 @@ Section atomic_triple.
     rewrite leibniz_equiv_iff. solve_proper.
   Qed.
 
-  Lemma atomic_triple_wand e E P α β Ψ1 Ψ2 f :
+  Lemma atomic_triple_mono e E P α β Ψ1 Ψ2 f :
     □ (∀.. x y, Ψ1 x y -∗ Ψ2 x y) -∗
     atomic_triple e E P α β Ψ1 f -∗
     atomic_triple e E P α β Ψ2 f.
   Proof.
     iIntros "#HΨ #H !> %Φ HP HΦ".
-    iApply ("H" with "HP"). iApply (atomic_update_wand with "[HΨ] HΦ").
-    iIntros "%x %y HΨ2". rewrite !tele_app_bind. iIntros "HΨ1".
-    iApply "HΨ2". iApply "HΨ". iSmash.
+    iApply ("H" with "HP").
+    iApply (atomic_update_wand with "HΦ"). iIntros "%x %y HΨ2". rewrite !tele_app_bind. iIntros "HΨ1".
+    iApply "HΨ2".
+    iApply "HΨ".
+    iSmash.
+  Qed.
+  Lemma atomic_triple_wand e E P α β Ψ1 Ψ2 f :
+    atomic_triple e E P α β Ψ1 f -∗
+    □ (∀.. x y, Ψ1 x y -∗ Ψ2 x y) -∗
+    atomic_triple e E P α β Ψ2 f.
+  Proof.
+    iIntros "#H #HΨ".
+    iApply (atomic_triple_mono with "HΨ H").
   Qed.
 
   #[global] Instance frame_atomic_triple R e E P α β Ψ1 Ψ2 f :
@@ -429,8 +473,9 @@ Section atomic_triple.
     Frame true R (atomic_triple e E P α β (λ.. x y, Ψ1 x y) f) (atomic_triple e E P α β (λ.. x y, Ψ2 x y) f).
   Proof.
     rewrite /Frame. iIntros "/= %HΨ (#HR & H)".
-    iApply (atomic_triple_wand with "[HR] H").
-    iIntros "!> %x %y HΨ2". rewrite !tele_app_bind. iApply HΨ. iSmash.
+    iApply (atomic_triple_wand with "H"). iIntros "!> %x %y HΨ2". rewrite !tele_app_bind.
+    iApply HΨ.
+    iSmash.
   Qed.
   Lemma atomic_triple_frame_l R e E P α β Ψ f :
     atomic_triple e E P α β Ψ f ⊢
@@ -438,8 +483,8 @@ Section atomic_triple.
   Proof.
     iIntros "#H !> %Φ (HR & HP) HΦ".
     iApply ("H" with "HP").
-    iApply (atomic_update_wand with "[HR] HΦ").
-    iIntros "%x %y HΦ". rewrite !tele_app_bind. iSmash.
+    iApply (atomic_update_wand with "HΦ"). iIntros "%x %y HΦ". rewrite !tele_app_bind.
+    iSmash.
   Qed.
   Lemma atomic_triple_frame_r R e E P α β Ψ f :
     atomic_triple e E P α β Ψ f ⊢
@@ -447,8 +492,8 @@ Section atomic_triple.
   Proof.
     iIntros "#H !> %Φ (HP & HR) HΦ".
     iApply ("H" with "HP").
-    iApply (atomic_update_wand with "[HR] HΦ").
-    iIntros "%x %y HΦ". rewrite !tele_app_bind. iSmash.
+    iApply (atomic_update_wand with "HΦ"). iIntros "%x %y HΦ". rewrite !tele_app_bind.
+    iSmash.
   Qed.
 
   Lemma atomic_triple_mask_weaken E1 E2 e P α β Ψ f :
@@ -467,9 +512,10 @@ Section atomic_triple.
     □ ∀ Φ, P -∗ ∀.. x, α x -∗ (∀.. y, β x y -∗ Ψ x y -∗ Φ (f x y)) -∗ WP e {{ Φ }}.
   Proof.
     iIntros "#H !> %Φ HP %x Hα HΦ".
-    iApply (wp_frame_wand with "HΦ"). iApply ("H" with "HP").
-    iAuIntro. iAaccIntro with "Hα"; first auto. iIntros "%y Hβ !>".
-    rewrite !tele_app_bind. iIntros "HΨ HΦ". iApply ("HΦ" with "Hβ HΨ").
+    iApply (wp_frame_wand with "HΦ").
+    iApply ("H" with "HP").
+    iAuIntro. iAaccIntro with "Hα"; first auto. iIntros "%y Hβ !>". rewrite !tele_app_bind. iIntros "HΨ HΦ".
+    iApply ("HΦ" with "Hβ HΨ").
   Qed.
   Lemma atomic_triple_seq_step e E P α β Ψ f :
     to_val e = None →

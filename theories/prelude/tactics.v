@@ -111,7 +111,10 @@ Tactic Notation "solve_proper+" :=
 Tactic Notation "Z_to_nat" ident(x) :=
   let y := fresh x in
   rename x into y;
-  destruct (Z_of_nat_complete y) as (x & ->); first lia.
+  let Heq := fresh in
+  destruct (Z_of_nat_complete y) as (x & Heq); first lia;
+  rewrite -> Heq in *;
+  clear y Heq.
 Tactic Notation "Z_to_nat" ident(x) "as" ident(y) :=
   Z_to_nat x;
   rename x into y.

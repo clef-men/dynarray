@@ -49,12 +49,12 @@ Section heapGS.
   Definition safe_dynarray_make : val :=
     λ: "sz" "v",
       assume (#0 ≤ "sz") ;;
-      record2_make "sz" (array_init "sz" (λ: <>, &Some (ref "v"))).
+      record2_make "sz" (array_initi "sz" (λ: <>, &Some (ref "v"))).
 
-  Definition safe_dynarray_init : val :=
+  Definition safe_dynarray_initi : val :=
     λ: "sz" "fn",
       assume (#0 ≤ "sz") ;;
-      record2_make "sz" (array_init "sz" (λ: "i", &Some (ref ("fn" "i")))).
+      record2_make "sz" (array_initi "sz" (λ: "i", &Some (ref ("fn" "i")))).
 
   Definition safe_dynarray_size : val :=
     λ: "t",
@@ -192,7 +192,7 @@ Section heapGS.
     Z_to_nat sz. rewrite Nat2Z.id.
     wp_rec.
     wp_smart_apply assume_spec'. iIntros "_".
-    wp_smart_apply (array_init_spec_disentangled' (λ _ slot, slot_model slot v)); [done | iSmash |]. iIntros "%data %slots (%Hslots & Hdata_model & Hslots)".
+    wp_smart_apply (array_initi_spec_disentangled (λ _ slot, slot_model slot v)); [done | iSmash |]. iIntros "%data %slots (%Hslots & Hdata_model & Hslots)".
     wp_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)".
     iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
     iApply "HΦ". iExists l, data, slots, 0. iFrame. iSplit; first iSmash.
@@ -200,36 +200,39 @@ Section heapGS.
     iApply (big_sepL2_replicate_r_2 _ _ (λ _, slot_model) with "Hslots"). lia.
   Qed.
 
-  Lemma safe_dynarray_init_spec Ψ sz fn :
+  Lemma safe_dynarray_initi_spec Ψ sz fn :
     (0 ≤ sz)%Z →
     {{{
-      Ψ [] ∗
-      [∗ list] i ∈ seq 0 (Z.to_nat sz), ∀ vs_done,
-        ⌜i = length vs_done⌝ -∗
-        Ψ vs_done -∗
-        WP fn #(i : nat) {{ v, Ψ (vs_done ++ [v]) }}
+      Ψ 0 [] ∗
+      □ (
+        ∀ i vs,
+        ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
+        Ψ i vs -∗
+        WP fn #i {{ v,
+          Ψ (S i) (vs ++ [v])
+        }}
+      )
     }}}
-      safe_dynarray_init #sz fn
+      safe_dynarray_initi #sz fn
     {{{ t vs,
-      RET t ;
+      RET t;
       ⌜length vs = Z.to_nat sz⌝ ∗
       safe_dynarray_model t vs ∗
-      Ψ vs
+      Ψ (Z.to_nat sz) vs
     }}}.
   Proof.
-    iIntros "%Hsz %Φ (HΨ & Hfn) HΦ".
+    iIntros "%Hsz %Φ (HΨ & #Hfn) HΦ".
     wp_rec.
     wp_smart_apply assume_spec'. iIntros "_".
-    pose Ψ' slots := (
+    pose Ψ' i slots := (
       ∃ vs,
-      Ψ vs ∗
+      Ψ i vs ∗
       [∗list] slot; v ∈ slots; vs, slot_model slot v
     )%I.
-    wp_smart_apply (array_init_spec Ψ' with "[HΨ Hfn]"); first done.
-    { iSplitL "HΨ"; first iSmash.
-      iApply (big_sepL_impl with "Hfn"). iIntros "!> %i %_i %Hi Hfn %slots -> (%vs & HΨ & Hslots)".
-      iDestruct (big_sepL2_length with "Hslots") as %->.
-      wp_smart_apply (wp_wand with "(Hfn [//] HΨ)"). iIntros "%v HΨ".
+    wp_smart_apply (array_initi_spec Ψ' with "[HΨ]"); first done.
+    { iSplitL "HΨ"; first iSmash. iIntros "!> %i %slots (%Hi1 & %Hi2) (%vs & HΨ & Hslots)".
+      iDestruct (big_sepL2_length with "Hslots") as %Hslots.
+      wp_smart_apply (wp_wand with "(Hfn [] HΨ)"); first iSmash. iIntros "%v HΨ".
       wp_alloc r as "Hr". wp_pures.
       iExists (vs ++ [v]). iFrame. iSmash.
     }
@@ -241,71 +244,96 @@ Section heapGS.
     iExists l, data, slots, 0. iFrame. iSplitR; first iSmash. iSplitL "Hsz"; first iSmash.
     rewrite right_id //.
   Qed.
-  Lemma safe_dynarray_init_spec' Ψ sz fn :
+  Lemma safe_dynarray_initi_spec' Ψ sz fn :
     (0 ≤ sz)%Z →
     {{{
-      Ψ [] ∗
-      ∀ i vs_done,
-      {{{ ⌜i = length vs_done ∧ i < Z.to_nat sz⌝ ∗ Ψ vs_done }}}
-        fn #i
-      {{{ v, RET v; Ψ (vs_done ++ [v]) }}}
+      Ψ 0 [] ∗
+      ( [∗ list] i ∈ seq 0 (Z.to_nat sz),
+        ∀ vs,
+        ⌜i = length vs⌝ -∗
+        Ψ i vs -∗
+        WP fn #i {{ v,
+          Ψ (S i) (vs ++ [v])
+        }}
+      )
     }}}
-      safe_dynarray_init #sz fn
+      safe_dynarray_initi #sz fn
     {{{ t vs,
-      RET t ;
+      RET t;
       ⌜length vs = Z.to_nat sz⌝ ∗
       safe_dynarray_model t vs ∗
-      Ψ vs
+      Ψ (Z.to_nat sz) vs
     }}}.
   Proof.
-    iIntros "% %Φ (HΨ & #Hfn) HΦ".
-    wp_apply (safe_dynarray_init_spec Ψ with "[$HΨ]"); try done.
-    iApply big_sepL_intro. iIntros "!> %i %_i %H_i %vs_done % HΨ". apply lookup_seq in H_i as (-> & ?).
-    iApply ("Hfn" with "[$HΨ]"); iSmash.
+    iIntros "%Hsz %Φ (HΨ & Hfn) HΦ".
+    match goal with |- context [big_opL bi_sep (λ _, ?Ξ') _] => set Ξ := Ξ' end.
+    pose (Ψ' i vs := (
+      Ψ i vs ∗
+      [∗ list] j ∈ seq i (Z.to_nat sz - i), Ξ j
+    )%I).
+    wp_apply (safe_dynarray_initi_spec Ψ' with "[$HΨ Hfn]"); [done | | iSmash].
+    rewrite Nat.sub_0_r. iFrame. iIntros "!> %i %vs (%Hi1 & %Hi2) (HΨ & HΞ)".
+    destruct (Nat.lt_exists_pred 0 (Z.to_nat sz - i)) as (k & Hk & _); first lia. rewrite Hk.
+    rewrite -cons_seq. iDestruct "HΞ" as "(Hfn & HΞ)".
+    wp_apply (wp_wand with "(Hfn [//] HΨ)"). iSteps.
+    rewrite Nat.sub_succ_r Hk //.
   Qed.
-  Lemma safe_dynarray_init_spec_disentangled Ψ sz fn :
+  Lemma safe_dynarray_initi_spec_disentangled Ψ sz fn :
     (0 ≤ sz)%Z →
     {{{
-      [∗ list] i ∈ seq 0 (Z.to_nat sz),
-        WP fn #(i : nat) {{ Ψ i }}
+      □ (
+        ∀ i,
+        ⌜i < Z.to_nat sz⌝ -∗
+        WP fn #i {{ v,
+          Ψ i v
+        }}
+      )
     }}}
-      safe_dynarray_init #sz fn
+      safe_dynarray_initi #sz fn
     {{{ t vs,
-      RET t ;
+      RET t;
       ⌜length vs = Z.to_nat sz⌝ ∗
       safe_dynarray_model t vs ∗
-      ([∗ list] i ↦ v ∈ vs, Ψ i v)
+      ( [∗ list] i ↦ v ∈ vs,
+        Ψ i v
+      )
     }}}.
   Proof.
-    iIntros "% %Φ Hfn HΦ".
-    set (Ψ' vs := ([∗ list] i ↦ v ∈ vs, Ψ i v)%I).
-    wp_apply (safe_dynarray_init_spec Ψ' with "[Hfn]"); try done.
-    iSplit; first rewrite /Ψ' //.
-    iApply (big_sepL_mono with "Hfn"). iIntros "%i %v % Hfn %vs_done -> HΨ'".
-    iApply (wp_wand with "Hfn"). iIntros "%v HΨ". iFrame. iSplitL; last iSmash.
-    rewrite right_id //.
+    iIntros "%Hsz %Φ #Hfn HΦ".
+    pose (Ψ' i vs := (
+      [∗ list] j ↦ v ∈ vs, Ψ j v
+    )%I).
+    wp_apply (safe_dynarray_initi_spec Ψ'); [done | | iSmash].
+    rewrite /Ψ'. iSteps.
+    rewrite big_sepL_snoc. iSmash.
   Qed.
-  Lemma safe_dynarray_init_spec_disentangled' Ψ sz fn :
+  Lemma safe_dynarray_initi_spec_disentangled' Ψ sz fn :
     (0 ≤ sz)%Z →
     {{{
-      ∀ i,
-      {{{ ⌜i < Z.to_nat sz⌝ }}}
-        fn #i
-      {{{ v, RET v; Ψ i v }}}
+      ( [∗ list] i ∈ seq 0 (Z.to_nat sz),
+        WP fn #i {{ v,
+          Ψ i v
+        }}
+      )
     }}}
-      safe_dynarray_init #sz fn
+      safe_dynarray_initi #sz fn
     {{{ t vs,
-      RET t ;
+      RET t;
       ⌜length vs = Z.to_nat sz⌝ ∗
       safe_dynarray_model t vs ∗
-      ([∗ list] i ↦ v ∈ vs, Ψ i v)
+      ( [∗ list] i ↦ v ∈ vs,
+        Ψ i v
+      )
     }}}.
   Proof.
-    iIntros "% %Φ #Hfn HΦ".
-    wp_apply safe_dynarray_init_spec_disentangled; try done.
-    iApply  big_sepL_intro. iIntros "!> %i %_i %Hlookup".
-    apply lookup_seq in Hlookup as (-> & ?).
-    iApply ("Hfn" with "[//]"). iSmash.
+    iIntros "%Hsz %Φ Hfn HΦ".
+    pose (Ψ' i vs := (
+      [∗ list] j ↦ v ∈ vs, Ψ j v
+    )%I).
+    wp_apply (safe_dynarray_initi_spec' Ψ' with "[Hfn]"); [done | | iSmash].
+    rewrite /Ψ'. iSteps.
+    iApply (big_sepL_impl with "Hfn"). iSteps.
+    rewrite big_sepL_snoc. iSmash.
   Qed.
 
   Lemma safe_dynarray_size_spec t vs :
@@ -567,7 +595,7 @@ Section heapGS.
     wp_rec.
     wp_smart_apply assume_spec'. iIntros "%Hsz".
     Z_to_nat sz_ as sz.
-    wp_smart_apply (array_init_type slot_type); first iSmash. iIntros "%data Hdata_type".
+    wp_smart_apply (array_initi_type slot_type); first iSmash. iIntros "%data Hdata_type".
     iApply wp_fupd.
     wp_smart_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)".
     iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
@@ -777,7 +805,7 @@ End heapGS.
 
 #[global] Opaque safe_dynarray_create.
 #[global] Opaque safe_dynarray_make.
-#[global] Opaque safe_dynarray_init.
+#[global] Opaque safe_dynarray_initi.
 #[global] Opaque safe_dynarray_size.
 #[global] Opaque safe_dynarray_is_empty.
 #[global] Opaque safe_dynarray_get.
