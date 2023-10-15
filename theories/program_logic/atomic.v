@@ -255,22 +255,6 @@ Section atomic_wp.
     iApply (atomic_wp_seq with "H Hα"). iIntros "%y Hβ HΨ HΦ".
     iApply ("HΦ" with "Hβ HΨ").
   Qed.
-
-  Lemma atomic_wp_inv ι I e E α β Ψ f :
-    ↑ι ⊆ E →
-    inv ι I -∗
-    atomic_wp e (E ∖ ↑ι) (λ.. x, ▷ I ∗ α x) (λ.. x y, ▷ I ∗ β x y) Ψ f -∗
-    atomic_wp e E α β Ψ f.
-  Proof.
-    iIntros "% #Hinv H %Φ HΦ".
-    iApply "H".
-    iAuIntro.
-    iInv "Hinv" as "HI".
-    iApply (aacc_aupd_commit with "HΦ"); first solve_ndisj. iIntros "%x Hα".
-    iAaccIntro with "[HI Hα]"; rewrite !tele_app_bind; [iSmash.. |].
-    iIntros "%y". rewrite !tele_app_bind. iIntros "(HI & Hβ)".
-    iExists y. rewrite !tele_app_bind. iSmash.
-  Qed.
 End atomic_wp.
 
 Notation "'AWP' '<<' ∀∀ x1 .. xn , α '>>' e @ E '<<' ∃∃ y1 .. yn , β | 'RET' v ; Q '>>'" := (
@@ -526,21 +510,6 @@ Section atomic_triple.
     iApply (wp_step_fupd _ _ _ _ (∀.. y, β x y -∗ Ψ x y -∗ Φ (f x y)) with "[$HΦ //]"); [rewrite TCEq_eq // | done |].
     iApply (atomic_triple_seq with "H HP Hα"). iIntros "%y Hβ HΨ HΦ".
     iApply ("HΦ" with "Hβ HΨ").
-  Qed.
-
-  Lemma atomic_triple_inv ι I e E P α β Ψ f :
-    ↑ι ⊆ E →
-    inv ι I -∗
-    atomic_triple e (E ∖ ↑ι) P (λ.. x, ▷ I ∗ α x) (λ.. x y, ▷ I ∗ β x y) Ψ f -∗
-    atomic_triple e E P α β Ψ f.
-  Proof.
-    iIntros "% #Hinv #H !> %Φ HP HΦ".
-    iApply ("H" with "HP"). iAuIntro.
-    iInv "Hinv" as "HI".
-    iApply (aacc_aupd_commit with "HΦ"); first solve_ndisj. iIntros "%x Hα".
-    iAaccIntro with "[HI Hα]"; rewrite !tele_app_bind; [iSmash.. |].
-    iIntros "%y". rewrite !tele_app_bind. iIntros "(HI & Hβ)".
-    iExists y. rewrite !tele_app_bind. iSmash.
   Qed.
 End atomic_triple.
 
