@@ -57,10 +57,13 @@ Section heapGS.
   Definition array_size : val :=
     λ: "t",
       !"t".[size].
+  #[local] Definition array_data : val :=
+    λ: "t",
+      "t".[data].
 
   Definition array_unsafe_get : val :=
     λ: "t" "i",
-      !("t".[data] +ₗ "i").
+      !(array_data "t" +ₗ "i").
   Definition array_get : val :=
     λ: "t" "i",
       assume (#0 ≤ "i") ;;
@@ -69,7 +72,7 @@ Section heapGS.
 
   Definition array_unsafe_set : val :=
     λ: "t" "i" "v",
-      "t".[data] +ₗ "i" <- "v".
+      array_data "t" +ₗ "i" <- "v".
   Definition array_set : val :=
     λ: "t" "i" "v",
       assume (#0 ≤ "i") ;;
@@ -89,7 +92,7 @@ Section heapGS.
       assume ("i1" + "n" < "sz1") ;;
       assume (#0 ≤ "i2" + "n") ;;
       assume ("i2" + "n" < "sz2") ;;
-      chunk_copy ("t1".[data] +ₗ "i1") "n" ("t2".[data] +ₗ "i2").
+      chunk_copy (array_data "t1" +ₗ "i1") "n" (array_data "t2" +ₗ "i2").
 
   Section array_slice.
     Definition array_slice t (sz : nat) i dq vs : iProp Σ :=
@@ -541,7 +544,7 @@ Section heapGS.
     iIntros "%Φ _ HΦ".
     wp_rec.
     iApply wp_fupd.
-    wp_apply (chunk_make_spec with "[//]"); first lia. iIntros "%l (Hl & _)".
+    wp_apply (chunk_make_spec with "[//]"). iIntros "%l (Hl & _)".
     iDestruct (chunk_model_cons_2 with "Hl") as "(Hsz & Hdata)". rewrite -{1}(Loc.add_0 l).
     iMod (mapsto_persist with "Hsz") as "#Hsz".
     iApply "HΦ". iSteps. rewrite Loc.add_0 //.
@@ -560,7 +563,7 @@ Section heapGS.
     Z_to_nat sz.
     wp_rec.
     wp_smart_apply assume_spec'. iIntros "_".
-    wp_smart_apply (chunk_make_spec with "[//]"); first lia. iIntros "%l (Hmodel & _)".
+    wp_smart_apply (chunk_make_spec with "[//]"). iIntros "%l (Hmodel & _)".
     wp_pures.
     rewrite Z.add_1_l -Nat2Z.inj_succ !Nat2Z.id.
     iDestruct (chunk_model_cons with "Hmodel") as "(Hsz & Hmodel)".
@@ -572,12 +575,12 @@ Section heapGS.
   Lemma array_initi_spec Ψ sz fn :
     (0 ≤ sz)%Z →
     {{{
-      Ψ 0 [] ∗
+      ▷ Ψ 0 [] ∗
       □ (
         ∀ i vs,
         ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
         Ψ i vs -∗
-        WP fn #i {{ v,
+        WP fn #i {{ v, ▷
           Ψ (S i) (vs ++ [v])
         }}
       )
@@ -593,7 +596,7 @@ Section heapGS.
     iIntros "%Hsz %Φ (HΨ & #Hfn) HΦ".
     wp_rec.
     wp_smart_apply assume_spec'. iIntros "_".
-    wp_smart_apply (chunk_make_spec with "[//]"); first lia. iIntros "%l (Hmodel & _)".
+    wp_smart_apply (chunk_make_spec with "[//]"). iIntros "%l (Hmodel & _)".
     wp_pures.
     rewrite Z.add_1_l Z2Nat.inj_succ //.
     iDestruct (chunk_model_cons with "Hmodel") as "(Hsz & Hmodel)".
@@ -613,12 +616,12 @@ Section heapGS.
   Lemma array_initi_spec' Ψ sz fn :
     (0 ≤ sz)%Z →
     {{{
-      Ψ 0 [] ∗
+      ▷ Ψ 0 [] ∗
       ( [∗ list] i ∈ seq 0 (Z.to_nat sz),
         ∀ vs,
         ⌜i = length vs⌝ -∗
         Ψ i vs -∗
-        WP fn #i {{ v,
+        WP fn #i {{ v, ▷
           Ψ (S i) (vs ++ [v])
         }}
       )
@@ -650,7 +653,7 @@ Section heapGS.
       □ (
         ∀ i,
         ⌜i < Z.to_nat sz⌝ -∗
-        WP fn #i {{ v,
+        WP fn #i {{ v, ▷
           Ψ i v
         }}
       )
@@ -677,7 +680,7 @@ Section heapGS.
     (0 ≤ sz)%Z →
     {{{
       ( [∗ list] i ∈ seq 0 (Z.to_nat sz),
-        WP fn #i {{ v,
+        WP fn #i {{ v, ▷
           Ψ i v
         }}
       )
@@ -721,7 +724,8 @@ Section heapGS.
     wp_rec. wp_pure credit:"H£".
     iMod "HΦ" as "(%sz & %i & %dq & %vs & (%_l & %Heq & #Hsz & Hmodel) & _ & HΦ)". injection Heq as <-.
     wp_load.
-    iApply ("HΦ" with "[Hmodel] H£"). iSmash.
+    iApply ("HΦ" with "[Hmodel] H£").
+    iSmash.
   Qed.
   Lemma array_size_spec_atomic t :
     <<<
@@ -782,7 +786,7 @@ Section heapGS.
     iApply fupd_wp. iMod "HΦ" as "(%sz & %dq & %vs & %j & %v & ((%Hj & %Hlookup) & (%l & -> & Hmodel)) & HΦ & _)".
     iMod ("HΦ" with "[Hmodel]") as "HΦ"; first iSmash.
     iModIntro. clear.
-    wp_rec. wp_pure credit:"H£". wp_pures.
+    wp_rec. rewrite /array_data. wp_pure credit:"H£". wp_pures.
     iMod "HΦ" as "(%sz & %dq & %vs & %j & %v & ((%Hj & %Hlookup) & (%_l & %Heq & #Hsz & Hmodel)) & _ & HΦ)". injection Heq as <-.
     destruct (Z_of_nat_complete (i - j)) as (k & Hk); first lia.
     assert (i = j + k)%Z as -> by lia.
@@ -944,7 +948,7 @@ Section heapGS.
     iApply fupd_wp. iMod "HΦ" as "(%sz & %vs & %j & (%Hi & (%l & -> & Hmodel)) & HΦ & _)".
     iMod ("HΦ" with "[Hmodel]") as "HΦ"; first iSmash.
     iModIntro. clear.
-    wp_rec. wp_pure credit:"H£". wp_pures.
+    wp_rec. rewrite /array_data. wp_pure credit:"H£". wp_pures.
     iMod "HΦ" as "(%sz & %vs & %j & (%Hi & (%_l & %Heq & #Hsz & Hmodel)) & _ & HΦ)". injection Heq as <-.
     destruct (Z_of_nat_complete (i - j)) as (k & Hk); first lia.
     assert (i = j + k)%Z as -> by lia.
@@ -1108,7 +1112,7 @@ Section heapGS.
     }}}.
   Proof.
     iIntros (-> -> -> ?) "%Φ (Hslice1 & Hslice2) HΦ".
-    wp_rec.
+    wp_rec. rewrite /array_data.
     wp_smart_apply (array_size_spec_slice with "Hslice1"). iIntros "Hslice1".
     wp_smart_apply (array_size_spec_slice with "Hslice2"). iIntros "Hslice2".
     do 9 (wp_smart_apply assume_spec'; iIntros "_").
@@ -1209,11 +1213,7 @@ Section heapGS.
     ∃ l,
     ⌜t = #l⌝ ∗
     l.[size] ↦□ #sz ∗
-    inv nroot (
-      ∃ vs,
-      ⌜sz = length vs⌝ ∗
-      chunk_model l.[data] (DfracOwn 1) vs ∗ [∗ list] v ∈ vs, τ v
-    ).
+    chunk_type τ sz l.[data].
   #[global] Instance array_type_itype sz :
     iType _ (array_type sz).
   Proof.
@@ -1230,12 +1230,11 @@ Section heapGS.
     iIntros "%Φ _ HΦ".
     wp_rec.
     iApply wp_fupd.
-    wp_apply (chunk_make_spec with "[//]"); first lia. iIntros "%l (Hl & _)".
+    wp_apply (chunk_make_spec with "[//]"). iIntros "%l (Hl & _)".
     iDestruct (chunk_model_cons_2 with "Hl") as "(Hsz & _)".
     rewrite -{1}(Loc.add_0 l). iMod (mapsto_persist with "Hsz") as "#Hsz".
     iApply "HΦ". iExists l. repeat iSplitR; [iSmash.. |].
-    iApply inv_alloc. iExists []. iStep 2. rewrite right_id.
-    iApply chunk_model_nil.
+    iApply chunk_type_0.
   Qed.
 
   Lemma array_make_type (sz : Z) v :
@@ -1251,7 +1250,7 @@ Section heapGS.
     wp_rec.
     wp_smart_apply assume_spec'. iIntros "%Hsz".
     Z_to_nat sz. rewrite Nat2Z.id.
-    wp_smart_apply (chunk_make_spec with "[//]"); first lia. iIntros "%l (Hl & _)".
+    wp_smart_apply (chunk_make_spec with "[//]"). iIntros "%l (Hl & _)".
     rewrite Z.add_1_l Z2Nat.inj_succ; last lia. rewrite Nat2Z.id.
     iDestruct (chunk_model_cons_2 with "Hl") as "(Hsz & Hdata)".
     rewrite -{1}(Loc.add_0 l).
@@ -1264,7 +1263,7 @@ Section heapGS.
 
   Lemma array_initi_type (sz : Z) fn :
     {{{
-      function_type nat_type τ fn
+      (nat_type --> τ)%T fn
     }}}
       array_initi #sz fn
     {{{ t,
@@ -1274,7 +1273,7 @@ Section heapGS.
     iIntros "%Φ #Hfn HΦ".
     wp_rec.
     wp_smart_apply assume_spec'. iIntros "%Hsz".
-    wp_smart_apply (chunk_make_spec with "[//]"); first lia. iIntros "%l (Hmodel & _)".
+    wp_smart_apply (chunk_make_spec with "[//]"). iIntros "%l (Hmodel & _)".
     rewrite Z.add_1_l Z2Nat.inj_succ //.
     iDestruct (chunk_model_cons with "Hmodel") as "(Hsz & Hmodel)".
     iMod (mapsto_persist with "Hsz") as "#Hsz".
@@ -1297,6 +1296,19 @@ Section heapGS.
     iSmash.
   Qed.
 
+  #[local] Lemma array_data_type t sz :
+    {{{
+      array_type sz t
+    }}}
+      array_data t
+    {{{ l,
+      RET #l;
+      chunk_type τ sz l
+    }}}.
+  Proof.
+    iSmash.
+  Qed.
+
   Lemma array_unsafe_get_type t (sz : nat) (i : Z) :
     (0 ≤ i < sz)%Z →
     {{{
@@ -1307,14 +1319,11 @@ Section heapGS.
       RET v; τ v
     }}}.
   Proof.
-    iIntros "%Hi %Φ (%l & -> & #Hsz & #Hinv) HΦ".
-    wp_rec. wp_pures.
-    iInv "Hinv" as "(%vs & >-> & >Hmodel & #Hvs)".
-    edestruct (lookup_lt_is_Some_2 vs (Z.to_nat i)) as (v & Hlookup); first lia.
-    iApply (chunk_get_spec with "Hmodel"); [lia | done |].
-    iIntros "!> Hmodel !>". iSplitR "HΦ"; first iSmash.
-    iApply "HΦ".
-    iApply (big_sepL_lookup with "Hvs"). done.
+    iIntros "%Hi %Φ #Ht HΦ".
+    wp_rec.
+    wp_smart_apply (array_data_type with "Ht"). iIntros "%data #Hdata".
+    wp_smart_apply (chunk_get_type with "Hdata"); first done.
+    iSmash.
   Qed.
 
   Lemma array_get_type t sz (i : val) :
@@ -1327,12 +1336,12 @@ Section heapGS.
       RET v; τ v
     }}}.
   Proof.
-    iIntros "%Φ (#Htype & (%i_ & ->)) HΦ".
+    iIntros "%Φ (#Ht & (%i_ & ->)) HΦ".
     wp_rec.
     wp_smart_apply assume_spec'. iIntros "%Hi".
-    wp_smart_apply (array_size_type with "Htype"). iIntros "_".
+    wp_smart_apply (array_size_type with "Ht"). iIntros "_".
     wp_smart_apply assume_spec'. iIntros "%Hi'".
-    wp_smart_apply (array_unsafe_get_type with "Htype"); first lia.
+    wp_smart_apply (array_unsafe_get_type with "Ht"); first lia.
     iSmash.
   Qed.
 
@@ -1347,17 +1356,11 @@ Section heapGS.
       RET #(); True
     }}}.
   Proof.
-    iIntros "%Hi %Φ ((%l & ->& #Hsz & #Hinv) & #Hv) HΦ".
-    wp_rec. wp_pures.
-    iInv "Hinv" as "(%vs & >-> & >Hmodel & #Hvs)".
-    iApply (chunk_set_spec with "Hmodel"); first done.
-    iIntros "!> Hmodel !>". iSplitR "HΦ".
-    { iExists _. iFrame. iSplit; first rewrite insert_length //.
-      edestruct (lookup_lt_is_Some_2 vs (Z.to_nat i)) as (w & Hlookup); first lia.
-      iDestruct (big_sepL_insert_acc with "Hvs") as "(_ & Hvs_)"; first done.
-      iSmash.
-    }
-    iApply ("HΦ" with "[//]").
+    iIntros "%Hi %Φ (#Ht & #Hv) HΦ".
+    wp_rec.
+    wp_smart_apply (array_data_type with "Ht"). iIntros "%data #Hdata".
+    wp_smart_apply (chunk_set_type with "[$Hdata $Hv]"); first done.
+    iSmash.
   Qed.
 
   Lemma array_set_type t sz (i : val) v :
@@ -1371,12 +1374,12 @@ Section heapGS.
       RET #();  True
     }}}.
   Proof.
-    iIntros "%Φ (#Htype & (%i_ & ->) & #Hv) HΦ".
+    iIntros "%Φ (#Ht & (%i_ & ->) & #Hv) HΦ".
     wp_rec.
     wp_smart_apply assume_spec'. iIntros "%Hi".
-    wp_smart_apply (array_size_type with "Htype"). iIntros "_".
+    wp_smart_apply (array_size_type with "Ht"). iIntros "_".
     wp_smart_apply assume_spec'. iIntros "%Hi'".
-    wp_smart_apply (array_unsafe_set_type with "[$Htype $Hv]"); first lia.
+    wp_smart_apply (array_unsafe_set_type with "[$Ht $Hv]"); first lia.
     iSmash.
   Qed.
 
@@ -1393,16 +1396,19 @@ Section heapGS.
       RET #(); True
     }}}.
   Proof.
-    iIntros "%Φ (#Htype1 & (%i1_ & ->) & #Htype2 & (%i2_ & ->) & (%n_ & ->)) HΦ".
+    iIntros "%Φ (#Ht1 & (%i1_ & ->) & #Ht2 & (%i2_ & ->) & (%n_ & ->)) HΦ".
     wp_rec.
-    wp_smart_apply (array_size_type with "Htype1"). iIntros "_".
-    wp_smart_apply (array_size_type with "Htype2"). iIntros "_".
-    wp_pures.
+    wp_smart_apply (array_size_type with "Ht1"). iIntros "_".
+    wp_smart_apply (array_size_type with "Ht2"). iIntros "_".
     do 9 (wp_smart_apply assume_spec'; iIntros "%").
-    iDestruct "Htype1" as "(%l1 & -> & #Hsz1 & #Htype1)".
-    iDestruct "Htype2" as "(%l2 & -> & #Hsz2 & #Htype2)".
-    wp_pures.
-  Admitted.
+    wp_smart_apply (array_data_type with "Ht2"). iIntros "%data2 Hdata2".
+    wp_smart_apply (array_data_type with "Ht1"). iIntros "%data1 Hdata1".
+    iDestruct (chunk_type_shift i1_ with "Hdata1") as "Hdata1"; first done.
+    iDestruct (chunk_type_shift i2_ with "Hdata2") as "Hdata2"; first done.
+    iDestruct (chunk_type_le (Z.to_nat n_) with "Hdata1") as "Hdata1"; first lia.
+    wp_smart_apply (chunk_copy_type with "[$Hdata1 $Hdata2]"); [lia.. |].
+    iSmash.
+  Qed.
 End heapGS.
 
 #[global] Opaque array_create.

@@ -148,12 +148,12 @@ Section heapGS.
   Lemma dynarray_initi_spec Ψ sz fn :
     (0 ≤ sz)%Z →
     {{{
-      Ψ 0 [] ∗
+      ▷ Ψ 0 [] ∗
       □ (
         ∀ i vs,
         ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
         Ψ i vs -∗
-        WP fn #i {{ v,
+        WP fn #i {{ v, ▷
           Ψ (S i) (vs ++ [v])
         }}
       )
@@ -178,12 +178,12 @@ Section heapGS.
   Lemma dynarray_initi_spec' Ψ sz fn :
     (0 ≤ sz)%Z →
     {{{
-      Ψ 0 [] ∗
+      ▷ Ψ 0 [] ∗
       ( [∗ list] i ∈ seq 0 (Z.to_nat sz),
         ∀ vs,
         ⌜i = length vs⌝ -∗
         Ψ i vs -∗
-        WP fn #i {{ v,
+        WP fn #i {{ v, ▷
           Ψ (S i) (vs ++ [v])
         }}
       )
@@ -215,7 +215,7 @@ Section heapGS.
       □ (
         ∀ i,
         ⌜i < Z.to_nat sz⌝ -∗
-        WP fn #i {{ v,
+        WP fn #i {{ v, ▷
           Ψ i v
         }}
       )
@@ -242,7 +242,7 @@ Section heapGS.
     (0 ≤ sz)%Z →
     {{{
       ( [∗ list] i ∈ seq 0 (Z.to_nat sz),
-        WP fn #i {{ v,
+        WP fn #i {{ v, ▷
           Ψ i v
         }}
       )

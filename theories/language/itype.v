@@ -12,22 +12,6 @@ Section basic_types.
 
   Implicit Types v : val.
 
-  Definition int_type v : PROP :=
-    ∃ i, ⌜v = LitV (LitInt i)⌝.
-  #[global] Instance int_type_itype :
-    iType _ int_type.
-  Proof.
-    split. apply _.
-  Qed.
-
-  Definition nat_type v : PROP :=
-    ∃ i, ⌜v = LitV (LitInt (Z.of_nat i))⌝.
-  #[global] Instance nat_type_itype :
-    iType _ nat_type.
-  Proof.
-    split. apply _.
-  Qed.
-
   Definition bool_type v : PROP :=
     ∃ b, ⌜v = LitV (LitBool b)⌝.
   #[global] Instance bool_type_itype :
@@ -43,6 +27,46 @@ Section basic_types.
   Proof.
     split. apply _.
   Qed.
+
+  Definition int_type v : PROP :=
+    ∃ i, ⌜v = LitV (LitInt i)⌝.
+  #[global] Instance int_type_itype :
+    iType _ int_type.
+  Proof.
+    split. apply _.
+  Qed.
+
+  Definition refined_int_type ϕ v : PROP :=
+    ∃ i, ⌜v = LitV (LitInt i) ∧ ϕ i⌝.
+  #[global] Instance refined_int_type_itype ϕ :
+    iType _ (refined_int_type ϕ).
+  Proof.
+    split. apply _.
+  Qed.
+
+  Definition int_range_type lb ub :=
+    refined_int_type (λ i, (lb ≤ i < ub)%Z).
+
+  Definition nat_type v : PROP :=
+    ∃ i, ⌜v = LitV (LitInt (Z.of_nat i))⌝.
+  #[global] Instance nat_type_itype :
+    iType _ nat_type.
+  Proof.
+    split. apply _.
+  Qed.
+
+  Definition refined_nat_type ϕ v : PROP :=
+    ∃ i, ⌜v = LitV (LitInt (Z.of_nat i)) ∧ ϕ i⌝.
+  #[global] Instance refined_nat_type_itype ϕ :
+    iType _ (refined_nat_type ϕ).
+  Proof.
+    split. apply _.
+  Qed.
+
+  Definition nat_range_type lb ub :=
+    refined_nat_type (λ i, lb ≤ i < ub).
+  Definition nat_upto_type ub :=
+    refined_nat_type (λ i, i < ub).
 End basic_types.
 
 Section other_types.
@@ -57,4 +81,22 @@ Section other_types.
   Proof.
     split. apply _.
   Qed.
+
+  Definition later_type τ `{!iType _ τ} v : iProp Σ :=
+    ▷ τ v.
+  #[global] Instance later_type_itype τ `{!iType _ τ} :
+    iType _ (later_type τ).
+  Proof.
+    split. apply _.
+  Qed.
 End other_types.
+
+Declare Scope itype_scope.
+Delimit Scope itype_scope with T.
+
+Infix "-->" := (
+  function_type
+) : itype_scope.
+Notation "▷ τ" := (
+  later_type τ
+) : itype_scope.
