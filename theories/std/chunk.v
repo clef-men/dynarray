@@ -1,5 +1,5 @@
 From ml Require Import
-prelude.
+  prelude.
 From ml.bi Require Import
   big_op.
 From ml.language Require Import
@@ -27,7 +27,7 @@ Section heapGS.
   #[local] Definition chunk_foldli_aux : val :=
     rec: "chunk_foldli_aux" "t" "sz" "acc" "fn" "i" :=
       if: "sz" ≤ "i" then (
-"acc"
+        "acc"
       ) else (
         "chunk_foldli_aux" "t" "sz" ("fn" "acc" "i" !("t" +ₗ "i")) "fn" (#1 + "i")
       ).
