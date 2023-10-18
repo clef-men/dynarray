@@ -187,7 +187,7 @@ Section heapGS.
       ⌜t = #l⌝ ∗
       l.[size] ↦ #(length vs) ∗
       l.[data] ↦ data ∗ array_model data (DfracOwn 1) (slots ++ replicate extra &&None) ∗
-      [∗list] slot; v ∈ slots; vs, slot_model slot v.
+      [∗ list] slot; v ∈ slots; vs, slot_model slot v.
 
     #[global] Instance safe_dynarray_model_timeless t vs :
       Timeless (safe_dynarray_model t vs).
@@ -260,7 +260,7 @@ Section heapGS.
     pose Ψ' i slots := (
       ∃ vs,
       Ψ i vs ∗
-      [∗list] slot; v ∈ slots; vs, slot_model slot v
+      [∗ list] slot; v ∈ slots; vs, slot_model slot v
     )%I.
     wp_smart_apply (array_initi_spec Ψ' with "[HΨ]"); first done.
     { iSplitL "HΨ"; first iSmash. iIntros "!> %i %slots (%Hi1 & %Hi2) (%vs & HΨ & Hslots)".
