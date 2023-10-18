@@ -172,6 +172,11 @@ Section heapGS.
         safe_dynarray_set_data "t" (array_shrink "data" "sz")
       ).
 
+  Definition safe_dynarray_reset : val :=
+    λ: "t",
+      safe_dynarray_set_size "t" #0 ;;
+      safe_dynarray_set_data "t" (array_create #()).
+
   Section safe_dynarray_model.
     #[local] Definition slot_model slot v : iProp Σ :=
       ∃ r,
@@ -652,6 +657,23 @@ Section heapGS.
     rewrite right_id. iSmash.
   Qed.
 
+  Lemma safe_dynarray_reset_spec t vs :
+    {{{
+      safe_dynarray_model t vs
+    }}}
+      safe_dynarray_reset t
+    {{{
+      RET #();
+      safe_dynarray_model t []
+    }}}.
+  Proof.
+    iIntros "%Φ (%l & %data & %slots & %extra & -> & Hsz & Hdata & _ & _) HΦ".
+    wp_rec. rewrite /safe_dynarray_set_size /safe_dynarray_set_data. wp_store.
+    wp_apply (array_create_spec with "[//]"). iIntros "%data' Hdata_model'".
+    wp_store.
+    iSteps. iExists [], 0. iSmash.
+  Qed.
+
   Context τ `{!iType (iPropI Σ) τ}.
 
   #[local] Definition slot_type :=
@@ -973,6 +995,23 @@ Section heapGS.
     wp_apply (safe_dynarray_set_data_type with "[$Htype $Hdata_type']").
     iSmash.
   Qed.
+
+  Lemma safe_dynarray_reset_type t v :
+    {{{
+      safe_dynarray_type t
+    }}}
+      safe_dynarray_reset t
+    {{{
+      RET #(); True
+    }}}.
+  Proof.
+    iIntros "%Φ #Htype HΦ".
+    wp_rec.
+    wp_apply (safe_dynarray_set_size_type with "Htype"); first done. iIntros "_".
+    wp_smart_apply (array_create_type with "[//]"). iIntros "%data' #Hdata_type'".
+    wp_apply (safe_dynarray_set_data_type with "[$Htype $Hdata_type']").
+    iSmash.
+  Qed.
 End heapGS.
 
 #[global] Opaque safe_dynarray_create.
@@ -988,6 +1027,7 @@ End heapGS.
 #[global] Opaque safe_dynarray_push.
 #[global] Opaque safe_dynarray_pop.
 #[global] Opaque safe_dynarray_fit_capacity.
+#[global] Opaque safe_dynarray_reset.
 
 #[global] Opaque safe_dynarray_model.
 #[global] Opaque safe_dynarray_type.

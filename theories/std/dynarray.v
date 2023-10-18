@@ -116,6 +116,11 @@ Section heapGS.
         "t".[data] <- array_shrink "data" "sz"
       ).
 
+  Definition dynarray_reset : val :=
+    λ: "t",
+      "t".[size] <- #0 ;;
+      "t".[data] <- array_create #().
+
   Section dynarray_model.
     #[local] Definition dynarray_model_inner l (sz : nat) data vs : iProp Σ :=
       l.[size] ↦ #sz ∗
@@ -533,6 +538,23 @@ Section heapGS.
     wp_store.
     iSteps. iExists 0. rewrite Nat2Z.id take_app right_id //.
   Qed.
+
+  Lemma dynarray_reset_spec t vs :
+    {{{
+      dynarray_model t vs
+    }}}
+      dynarray_reset t
+    {{{
+      RET #();
+      dynarray_model t []
+    }}}.
+  Proof.
+    iIntros "%Φ (%l & %data & %extra & -> & Hsz & Hdata & _) HΦ".
+    wp_rec. wp_store.
+    wp_apply (array_create_spec with "[//]"). iIntros "%data' Hdata_model'".
+    wp_store.
+    iSteps. iExists 0. iSmash.
+  Qed.
 End heapGS.
 
 #[global] Opaque dynarray_create.
@@ -548,5 +570,6 @@ End heapGS.
 #[global] Opaque dynarray_push.
 #[global] Opaque dynarray_pop.
 #[global] Opaque dynarray_fit_capacity.
+#[global] Opaque dynarray_reset.
 
 #[global] Opaque dynarray_model.
