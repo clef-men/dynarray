@@ -46,4 +46,16 @@ Section heapGS.
   Proof.
     split. apply _.
   Qed.
+
+  Lemma opt_type_match t e1 x e2 Φ :
+    opt_type t -∗
+    ( WP e1 {{ Φ }} ∧
+      ∀ v, τ v -∗ WP subst' x v e2 {{ Φ }}
+    ) -∗
+    WP match: t with None => e1 | Some x => e2 end {{ Φ }}.
+  Proof.
+    iIntros "[-> | (%v & -> & #Hv)] H";
+      [rewrite bi.and_elim_l | rewrite bi.and_elim_r];
+      iSmash.
+  Qed.
 End heapGS.

@@ -88,17 +88,16 @@ Section heapGS.
       chunk_iteri "t" "sz" (λ: "i" "v", "t'" +ₗ "i" <- "v").
 
   Definition chunk_resize : val :=
-    λ: "t" "sz" "sz'" "n" "v",
-      let: "t'" := chunk_make "sz'" "v" in
+    λ: "t" "sz" "sz'" "n" "v'",
+      let: "t'" := chunk_make "sz'" "v'" in
       chunk_copy "t" "n" "t'" ;;
       "t'".
   Definition chunk_grow : val :=
-    λ: "t" "sz" "sz'" "v",
-      chunk_resize "t" "sz" "sz'" "sz" "v".
+    λ: "t" "sz" "sz'" "v'",
+      chunk_resize "t" "sz" "sz'" "sz" "v'".
   Definition chunk_shrink : val :=
     λ: "t" "sz" "sz'",
       chunk_resize "t" "sz" "sz'" "sz'" (inhabitant : val).
-
   Definition chunk_clone : val :=
     λ: "t" "sz",
       chunk_shrink "t" "sz" "sz".
@@ -2542,17 +2541,17 @@ Section heapGS.
     wp_rec.
     wp_smart_apply (chunk_resize_spec_atomic Ψ with "[$HΨ $Hau]"); [done.. | iSmash].
   Qed.
-  Lemma chunk_grow_spec l dq vs (sz : Z) sz' v :
+  Lemma chunk_grow_spec l dq vs (sz : Z) sz' v' :
     Z.to_nat sz = length vs →
     Z.to_nat sz ≤ Z.to_nat sz' →
     {{{
       chunk_model l dq vs
     }}}
-      chunk_grow #l #sz #sz' v
+      chunk_grow #l #sz #sz' v'
     {{{ l',
       RET #l';
       chunk_model l dq vs ∗
-      chunk_model l' (DfracOwn 1) (vs ++ replicate (Z.to_nat sz' - Z.to_nat sz) v) ∗
+      chunk_model l' (DfracOwn 1) (vs ++ replicate (Z.to_nat sz' - Z.to_nat sz) v') ∗
       if decide (0 < sz')%Z then meta_token l' ⊤ else True
     }}}.
   Proof.
@@ -2674,7 +2673,7 @@ Section heapGS.
   Qed.
 
   Lemma chunk_type_shift (i : Z) τ `{!iType _ τ} (sz : nat) l :
-    (0 ≤ i < sz)%Z →
+    (0 ≤ i ≤ sz)%Z →
     chunk_type τ sz l ⊢
     chunk_type τ (sz - Z.to_nat i) (l +ₗ i).
   Proof.
@@ -3053,6 +3052,52 @@ Section heapGS.
     iFrame "#∗". iIntros "!> % (%i & -> & %Hi)". wp_pures. iIntros "!> !> %v Hv".
     wp_smart_apply (chunk_set_type with "[$Hl2 $Hv]"); first lia.
     iSmash.
+  Qed.
+  Lemma chunk_copy_type' τ `{!iType _ τ} l1 sz1 sz1_ l2 vs2 :
+    sz1_ = Z.of_nat sz1 →
+    sz1 = length vs2 →
+    {{{
+      chunk_type τ sz1 l1 ∗
+      chunk_model l2 (DfracOwn 1) vs2
+    }}}
+      chunk_copy #l1 #sz1_ #l2
+    {{{
+      RET #();
+      chunk_type τ sz1 l2
+    }}}.
+  Proof.
+    iIntros (-> ->) "%Φ (#Hl1 & Hmodel2) HΦ".
+    wp_rec.
+    pose (Ψ i vs o := (
+      chunk_model l2 (DfracOwn 1) (vs ++ drop i vs2) ∗
+      ([∗ list] v ∈ vs, τ v) ∗
+      from_option τ True o
+    )%I).
+    iApply wp_fupd.
+    wp_smart_apply (chunk_iteri_spec_atomic Ψ with "[$Hmodel2]"); last first.
+    { iIntros "%vs (%Hvs & (Hmodel2 & Hvs & _))".
+      iApply "HΦ".
+      iApply inv_alloc. iExists vs.
+      rewrite Nat2Z.id drop_all right_id. iSmash.
+    }
+    repeat iSplit; try iSmash.
+    - iIntros "!> %i %vs (%Hi1 & %Hi2) (Hmodel2 & Hvs & _)".
+      iAuIntro.
+      iInv "Hl1" as "(%vs1 & >%Hvs1 & >Hmodel1 & #Hvs1)".
+      feed pose proof (list_lookup_lookup_total_lt vs1 i); first lia.
+      iDestruct (chunk_model_lookup_acc with "Hmodel1") as "(H↦1 & Hmodel1)"; first done.
+      iAaccIntro with "H↦1"; first iSmash.
+      iDestruct (big_sepL_lookup with "Hvs1") as "Hv1"; first done.
+      iSmash.
+    - iIntros "!> %i %vs %v (%Hi1 & %Hi2) (Hmodel2 & Hvs & Hv)".
+      iDestruct (chunk_model_update i with "Hmodel2") as "(H↦2 & Hmodel2)".
+      { apply list_lookup_lookup_total_lt. rewrite app_length drop_length. lia. }
+      wp_store.
+      iDestruct ("Hmodel2" with "H↦2") as "Hmodel2".
+      iFrame.
+      rewrite /= right_id insert_app_r_alt; last lia.
+      rewrite Hi2 Nat.sub_diag insert_take_drop; last (rewrite drop_length; lia).
+      rewrite drop_drop Nat.add_1_r -(assoc (++)) //.
   Qed.
 
   Lemma chunk_resize_type τ `{!iType _ τ} l sz sz_ sz' n v' :

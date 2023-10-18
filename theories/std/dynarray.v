@@ -51,6 +51,9 @@ Section heapGS.
   Definition dynarray_size : val :=
     λ: "t",
       !"t".[size].
+  Definition dynarray_capacity : val :=
+    λ: "t",
+      array_size !"t".[data].
 
   Definition dynarray_is_empty : val :=
     λ: "t",
@@ -58,11 +61,11 @@ Section heapGS.
 
   Definition dynarray_get : val :=
     λ: "t" "i",
-      array_get !"t".[data] "i".
+      array_unsafe_get !"t".[data] "i".
 
   Definition dynarray_set : val :=
     λ: "t" "i" "v",
-      array_set !"t".[data] "i" "v".
+      array_unsafe_set !"t".[data] "i" "v".
 
   #[local] Definition dynarray_next_capacity : val :=
     λ: "n",
@@ -92,7 +95,26 @@ Section heapGS.
       dynarray_reserve_extra "t" #1 ;;
       let: "sz" := !"t".[size] in
       "t".[size] <- "sz" + #1 ;;
-      array_set !"t".[data] "sz" "v".
+      array_unsafe_set !"t".[data] "sz" "v".
+
+  Definition dynarray_pop : val :=
+    λ: "t",
+      let: "sz" := !"t".[size] - #1 in
+      "t".[size] <- "sz" ;;
+      let: "data" := !"t".[data] in
+      let: "v" := array_unsafe_get "data" "sz" in
+      array_unsafe_set "data" "sz" #() ;;
+      "v".
+
+  Definition dynarray_fit_capacity : val :=
+    λ: "t",
+      let: "sz" := !"t".[size] in
+      let: "data" := !"t".[data] in
+      if: "sz" = array_size "data" then (
+        #()
+      ) else (
+        "t".[data] <- array_shrink "data" "sz"
+      ).
 
   Section dynarray_model.
     #[local] Definition dynarray_model_inner l (sz : nat) data vs : iProp Σ :=
@@ -280,6 +302,23 @@ Section heapGS.
     iSmash.
   Qed.
 
+  Lemma dynarray_capacity_spec t vs :
+    {{{
+      dynarray_model t vs
+    }}}
+      dynarray_capacity t
+    {{{ cap,
+      RET #cap;
+      ⌜length vs ≤ cap⌝ ∗
+      dynarray_model t vs
+    }}}.
+  Proof.
+    iIntros "%Φ (%l & %data & %extra & -> & Hsz & Hdata & Hdata_model) HΦ".
+    wp_rec. wp_load.
+    wp_apply (array_size_spec with "Hdata_model"). iIntros "Hdata_model".
+    rewrite app_length. iSmash.
+  Qed.
+
   Lemma dynarray_is_empty_spec t vs :
     {{{
       dynarray_model t vs
@@ -311,7 +350,7 @@ Section heapGS.
   Proof.
     iIntros "%Hi %Hlookup %Φ (%l & %data & %extra & -> & Hsz & Hdata & Hdata_model) HΦ".
     wp_rec. wp_load.
-    wp_apply (array_get_spec with "Hdata_model"); first done.
+    wp_apply (array_unsafe_get_spec with "Hdata_model"); first done.
     { rewrite lookup_app_l //. eapply lookup_lt_Some. done. }
     iSmash.
   Qed.
@@ -329,8 +368,8 @@ Section heapGS.
   Proof.
     iIntros "%Hi %Φ (%l & %data & %extra & -> & Hsz & Hdata & Hdata_model) HΦ".
     wp_rec. wp_load.
-    wp_apply (array_set_spec with "Hdata_model").
-    { rewrite app_length replicate_length. lia. }
+    wp_apply (array_unsafe_set_spec with "Hdata_model").
+    { rewrite app_length. lia. }
     iIntros "Hdata_model".
     iApply "HΦ". iExists l, data, extra.
     rewrite insert_length insert_app_l; last lia. iSmash.
@@ -365,14 +404,14 @@ Section heapGS.
     wp_smart_apply (array_size_spec with "Hdata_model"). iIntros "Hdata_model".
     wp_pures.
     case_bool_decide as Htest; wp_pures; rewrite app_length replicate_length in Htest.
-    - iApply ("HΦ" $! data extra). iSmash.
+    - iApply ("HΦ" $! data extra).
+      iSmash.
     - wp_apply (dynarray_next_capacity_spec with "[//]"); first lia. iIntros "%n' %Hn'".
-      rewrite app_length replicate_length in Hn'.
       wp_apply maximum_spec.
       wp_smart_apply (array_make_spec with "[//]"); first lia. iIntros "%data' Hdata_model'".
       wp_load.
       wp_smart_apply (array_blit_spec with "[$Hdata_model $Hdata_model']"); try lia.
-      { rewrite app_length replicate_length. lia. }
+      { rewrite app_length. lia. }
       { rewrite replicate_length. lia. }
       iIntros "(Hdata_model & Hdata_model')".
       wp_store.
@@ -443,10 +482,56 @@ Section heapGS.
     wp_rec.
     wp_smart_apply (dynarray_reserve_extra_spec' with "Hmodel"); first lia. iIntros "%data' %δ (%Hδ & (Hsz & Hdata & Hdata_model))".
     wp_load. wp_store. wp_load.
-    wp_apply (array_set_spec with "Hdata_model").
+    wp_apply (array_unsafe_set_spec with "Hdata_model").
     { rewrite app_length replicate_length. lia. }
     rewrite Nat2Z.id insert_app_r_alt // Nat.sub_diag insert_replicate_lt // /= (assoc (++) vs [v] (replicate _ _)).
     iSteps. rewrite app_length. iSmash.
+  Qed.
+
+  Lemma dynarray_pop_spec t vs v :
+    {{{
+      dynarray_model t (vs ++ [v])
+    }}}
+      dynarray_pop t
+    {{{
+      RET v;
+      dynarray_model t vs
+    }}}.
+  Proof.
+    iIntros "%Φ (%l & %data & %extra & -> & Hsz & Hdata & Hdata_model) HΦ".
+    wp_rec. wp_load. wp_store. wp_load.
+    rewrite app_length Nat.add_1_r Z.sub_1_r -Nat2Z.inj_pred /=; last lia.
+    wp_smart_apply (array_unsafe_get_spec with "Hdata_model"); first lia.
+    { rewrite lookup_app_l; last (rewrite app_length /=; lia).
+      rewrite lookup_app_r; last lia.
+      rewrite Nat2Z.id Nat.sub_diag //.
+    }
+    iIntros "Hdata_model".
+    wp_smart_apply (array_unsafe_set_spec with "Hdata_model").
+    { rewrite !app_length /=. lia. }
+    iSteps. iExists (S extra).
+    rewrite -assoc insert_app_r_alt; last lia. rewrite Nat2Z.id Nat.sub_diag //.
+  Qed.
+
+  Lemma dynarray_fit_capacity_spec t vs :
+    {{{
+      dynarray_model t vs
+    }}}
+      dynarray_fit_capacity t
+    {{{
+      RET #();
+      dynarray_model t vs
+    }}}.
+  Proof.
+    iIntros "%Φ (%l & %data & %extra & -> & Hsz & Hdata & Hdata_model) HΦ".
+    wp_rec. do 2 wp_load.
+    wp_smart_apply (array_size_spec with "Hdata_model"). iIntros "Hdata_model".
+    wp_pures. case_bool_decide; wp_pures; first iSmash.
+    wp_apply (array_shrink_spec with "Hdata_model").
+    { rewrite app_length. lia. }
+    iIntros "%data' (_ & Hdata_model')".
+    wp_store.
+    iSteps. iExists 0. rewrite Nat2Z.id take_app right_id //.
   Qed.
 End heapGS.
 
@@ -454,11 +539,14 @@ End heapGS.
 #[global] Opaque dynarray_make.
 #[global] Opaque dynarray_initi.
 #[global] Opaque dynarray_size.
+#[global] Opaque dynarray_capacity.
 #[global] Opaque dynarray_is_empty.
 #[global] Opaque dynarray_get.
 #[global] Opaque dynarray_set.
 #[global] Opaque dynarray_reserve.
 #[global] Opaque dynarray_reserve_extra.
 #[global] Opaque dynarray_push.
+#[global] Opaque dynarray_pop.
+#[global] Opaque dynarray_fit_capacity.
 
 #[global] Opaque dynarray_model.
