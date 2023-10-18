@@ -13,7 +13,7 @@ From ml.std Require Import
   diverge
   assume
   record2
-math
+  math
   reference
   opt
   array.
@@ -125,8 +125,8 @@ Section heapGS.
       if: array_size "data" ≤ "sz" then (
         #false
       ) else (
+        safe_dynarray_set_size "t" (#1 + "sz") ;;
         array_unsafe_set "data" "sz" "slot" ;;
-        safe_dynarray_set_size "t" ("sz" + #1) ;;
         #true
       ).
   #[local] Definition safe_dynarray_push_aux : val :=
@@ -150,9 +150,10 @@ Section heapGS.
     λ: "t",
       let: "sz" := safe_dynarray_size "t" in
       let: "data" := safe_dynarray_data "t" in
+      assume ("sz" ≤ array_size "data") ;;
       assume (#0 < "sz") ;;
       let: "sz" := "sz" - #1 in
-      match: array_get "data" "sz" with
+      match: array_unsafe_get "data" "sz" with
       | None =>
           diverge #()
       | Some "ref" =>
@@ -542,15 +543,16 @@ Section heapGS.
   Proof.
     iIntros "%Φ ((%l & %data & %slots & %extra & -> & Hsz & Hdata & Hdata_model & Hslots) & Hslot) HΦ".
     iDestruct (big_sepL2_length with "Hslots") as "%Hslots".
-    wp_rec. rewrite /safe_dynarray_size /safe_dynarray_data. do 2 wp_load.
+    wp_rec. rewrite /safe_dynarray_size /safe_dynarray_data /safe_dynarray_set_size. do 2 wp_load.
     wp_smart_apply (array_size_spec with "Hdata_model"). iIntros "Hdata_model".
     wp_pures.
     case_bool_decide as Htest; wp_pures.
     { iApply "HΦ". iFrame. iSmash. }
+    wp_store.
     wp_apply (array_unsafe_set_spec with "Hdata_model"); first lia. iIntros "Hdata_model".
-    rewrite /safe_dynarray_set_size. wp_store.
+    wp_pures.
     iApply "HΦ". iExists l, data, (slots ++ [slot]), (extra - 1). iFrame. iSplitR; first iSmash.
-    rewrite app_length Z.add_1_r -Nat2Z.inj_succ Nat.add_comm /=. iFrame.
+    rewrite app_length Z.add_1_l -Nat2Z.inj_succ Nat.add_comm /=. iFrame.
     rewrite Nat2Z.id -Hslots -(Nat.add_0_r (length slots)) insert_app_r.
     destruct extra.
     - rewrite app_length in Htest. naive_solver lia.
@@ -603,14 +605,15 @@ Section heapGS.
   Proof.
     iIntros "%Φ (%l & %data & %slots & %extra & -> & Hsz & Hdata & Hdata_model & Hslots) HΦ".
     wp_rec. rewrite /safe_dynarray_size /safe_dynarray_data /safe_dynarray_set_size. do 2 wp_load.
-    wp_smart_apply assume_spec'. iIntros "_".
+    wp_smart_apply (array_size_spec with "Hdata_model"). iIntros "Hdata_model".
+    do 2 (wp_smart_apply assume_spec'; iIntros "_").
     wp_pures.
     rewrite app_length Nat.add_1_r Z.sub_1_r -Nat2Z.inj_pred /=; last lia.
     iDestruct (big_sepL2_length with "Hslots") as %Hslots. rewrite app_length /= in Hslots.
     destruct (rev_elim slots) as [-> | (slots_ & slot & ->)]; first (simpl in Hslots; lia).
     rewrite app_length Nat.add_cancel_r in Hslots. iEval (rewrite -Hslots).
     iDestruct (big_sepL2_snoc with "Hslots") as "(Hslots & (%r & -> & Hr))".
-    wp_apply (array_get_spec with "Hdata_model"); first lia.
+    wp_apply (array_unsafe_get_spec with "Hdata_model"); first lia.
     { rewrite Nat2Z.id lookup_app_l; last (rewrite app_length /=; lia).
       rewrite lookup_app_r // Nat.sub_diag //.
     }
@@ -884,8 +887,8 @@ Section heapGS.
     wp_smart_apply (array_size_type with "Hdata_type"). iIntros "_".
     wp_pures.
     case_bool_decide; wp_pures; first iSmash.
-    wp_apply (array_unsafe_set_type with "[$Hdata_type $Hslot]"); first lia. iIntros "_".
-    wp_smart_apply (safe_dynarray_set_size_type with "Htype"); first lia. iIntros "_".
+    wp_apply (safe_dynarray_set_size_type with "Htype"); first lia. iIntros "_".
+    wp_smart_apply (array_unsafe_set_type with "[$Hdata_type $Hslot]"); first lia. iIntros "_".
     iSmash.
   Qed.
   #[local] Lemma safe_dynarray_push_aux_type t slot :
@@ -937,12 +940,14 @@ Section heapGS.
     wp_rec.
     wp_apply (safe_dynarray_size_type with "Htype"). iIntros "%sz _".
     wp_smart_apply (safe_dynarray_data_type with "Htype"). iIntros "%cap %data #Hdata_type".
+    wp_smart_apply (array_size_type with "Hdata_type"). iIntros "_".
+    wp_smart_apply assume_spec'. iIntros "%Hcap".
     wp_smart_apply assume_spec'. iIntros "%Hsz".
-    wp_smart_apply (array_get_type with "Hdata_type"). iIntros "%slot (%Hcap & #Hslot)".
+    wp_smart_apply (array_unsafe_get_type with "Hdata_type"); first lia. iIntros "%slot #Hslot".
     wp_apply (opt_type_match with "Hslot"). iSplit.
     - wp_apply wp_diverge.
     - iIntros "%r #Hr /=".
-      wp_smart_apply (array_unsafe_set_type with "[$Hdata_type]"); [done | iSmash |]. iIntros "_".
+      wp_smart_apply (array_unsafe_set_type with "[$Hdata_type]"); [lia | iSmash |]. iIntros "_".
       wp_smart_apply (safe_dynarray_set_size_type with "Htype"); first lia. iIntros "_".
       wp_smart_apply (reference_get_type with "Hr").
       iSmash.
