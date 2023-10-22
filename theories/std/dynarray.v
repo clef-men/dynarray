@@ -493,17 +493,18 @@ Section heapGS.
     iSteps. rewrite app_length. iSmash.
   Qed.
 
-  Lemma dynarray_pop_spec t vs v :
+  Lemma dynarray_pop_spec t vs vs' v :
+    vs = vs' ++ [v] →
     {{{
-      dynarray_model t (vs ++ [v])
+      dynarray_model t vs
     }}}
       dynarray_pop t
     {{{
       RET v;
-      dynarray_model t vs
+      dynarray_model t vs'
     }}}.
   Proof.
-    iIntros "%Φ (%l & %data & %extra & -> & Hsz & Hdata & Hdata_model) HΦ".
+    iIntros (->) "%Φ (%l & %data & %extra & -> & Hsz & Hdata & Hdata_model) HΦ".
     wp_rec. wp_load. wp_store. wp_load.
     rewrite app_length Nat.add_1_r Z.sub_1_r -Nat2Z.inj_pred /=; last lia.
     wp_smart_apply (array_unsafe_get_spec with "Hdata_model"); first lia.

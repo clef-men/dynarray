@@ -598,17 +598,18 @@ Section heapGS.
     iSmash.
   Qed.
 
-  Lemma safe_dynarray_pop_spec t vs v :
+  Lemma safe_dynarray_pop_spec t vs vs' v :
+    vs = vs' ++ [v] →
     {{{
-      safe_dynarray_model t (vs ++ [v])
+      safe_dynarray_model t vs
     }}}
       safe_dynarray_pop t
     {{{
       RET v;
-      safe_dynarray_model t vs
+      safe_dynarray_model t vs'
     }}}.
   Proof.
-    iIntros "%Φ (%l & %data & %slots & %extra & -> & Hsz & Hdata & Hdata_model & Hslots) HΦ".
+    iIntros (->) "%Φ (%l & %data & %slots & %extra & -> & Hsz & Hdata & Hdata_model & Hslots) HΦ".
     wp_rec. rewrite /safe_dynarray_size /safe_dynarray_data /safe_dynarray_set_size. do 2 wp_load.
     wp_smart_apply (array_size_spec with "Hdata_model"). iIntros "Hdata_model".
     do 2 (wp_smart_apply assume_spec'; iIntros "_").
