@@ -1,11 +1,11 @@
-From ml Require Import
+From heap_lang Require Import
   prelude.
-From ml.language Require Import
+From heap_lang.language Require Import
   notations
   proofmode.
-From ml.std Require Export
+From heap_lang.std Require Export
   base.
-From ml.std Require Import
+From heap_lang.std Require Import
   record2
   math
   array.

@@ -1,7 +1,7 @@
 From Coq.Program Require Import
   Tactics.
 
-From ml.prelude Require Export
+From heap_lang.prelude Require Export
   base.
 
 Ltac done :=

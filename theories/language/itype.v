@@ -1,6 +1,6 @@
-From ml Require Import
+From heap_lang Require Import
   prelude.
-From ml.language Require Export
+From heap_lang.language Require Export
   base.
 
 Class iType (PROP : bi) (τ : val → PROP) := {

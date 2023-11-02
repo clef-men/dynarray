@@ -7,8 +7,9 @@ From iris.base_logic Require Import
 From iris.program_logic Require Export
   weakestpre.
 
-From ml Require Import
-  prelude
+From heap_lang Require Import
+  prelude.
+From heap_lang.iris Require Import
   proofmode.
 
 Section atomic_acc.

@@ -1,3 +1,3 @@
-From ml.prelude Require Export
+From heap_lang.prelude Require Export
   base
   tactics.

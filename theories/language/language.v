@@ -1,2 +1,2 @@
-From ml.language Require Export
+From heap_lang.language Require Export
   itype.

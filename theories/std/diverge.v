@@ -1,5 +1,5 @@
 From iris.heap_lang Require Export
   lib.diverge.
 
-From ml.std Require Export
+From heap_lang.std Require Export
   base.

@@ -1,7 +1,7 @@
 From stdpp Require Export
   list.
 
-From ml Require Import
+From heap_lang Require Import
   prelude.
 
 Section basic.

@@ -4,7 +4,7 @@ From iris.proofmode Require Export
 From diaframe Require Export
   proofmode_base.
 
-From ml Require Import
+From heap_lang Require Import
   prelude.
 
 (* FIXME: some goals are solved by [done] but not by [iSmash] *)

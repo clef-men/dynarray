@@ -4,7 +4,7 @@ From stdpp Require Import
 From iris.proofmode Require Import
   string_ident.
 
-From ml.prelude Require Export
+From heap_lang.prelude Require Export
   base.
 
 Class TacticFlag (name : string) := {

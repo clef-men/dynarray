@@ -6,11 +6,12 @@ From iris.heap_lang Require Export
 From diaframe.heap_lang Require Export
   proof_automation.
 
-From ml Require Export
-  language
+From heap_lang Require Export
+  language.
+From heap_lang.iris Require Export
   proofmode.
-From ml.program_logic Require Import
-  atomic.
+From heap_lang.iris Require Import
+  program_logic.atomic.
 
 Tactic Notation "awp_smart_apply" open_constr(lem) :=
   wp_apply_core lem

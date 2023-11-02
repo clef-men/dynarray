@@ -1,9 +1,9 @@
 From iris.heap_lang Require Export
   notation.
 
-From ml Require Import
+From heap_lang Require Import
   prelude.
-From ml Require Export
+From heap_lang Require Export
   language.
 
 Coercion val_of_option opt :=

@@ -4,8 +4,9 @@ From iris.heap_lang Require Export
   lang
   primitive_laws.
 
-From ml Require Import
-  prelude
+From heap_lang Require Import
+  prelude.
+From heap_lang.iris Require Import
   proofmode.
 
 Lemma mapsto_dfrac_relax `{!heapGS Σ} dq l v :

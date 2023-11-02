@@ -1,19 +1,18 @@
 -arg -w -arg -uniform-inheritance
 -arg -w -arg -notation-overridden
+-arg -w -arg -masking-absolute-name
 
--Q theories ml
+-Q theories heap_lang
 
 theories/prelude/base.v
 theories/prelude/tactics.v
 theories/prelude/prelude.v
 
-theories/bi/big_op.v
-
-theories/program_logic/atomic.v
-
-theories/proofmode.v
-
 theories/common/list.v
+
+theories/iris/bi/big_op.v
+theories/iris/program_logic/atomic.v
+theories/iris/proofmode.v
 
 theories/language/base.v
 theories/language/itype.v

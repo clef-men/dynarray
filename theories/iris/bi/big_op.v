@@ -1,10 +1,11 @@
 From iris.bi Require Export
   big_op.
 
-From ml Require Import
-  prelude
+From heap_lang Require Import
+  prelude.
+From heap_lang.iris Require Import
   proofmode.
-From ml.common Require Import
+From heap_lang.common Require Import
   list.
 
 Section bi.
