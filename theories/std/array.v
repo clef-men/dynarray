@@ -53,6 +53,9 @@ Section heapGS.
       let: "t" := chunk_make (#1 + "sz") "sz" in
       chunk_applyi "t".[data] "sz" (λ: "i" <>, "fn" "i") ;;
       "t".
+  Definition array_init : val :=
+    λ: "sz" "fn",
+      array_initi "sz" (λ: <>, "fn" #()).
 
   Definition array_size : val :=
     λ: "t",
@@ -78,6 +81,21 @@ Section heapGS.
       assume (#0 ≤ "i") ;;
       assume ("i" < array_size "t") ;;
       array_unsafe_set "t" "i" "v".
+
+  (* array_foldli *)
+  (* array_foldl *)
+
+  (* array_foldri *)
+  (* array_foldr *)
+
+  (* array_iteri *)
+  (* array_iter *)
+
+  (* array_applyi *)
+  (* array_apply *)
+
+  (* array_mapi *)
+  (* array_map *)
 
   Definition array_blit : val :=
     λ: "t1" "i1" "t2" "i2" "n",
@@ -238,7 +256,8 @@ Section heapGS.
     Qed.
 
     Lemma array_slice_app t sz i dq vs1 vs2 :
-      array_slice t sz i dq vs1 ∗ array_slice t sz (i + length vs1) dq vs2 ⊣⊢
+      array_slice t sz i dq vs1 ∗
+      array_slice t sz (i + length vs1) dq vs2 ⊣⊢
       array_slice t sz i dq (vs1 ++ vs2).
     Proof.
       iSplit.
@@ -259,13 +278,74 @@ Section heapGS.
     Proof.
       intros ->. rewrite -array_slice_app. iSmash.
     Qed.
-    Lemma array_slice_app_2 t sz i dq vs vs1 vs2 :
+    Lemma array_slice_app_2 {t sz i dq vs} vs1 vs2 :
       vs = vs1 ++ vs2 →
       array_slice t sz i dq vs ⊢
         array_slice t sz i dq vs1 ∗
         array_slice t sz (i + length vs1) dq vs2.
     Proof.
       intros ->. rewrite array_slice_app //.
+    Qed.
+
+    Lemma array_slice_app3 t sz i dq vs1 vs2 vs3 :
+      array_slice t sz i dq vs1 ∗
+      array_slice t sz (i + length vs1) dq vs2 ∗
+      array_slice t sz (i + length vs1 + length vs2) dq vs3 ⊣⊢
+      array_slice t sz i dq (vs1 ++ vs2 ++ vs3).
+    Proof.
+      rewrite !array_slice_app //.
+    Qed.
+    Lemma array_slice_app3_1 t sz dq i1 vs1 i2 vs2 i3 vs3 :
+      i2 = i1 + length vs1 →
+      i3 = i1 + length vs1 + length vs2 →
+      array_slice t sz i1 dq vs1 -∗
+      array_slice t sz i2 dq vs2 -∗
+      array_slice t sz i3 dq vs3 -∗
+      array_slice t sz i1 dq (vs1 ++ vs2 ++ vs3).
+    Proof.
+      intros -> ->. rewrite -array_slice_app3. iSmash.
+    Qed.
+    Lemma array_slice_app3_2 {t sz i dq vs} vs1 vs2 vs3 :
+      vs = vs1 ++ vs2 ++ vs3 →
+      array_slice t sz i dq vs ⊢
+        array_slice t sz i dq vs1 ∗
+        array_slice t sz (i + length vs1) dq vs2 ∗
+        array_slice t sz (i + length vs1 + length vs2) dq vs3.
+    Proof.
+      intros ->. rewrite array_slice_app3 //.
+    Qed.
+
+    Lemma array_slice_update {t sz i dq vs} j v :
+      vs !! j = Some v →
+      array_slice t sz i dq vs ⊢
+        array_slice t sz (i + j) dq [v] ∗
+        (∀ w, array_slice t sz (i + j) dq [w] -∗ array_slice t sz i dq (<[j := w]> vs)).
+    Proof.
+      iIntros "%Hlookup Hslice".
+      pose proof Hlookup as Hj%lookup_lt_Some.
+      pose proof Hlookup as <-%take_drop_middle.
+      iDestruct (array_slice_app3_2 _ [v] with "Hslice") as "(Hslice1 & Hslice2 & Hslice3)"; first done.
+      setoid_rewrite insert_app_r_alt; rewrite take_length; last lia.
+      rewrite Nat.min_l; last lia. rewrite Nat.sub_diag /=.
+      iFrame. iIntros "%w Hslice2".
+      iApply (array_slice_app3_1 with "Hslice1 Hslice2 Hslice3"); rewrite take_length /=; lia.
+    Qed.
+    Lemma array_slice_lookup_acc {t sz i dq vs} j v :
+      vs !! j = Some v →
+      array_slice t sz i dq vs ⊢
+        array_slice t sz (i + j) dq [v] ∗
+        (array_slice t sz (i + j) dq [v] -∗ array_slice t sz i dq vs).
+    Proof.
+      iIntros "%Hlookup Hslice".
+      iDestruct (array_slice_update with "Hslice") as "(Hv & Hslice)"; first done.
+      iSpecialize ("Hslice" $! v). rewrite list_insert_id //. iFrame.
+    Qed.
+    Lemma array_slice_lookup {t sz i dq vs} j v :
+      vs !! j = Some v →
+      array_slice t sz i dq vs ⊢
+      array_slice t sz (i + j) dq [v].
+    Proof.
+      intros. rewrite array_slice_lookup_acc //. iSmash.
     Qed.
   End array_slice.
 
@@ -377,6 +457,33 @@ Section heapGS.
       array_model t DfracDiscarded vs.
     Proof.
       apply array_slice_persist.
+    Qed.
+
+    Lemma array_model_update {t dq vs} i v :
+      vs !! i = Some v →
+      array_model t dq vs ⊢
+        array_slice t (length vs) i dq [v] ∗
+        (∀ w, array_slice t (length vs) i dq [w] -∗ array_model t dq (<[i := w]> vs)).
+    Proof.
+      rewrite /array_model. setoid_rewrite insert_length. rewrite -(Nat.add_0_l i).
+      apply array_slice_update.
+    Qed.
+    Lemma array_model_lookup_acc {t dq vs} i v :
+      vs !! i = Some v →
+      array_model t dq vs ⊢
+        array_slice t (length vs) i dq [v] ∗
+        (array_slice t (length vs) i dq [v] -∗ array_model t dq vs).
+    Proof.
+      rewrite /array_model -(Nat.add_0_l i).
+      apply array_slice_lookup_acc.
+    Qed.
+    Lemma array_model_lookup {t dq vs} i v :
+      vs !! i = Some v →
+      array_model t dq vs ⊢
+      array_slice t (length vs) i dq [v].
+    Proof.
+      rewrite /array_model -(Nat.add_0_l i).
+      apply array_slice_lookup.
     Qed.
   End array_model.
 
@@ -521,35 +628,109 @@ Section heapGS.
       iApply array_slice_persist. iSmash+.
     Qed.
 
-    Lemma array_span_app t sz i dq sz1 sz2 :
-      array_span t sz i dq sz1 ∗ array_span t sz (i + sz1) dq sz2 ⊣⊢
-      array_span t sz i dq (sz1 + sz2).
+    Lemma array_span_app t sz i dq n1 n2 :
+      array_span t sz i dq n1 ∗
+      array_span t sz (i + n1) dq n2 ⊣⊢
+      array_span t sz i dq (n1 + n2).
     Proof.
       iSplit.
       - iIntros "((%vs1 & % & Hslice1) & (%vs2 & % & Hslice2))".
         iExists (vs1 ++ vs2). iSplit; first (rewrite app_length; naive_solver).
         iApply (array_slice_app_1 with "Hslice1 Hslice2"); first done.
       - iIntros "(%vs & % & Hslice)".
-        iDestruct (array_slice_app_2 _ _ _ _ _ (take sz1 vs) (drop sz1 vs) with "Hslice") as "(Hslice1 & Hslice2)"; first rewrite take_drop //.
+        iDestruct (array_slice_app_2 (take n1 vs) (drop n1 vs) with "Hslice") as "(Hslice1 & Hslice2)"; first rewrite take_drop //.
         iSplitL "Hslice1".
-        + iExists (take sz1 vs). iFrame. rewrite take_length_le //. lia.
-        + iExists (drop sz1 vs). rewrite take_length_le; last lia. iFrame.
+        + iExists (take n1 vs). iFrame. rewrite take_length_le //. lia.
+        + iExists (drop n1 vs). rewrite take_length_le; last lia. iFrame.
           rewrite drop_length. iSmash.
     Qed.
-    Lemma array_span_app_1 t sz i dq sz1 sz2 :
-      array_span t sz i dq sz1 -∗
-      array_span t sz (i + sz1) dq sz2 -∗
-      array_span t sz i dq (sz1 + sz2).
+    Lemma array_span_app_1 t sz i dq n1 n2 :
+      array_span t sz i dq n1 -∗
+      array_span t sz (i + n1) dq n2 -∗
+      array_span t sz i dq (n1 + n2).
     Proof.
       rewrite -array_span_app. iSmash.
     Qed.
-    Lemma array_span_app_2 t sz i dq sz1 sz2 sz12 :
-      sz12 = sz1 + sz2 →
-      array_span t sz i dq sz12 ⊢
-        array_span t sz i dq sz1 ∗
-        array_span t sz (i + sz1) dq sz2.
+    Lemma array_span_app_2 {t sz i dq n} n1 n2 :
+      n = n1 + n2 →
+      array_span t sz i dq n ⊢
+        array_span t sz i dq n1 ∗
+        array_span t sz (i + n1) dq n2.
     Proof.
       intros ->. rewrite array_span_app //.
+    Qed.
+
+    Lemma array_span_app3 t sz i dq n1 n2 n3 :
+      array_span t sz i dq n1 ∗
+      array_span t sz (i + n1) dq n2 ∗
+      array_span t sz (i + n1 + n2) dq n3 ⊣⊢
+      array_span t sz i dq (n1 + n2 + n3).
+    Proof.
+      iSplit.
+      - iIntros "((%vs1 & <- & Hspan1) & (%vs2 & <- & Hspan2) & (%vs3 & <- & Hspan3))".
+        iExists (vs1 ++ vs2 ++ vs3). rewrite -array_slice_app3. iFrame.
+        rewrite !app_length. iSmash.
+      - iIntros "(%vs & %Hvs & Hspan)".
+        rewrite -(take_drop n1 vs) -(take_drop n2 (drop n1 vs)) drop_drop.
+        iDestruct (array_slice_app3 with "Hspan") as "(Hspan1 & Hspan2 & Hspan3)".
+        rewrite !take_length !Nat.min_l; [| rewrite drop_length; lia | lia].
+        iSplitL "Hspan1"; last iSplitL "Hspan2".
+        all: iExists _; iFrame.
+        all: rewrite ?take_length ?drop_length.
+        all: iSmash.
+    Qed.
+    Lemma array_span_app3_1 t sz dq i1 n1 i2 n2 i3 n3 :
+      i2 = i1 + n1 →
+      i3 = i1 + n1 + n2 →
+      array_span t sz i1 dq n1 -∗
+      array_span t sz i2 dq n2 -∗
+      array_span t sz i3 dq n3 -∗
+      array_span t sz i1 dq (n1 + n2 + n3).
+    Proof.
+      rewrite -array_span_app3. iSmash.
+    Qed.
+    Lemma array_span_app3_2 {t sz i dq n} n1 n2 n3 :
+      n = n1 + n2 + n3 →
+      array_span t sz i dq n ⊢
+        array_span t sz i dq n1 ∗
+        array_span t sz (i + n1) dq n2 ∗
+        array_span t sz (i + n1 + n2) dq n3.
+    Proof.
+      rewrite array_span_app3. iSmash.
+    Qed.
+
+    Lemma array_span_update {t sz i dq n} j :
+      j < n →
+      array_span t sz i dq n ⊢
+        ∃ v,
+        array_slice t sz (i + j) dq [v] ∗
+        (∀ w, array_slice t sz (i + j) dq [w] -∗ array_span t sz i dq n).
+    Proof.
+      iIntros "%Hj (%vs & %Hv & Hslice)".
+      iDestruct (array_slice_update j with "Hslice") as "(Hv & Hslice)".
+      { rewrite list_lookup_lookup_total_lt; naive_solver. }
+      iExists (vs !!! j). iFrame. iIntros "%w Hw".
+      iExists (<[j := w]> vs). iSplit; first rewrite insert_length //.
+      iApply ("Hslice" with "Hw").
+    Qed.
+    Lemma array_span_lookup_acc {t sz i dq n} j :
+      j < n →
+      array_span t sz i dq n ⊢
+        ∃ v,
+        array_slice t sz (i + j) dq [v] ∗
+        (array_slice t sz (i + j) dq [v] -∗ array_span t sz i dq n).
+    Proof.
+      iIntros "%Hj Hspan".
+      iDestruct (array_span_update with "Hspan") as "(%v & Hv & Hspan)"; first done.
+      auto with iFrame.
+    Qed.
+    Lemma array_span_lookup {t sz i dq n} j :
+      j < n →
+      array_span t sz i dq n ⊢
+        ∃ v,
+        array_slice t sz (i + j) dq [v].
+    Proof.
+      intros. rewrite array_span_lookup_acc //. iSmash.
     Qed.
   End array_span.
 
@@ -724,6 +905,111 @@ Section heapGS.
     rewrite /Ψ'. iSteps.
     iApply (big_sepL_impl with "Hfn"). iSteps.
     rewrite big_sepL_snoc. iSmash.
+  Qed.
+
+  Lemma array_init_spec Ψ sz fn :
+    (0 ≤ sz)%Z →
+    {{{
+      ▷ Ψ 0 [] ∗
+      □ (
+        ∀ i vs,
+        ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
+        Ψ i vs -∗
+        WP fn #() {{ v, ▷
+          Ψ (S i) (vs ++ [v])
+        }}
+      )
+    }}}
+      array_init #sz fn
+    {{{ t vs,
+      RET t;
+      ⌜length vs = Z.to_nat sz⌝ ∗
+      array_model t (DfracOwn 1) vs ∗
+      Ψ (Z.to_nat sz) vs
+    }}}.
+  Proof.
+    iIntros "%Hsz %Φ (HΨ & #Hfn) HΦ".
+    wp_rec.
+    wp_smart_apply (array_initi_spec Ψ with "[$HΨ] HΦ"); first done.
+    iSmash.
+  Qed.
+  Lemma array_init_spec' Ψ sz fn :
+    (0 ≤ sz)%Z →
+    {{{
+      ▷ Ψ 0 [] ∗
+      ( [∗ list] i ∈ seq 0 (Z.to_nat sz),
+        ∀ vs,
+        ⌜i = length vs⌝ -∗
+        Ψ i vs -∗
+        WP fn #() {{ v, ▷
+          Ψ (S i) (vs ++ [v])
+        }}
+      )
+    }}}
+      array_init #sz fn
+    {{{ t vs,
+      RET t;
+      ⌜length vs = Z.to_nat sz⌝ ∗
+      array_model t (DfracOwn 1) vs ∗
+      Ψ (Z.to_nat sz) vs
+    }}}.
+  Proof.
+    iIntros "%Hsz %Φ (HΨ & Hfn) HΦ".
+    wp_rec.
+    wp_smart_apply (array_initi_spec' Ψ with "[$HΨ Hfn] HΦ"); first done.
+    iApply (big_sepL_impl with "Hfn").
+    iSmash.
+  Qed.
+  Lemma array_init_spec_disentangled Ψ sz fn :
+    (0 ≤ sz)%Z →
+    {{{
+      □ (
+        ∀ i,
+        ⌜i < Z.to_nat sz⌝ -∗
+        WP fn #() {{ v, ▷
+          Ψ i v
+        }}
+      )
+    }}}
+      array_init #sz fn
+    {{{ t vs,
+      RET t;
+      ⌜length vs = Z.to_nat sz⌝ ∗
+      array_model t (DfracOwn 1) vs ∗
+      ( [∗ list] i ↦ v ∈ vs,
+        Ψ i v
+      )
+    }}}.
+  Proof.
+    iIntros "%Hsz %Φ #Hfn HΦ".
+    wp_rec.
+    wp_smart_apply (array_initi_spec_disentangled Ψ with "[] HΦ"); first done.
+    iSmash.
+  Qed.
+  Lemma array_init_spec_disentangled' Ψ sz fn :
+    (0 ≤ sz)%Z →
+    {{{
+      ( [∗ list] i ∈ seq 0 (Z.to_nat sz),
+        WP fn #() {{ v, ▷
+          Ψ i v
+        }}
+      )
+    }}}
+      array_init #sz fn
+    {{{ t vs,
+      RET t;
+      ⌜length vs = Z.to_nat sz⌝ ∗
+      array_model t (DfracOwn 1) vs ∗
+      ( [∗ list] i ↦ v ∈ vs,
+        Ψ i v
+      )
+    }}}.
+  Proof.
+    iIntros "%Hsz %Φ Hfn HΦ".
+    wp_rec.
+    wp_smart_apply (array_initi_spec_disentangled' Ψ with "[Hfn] HΦ"); first done.
+    iApply (big_sepL_impl with "Hfn").
+    iSmash.
   Qed.
 
   Lemma array_size_spec_atomic_slice t :
@@ -1174,24 +1460,16 @@ Section heapGS.
     rewrite -{1 2}(take_drop k1 vs1) -(take_drop n (drop k1 vs1)).
     rewrite -{1}(take_drop k2 vs2) -(take_drop n (drop k2 vs2)).
     rewrite !drop_drop.
-    iDestruct (array_slice_app_2 with "Hslice1") as "(Hslice11 & Hslice1)"; first done.
-    iDestruct (array_slice_app_2 with "Hslice1") as "(Hslice12 & Hslice13)"; first done.
-    iDestruct (array_slice_app_2 with "Hslice2") as "(Hslice21 & Hslice2)"; first done.
-    iDestruct (array_slice_app_2 with "Hslice2") as "(Hslice22 & Hslice23)"; first done.
+    iDestruct (array_slice_app3_2 with "Hslice1") as "(Hslice11 & Hslice12 & Hslice13)"; first done.
+    iDestruct (array_slice_app3_2 with "Hslice2") as "(Hslice21 & Hslice22 & Hslice23)"; first done.
     rewrite !take_length !drop_length !Nat.min_l; [| lia..].
     wp_apply (array_blit_spec_slice_fit with "[$Hslice12 $Hslice22]"); try lia.
     { rewrite take_length drop_length. lia. }
     { rewrite !take_length !drop_length. lia. }
     iIntros "(Hslice12 & Hslice22)".
     iApply "HΦ".
-    iDestruct (array_slice_app_1 with "Hslice12 Hslice13") as "Hslice1".
-    { rewrite take_length drop_length. lia. }
-    iDestruct (array_slice_app_1 with "Hslice11 Hslice1") as "$".
-    { rewrite take_length. lia. }
-    iDestruct (array_slice_app_1 with "Hslice22 Hslice23") as "Hslice2".
-    { rewrite take_length drop_length. lia. }
-    iDestruct (array_slice_app_1 with "Hslice21 Hslice2") as "Hslice2".
-    { rewrite take_length. lia. }
+    iDestruct (array_slice_app3_1 with "Hslice11 Hslice12 Hslice13") as "$"; [rewrite !take_length ?drop_length; lia.. |].
+    iDestruct (array_slice_app3_1 with "Hslice21 Hslice22 Hslice23") as "Hslice2"; [rewrite !take_length ?drop_length; lia.. |].
     rewrite -!Nat.le_add_sub //; lia.
   Qed.
   Lemma array_blit_spec t1 (i1 : Z) dq1 vs1 t2 (i2 : Z) vs2 (n : Z) :
@@ -1361,17 +1639,13 @@ Section heapGS.
     rewrite (Nat.le_add_sub i j); last lia. set k := j - i.
     rewrite -{1 2}(take_drop k vs) -(take_drop n (drop k vs)).
     rewrite !drop_drop.
-    iDestruct (array_slice_app_2 with "Hslice") as "(Hslice1 & Hslice)"; first done.
-    iDestruct (array_slice_app_2 with "Hslice") as "(Hslice2 & Hslice3)"; first done.
+    iDestruct (array_slice_app3_2 with "Hslice") as "(Hslice1 & Hslice2 & Hslice3)"; first done.
     rewrite !take_length !drop_length !Nat.min_l; [| lia..].
     wp_apply (array_sub_spec_slice_fit with "Hslice2"); try lia.
     { rewrite take_length drop_length. lia. }
     iIntros "%t' (Hslice2 & Hmodel')".
     iApply "HΦ".
-    iDestruct (array_slice_app_1 with "Hslice2 Hslice3") as "Hslice".
-    { rewrite take_length drop_length. lia. }
-    iDestruct (array_slice_app_1 with "Hslice1 Hslice") as "$".
-    { rewrite take_length. lia. }
+    iDestruct (array_slice_app3_1 with "Hslice1 Hslice2 Hslice3") as "$"; [rewrite !take_length ?drop_length; lia.. |].
     rewrite Nat2Z.id take_take Nat.min_id -Nat.le_add_sub //. lia.
   Qed.
   Lemma array_sub_spec t dq vs (i n : Z) :
@@ -1510,6 +1784,23 @@ Section heapGS.
     wp_pures.
     iApply "HΦ". iStep. iExists l. repeat iSplitR; try iSmash.
     rewrite Loc.add_0 Z2Nat.id //.
+  Qed.
+
+  Lemma array_init_type sz fn :
+    {{{
+      (unit_type --> τ)%T fn
+    }}}
+      array_init #sz fn
+    {{{ t,
+      RET t;
+      ⌜0 ≤ sz⌝%Z ∗
+      array_type (Z.to_nat sz) t
+    }}}.
+  Proof.
+    iIntros "%Φ #Hfn HΦ".
+    wp_rec.
+    wp_smart_apply (array_initi_type with "[] HΦ").
+    iSmash.
   Qed.
 
   Lemma array_size_type t sz :
@@ -1740,6 +2031,7 @@ End heapGS.
 #[global] Opaque array_create.
 #[global] Opaque array_make.
 #[global] Opaque array_initi.
+#[global] Opaque array_init.
 #[global] Opaque array_size.
 #[global] Opaque array_unsafe_get.
 #[global] Opaque array_get.
