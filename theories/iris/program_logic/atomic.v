@@ -14,6 +14,7 @@ From heap_lang.iris Require Import
 
 Section atomic_acc.
   Context `{BiFUpd PROP} {TA TB : tele}.
+
   Implicit Types α : TA → PROP.
   Implicit Types P : PROP.
   Implicit Types β Ψ : TA → TB → PROP.
@@ -66,6 +67,7 @@ End atomic_acc.
 
 Section atomic_update.
   Context `{BiFUpd PROP} {TA TB : tele}.
+
   Implicit Types α : TA → PROP.
   Implicit Types β Ψ : TA → TB → PROP.
 
@@ -140,6 +142,7 @@ End atomic_update.
 
 Section atomic_wp.
   Context `{!irisGS Λ Σ} {TA TB : tele}.
+
   Implicit Types α : TA → iProp Σ.
   Implicit Types β Ψ : TA → TB → iProp Σ.
   Implicit Types f : TA → TB → val Λ.
@@ -389,6 +392,7 @@ Notation "'AWP' '<<' α '>>' e '<<' β | 'RET' v ; Q '>>'" := (
 
 Section atomic_triple.
   Context `{!irisGS Λ Σ} {TA TB : tele}.
+
   Implicit Types P : iProp Σ.
   Implicit Types α : TA → iProp Σ.
   Implicit Types β Ψ : TA → TB → iProp Σ.

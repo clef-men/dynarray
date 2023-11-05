@@ -13,6 +13,7 @@ Section bi.
 
   Section big_sepL.
     Context {A : Type}.
+
     Implicit Types l : list A.
     Implicit Types Φ Ψ : nat → A → PROP.
 
@@ -168,6 +169,7 @@ Section bi.
 
   Section big_sepL2.
     Context {A1 A2 : Type}.
+
     Implicit Types Φ Ψ : nat → A1 → A2 → PROP.
 
     Lemma big_sepL2_delete_1 Φ l1 l2 i x1 x2 :

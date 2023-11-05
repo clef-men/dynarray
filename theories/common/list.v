@@ -6,6 +6,7 @@ From heap_lang Require Import
 
 Section basic.
   Context {A : Type}.
+
   Implicit Types x y z : A.
   Implicit Types l : list A.
 
