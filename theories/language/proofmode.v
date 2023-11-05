@@ -10,8 +10,8 @@ From heap_lang Require Export
   language.
 From heap_lang.iris Require Export
   proofmode.
-From heap_lang.iris Require Import
-  program_logic.atomic.
+From heap_lang.iris.program_logic Require Import
+  atomic.
 
 Tactic Notation "awp_smart_apply" open_constr(lem) :=
   wp_apply_core lem

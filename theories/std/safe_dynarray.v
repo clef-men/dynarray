@@ -2,8 +2,8 @@ From heap_lang Require Import
   prelude.
 From heap_lang.common Require Import
   list.
-From heap_lang.iris Require Import
-  bi.big_op.
+From heap_lang.iris.bi Require Import
+  big_op.
 From heap_lang.language Require Import
   notations
   proofmode.
