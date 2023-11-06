@@ -18,8 +18,8 @@ From heap_lang.std Require Import
   opt
   array.
 
-Section heapGS.
-  Context `{!heapGS Σ}.
+Section heap_GS.
+  Context `{heap_GS : !heapGS Σ}.
 
   Implicit Types b : bool.
   Implicit Types i : nat.
@@ -1013,7 +1013,7 @@ Section heapGS.
     wp_apply (safe_dynarray_set_data_type with "[$Htype $Hdata_type']").
     iSmash.
   Qed.
-End heapGS.
+End heap_GS.
 
 #[global] Opaque safe_dynarray_create.
 #[global] Opaque safe_dynarray_make.

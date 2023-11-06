@@ -42,8 +42,8 @@ Notation "'match:' e0 'with' | 'Nil' => e1 | 'Cons' x1 , x2 => e2 'end'" := (
   only parsing
 ) : expr_scope.
 
-Section heapGS.
-  Context `{!heapGS Σ}.
+Section heap_GS.
+  Context `{heap_GS : !heapGS Σ}.
 
   Implicit Types i j : nat.
   Implicit Types v w t fn acc : val.
@@ -1391,7 +1391,7 @@ Section heapGS.
     iApply (big_sepL_impl with "Hfn").
     iSmash.
   Qed.
-End heapGS.
+End heap_GS.
 
 #[global] Opaque lst_cons.
 #[global] Opaque lst_singleton.

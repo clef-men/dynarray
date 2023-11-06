@@ -6,8 +6,8 @@ From heap_lang.language Require Import
 From heap_lang.std Require Export
   base.
 
-Section heapGS.
-  Context `{!heapGS Σ}.
+Section heap_GS.
+  Context `{heap_GS : !heapGS Σ}.
   Context τ `{!iType (iPropI Σ) τ}.
 
   Definition reference_type t : iProp Σ :=
@@ -59,4 +59,4 @@ Section heapGS.
   Proof.
     iSmash.
   Qed.
-End heapGS.
+End heap_GS.

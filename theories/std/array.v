@@ -11,8 +11,8 @@ From heap_lang.std Require Import
   assume
   chunk.
 
-Section heapGS.
-  Context `{!heapGS Σ}.
+Section heap_GS.
+  Context `{heap_GS : !heapGS Σ}.
 
   Implicit Types i j n : nat.
   Implicit Types l : loc.
@@ -2026,7 +2026,7 @@ Section heapGS.
     wp_smart_apply (array_shrink_type with "Ht").
     rewrite Nat2Z.id. iSmash.
   Qed.
-End heapGS.
+End heap_GS.
 
 #[global] Opaque array_create.
 #[global] Opaque array_make.

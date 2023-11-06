@@ -70,7 +70,7 @@ Section basic_types.
 End basic_types.
 
 Section other_types.
-  Context `{!heapGS Σ}.
+  Context `{heap_GS : !heapGS Σ}.
 
   Implicit Types v fn : val.
 

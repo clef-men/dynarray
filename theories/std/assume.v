@@ -12,8 +12,8 @@ Definition assume : val :=
   λ: "b",
     if: "b" then #() else diverge #().
 
-Section heapGS.
-  Context `{!heapGS Σ}.
+Section heap_GS.
+  Context `{heap_GS : !heapGS Σ}.
 
   Lemma assume_spec (b : bool) Φ :
     ▷ (⌜b = true⌝ → Φ #()) -∗
@@ -31,6 +31,6 @@ Section heapGS.
     wp_apply assume_spec. iIntros (Hϕ%bool_decide_eq_true_1).
     iSmash.
   Qed.
-End heapGS.
+End heap_GS.
 
 #[global] Opaque assume.

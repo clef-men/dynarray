@@ -8,8 +8,8 @@ From heap_lang.language Require Import
 From heap_lang.std Require Export
   base.
 
-Section heapGS.
-  Context `{!heapGS Σ}.
+Section heap_GS.
+  Context `{heap_GS : !heapGS Σ}.
 
   Implicit Types i j : nat.
   Implicit Types l : loc.
@@ -3280,7 +3280,7 @@ Section heapGS.
     wp_smart_apply (chunk_shrink_type with "Hl"); [done.. |].
     rewrite Nat2Z.id. iSmash.
   Qed.
-End heapGS.
+End heap_GS.
 
 #[global] Opaque chunk_make.
 #[global] Opaque chunk_foldli.

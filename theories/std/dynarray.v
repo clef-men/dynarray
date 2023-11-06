@@ -10,8 +10,8 @@ From heap_lang.std Require Import
   math
   array.
 
-Section heapGS.
-  Context `{!heapGS Σ}.
+Section heap_GS.
+  Context `{heap_GS : !heapGS Σ}.
 
   Implicit Types b : bool.
   Implicit Types i : nat.
@@ -556,7 +556,7 @@ Section heapGS.
     wp_store.
     iSteps. iExists 0. iSmash.
   Qed.
-End heapGS.
+End heap_GS.
 
 #[global] Opaque dynarray_create.
 #[global] Opaque dynarray_make.

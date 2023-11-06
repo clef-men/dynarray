@@ -9,7 +9,7 @@ From heap_lang Require Import
 From heap_lang.iris Require Import
   proofmode.
 
-Lemma mapsto_dfrac_relax `{!heapGS Σ} dq l v :
+Lemma mapsto_dfrac_relax `{heap_GS : !heapGS Σ} dq l v :
   ✓ dq →
   l ↦ v ==∗
   l ↦{dq} v.

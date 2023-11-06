@@ -34,8 +34,8 @@ Notation "'match:' e0 'with' | 'None' => e1 | 'Some' x => e2 'end'" := (
   only parsing
 ) : expr_scope.
 
-Section heapGS.
-  Context `{!heapGS Σ}.
+Section heap_GS.
+  Context `{heap_GS : !heapGS Σ}.
   Context τ `{!iType (iPropI Σ) τ}.
 
   Definition opt_type t : iProp Σ :=
@@ -58,4 +58,4 @@ Section heapGS.
       [rewrite bi.and_elim_l | rewrite bi.and_elim_r];
       iSmash.
   Qed.
-End heapGS.
+End heap_GS.
