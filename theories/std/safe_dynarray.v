@@ -598,7 +598,7 @@ Section heap_GS.
     iSmash.
   Qed.
 
-  Lemma safe_dynarray_pop_spec t vs vs' v :
+  Lemma safe_dynarray_pop_spec {t vs} vs' v :
     vs = vs' ++ [v] →
     {{{
       safe_dynarray_model t vs

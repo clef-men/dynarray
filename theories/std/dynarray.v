@@ -493,7 +493,7 @@ Section heap_GS.
     iSteps. rewrite app_length. iSmash.
   Qed.
 
-  Lemma dynarray_pop_spec t vs vs' v :
+  Lemma dynarray_pop_spec {t vs} vs' v :
     vs = vs' ++ [v] →
     {{{
       dynarray_model t vs

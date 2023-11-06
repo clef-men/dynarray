@@ -34,3 +34,4 @@ theories/std/chunk.v
 theories/std/array.v
 theories/std/dynarray.v
 theories/std/safe_dynarray.v
+theories/std/stack.v
