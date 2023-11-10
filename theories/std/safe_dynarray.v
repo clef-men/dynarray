@@ -241,8 +241,8 @@ Section heap_GS.
         ∀ i vs,
         ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
         Ψ i vs -∗
-        WP fn #i {{ v, ▷
-          Ψ (S i) (vs ++ [v])
+        WP fn #i {{ v,
+          ▷ Ψ (S i) (vs ++ [v])
         }}
       )
     }}}
@@ -285,8 +285,8 @@ Section heap_GS.
         ∀ vs,
         ⌜i = length vs⌝ -∗
         Ψ i vs -∗
-        WP fn #i {{ v, ▷
-          Ψ (S i) (vs ++ [v])
+        WP fn #i {{ v,
+          ▷ Ψ (S i) (vs ++ [v])
         }}
       )
     }}}
@@ -317,8 +317,8 @@ Section heap_GS.
       □ (
         ∀ i,
         ⌜i < Z.to_nat sz⌝ -∗
-        WP fn #i {{ v, ▷
-          Ψ i v
+        WP fn #i {{ v,
+          ▷ Ψ i v
         }}
       )
     }}}
@@ -344,8 +344,8 @@ Section heap_GS.
     (0 ≤ sz)%Z →
     {{{
       ( [∗ list] i ∈ seq 0 (Z.to_nat sz),
-        WP fn #i {{ v, ▷
-          Ψ i v
+        WP fn #i {{ v,
+          ▷ Ψ i v
         }}
       )
     }}}
