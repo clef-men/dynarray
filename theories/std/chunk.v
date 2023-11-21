@@ -11,7 +11,7 @@ From heap_lang.std Require Export
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
 
-  Implicit Types i j : nat.
+  Implicit Types i j n : nat.
   Implicit Types l : loc.
   Implicit Types v t fn acc : val.
   Implicit Types vs vs_left vs_right ws : list val.
@@ -240,28 +240,79 @@ Section heap_GS.
       intros ->. rewrite chunk_model_app3 //.
     Qed.
 
-    Lemma chunk_model_update {l dq vs} i v :
-      vs !! i = Some v →
+    Lemma chunk_model_update {l dq vs} (i : Z) i_ v :
+      (0 ≤ i)%Z →
+      vs !! i_ = Some v →
+      i_ = Z.to_nat i →
       chunk_model l dq vs ⊢
         (l +ₗ i) ↦{dq} v ∗
-        (∀ w, (l +ₗ i) ↦{dq} w -∗ chunk_model l dq (<[i := w]> vs)).
+        (∀ w, (l +ₗ i) ↦{dq} w -∗ chunk_model l dq (<[i_ := w]> vs)).
     Proof.
-      intros. iApply big_sepL_insert_acc. done.
+      intros Hi Hlookup ->.
+      Z_to_nat i. rewrite Nat2Z.id in Hlookup |- *.
+      iApply big_sepL_insert_acc. done.
     Qed.
-    Lemma chunk_model_lookup_acc {l dq vs} i v :
-      vs !! i = Some v →
+    Lemma chunk_model_lookup_acc {l dq vs} (i : Z) i_ v :
+      (0 ≤ i)%Z →
+      vs !! i_ = Some v →
+      i_ = Z.to_nat i →
       chunk_model l dq vs ⊢
         (l +ₗ i) ↦{dq} v ∗
         ((l +ₗ i) ↦{dq} v -∗ chunk_model l dq vs).
     Proof.
-      intros. iApply big_sepL_lookup_acc. done.
+      intros Hi Hlookup ->.
+      Z_to_nat i. rewrite Nat2Z.id in Hlookup |- *.
+      iApply big_sepL_lookup_acc. done.
     Qed.
-    Lemma chunk_model_lookup {l dq vs} i v :
-      vs !! i = Some v →
+    Lemma chunk_model_lookup {l dq vs} (i : Z) i_ v :
+      (0 ≤ i)%Z →
+      vs !! i_ = Some v →
+      i_ = Z.to_nat i →
       chunk_model l dq vs ⊢
       (l +ₗ i) ↦{dq} v.
     Proof.
-      intros. iApply big_sepL_lookup. done.
+      intros Hi Hlookup ->.
+      Z_to_nat i. rewrite Nat2Z.id in Hlookup |- *.
+      iApply big_sepL_lookup. done.
+    Qed.
+
+    Lemma chunk_model_update' {l} {i : Z} {dq vs} (j : Z) k v :
+      (0 ≤ i ≤ j)%Z →
+      vs !! k = Some v →
+      k = Z.to_nat j - Z.to_nat i →
+      chunk_model (l +ₗ i) dq vs ⊢
+        (l +ₗ j) ↦{dq} v ∗
+        (∀ w, (l +ₗ j) ↦{dq} w -∗ chunk_model (l +ₗ i) dq (<[k := w]> vs)).
+    Proof.
+      intros Hij Hlookup ->.
+      Z_to_nat i. Z_to_nat j. rewrite !Nat2Z.id in Hlookup |- *. remember (j - i) as k eqn:Hk.
+      rewrite {1}(chunk_model_update k); [| lia | done | lia].
+      rewrite Loc.add_assoc -Nat2Z.inj_add Hk -Nat.le_add_sub //. lia.
+    Qed.
+    Lemma chunk_model_lookup_acc' {l} {i : Z} {dq vs} (j : Z) k v :
+      (0 ≤ i ≤ j)%Z →
+      vs !! k = Some v →
+      k = Z.to_nat j - Z.to_nat i →
+      chunk_model (l +ₗ i) dq vs ⊢
+        (l +ₗ j) ↦{dq} v ∗
+        ((l +ₗ j) ↦{dq} v -∗ chunk_model (l +ₗ i) dq vs).
+    Proof.
+      intros Hij Hlookup ->.
+      Z_to_nat i. Z_to_nat j. rewrite !Nat2Z.id in Hlookup |- *. remember (j - i) as k eqn:Hk.
+      rewrite {1}(chunk_model_lookup_acc k); [| lia | done | lia].
+      rewrite Loc.add_assoc -Nat2Z.inj_add Hk -Nat.le_add_sub //. lia.
+    Qed.
+    Lemma chunk_model_lookup' {l} {i : Z} {dq vs} (j : Z) k v :
+      (0 ≤ i ≤ j)%Z →
+      vs !! k = Some v →
+      k = Z.to_nat j - Z.to_nat i →
+      chunk_model (l +ₗ i) dq vs ⊢
+      (l +ₗ j) ↦{dq} v.
+    Proof.
+      intros Hij Hlookup ->.
+      Z_to_nat i. Z_to_nat j. rewrite !Nat2Z.id in Hlookup |- *. remember (j - i) as k eqn:Hk.
+      rewrite {1}(chunk_model_lookup k); [| lia | done | lia].
+      rewrite Loc.add_assoc -Nat2Z.inj_add Hk -Nat.le_add_sub //. lia.
     Qed.
 
     Lemma chunk_model_valid l dq vs :
@@ -270,7 +321,7 @@ Section heap_GS.
       ⌜✓ dq⌝.
     Proof.
       iIntros "% Hmodel".
-      iDestruct (chunk_model_update 0 with "Hmodel") as "(H↦ & _)".
+      iDestruct (chunk_model_update 0 with "Hmodel") as "(H↦ & _)"; [lia | | done |].
       { destruct (nth_lookup_or_length vs 0 inhabitant); [done | lia]. }
       iApply (mapsto_valid with "H↦").
     Qed.
@@ -511,22 +562,22 @@ Section heap_GS.
       intros ->. rewrite chunk_span_app3 //.
     Qed.
 
-    Lemma chunk_span_update {l dq n} i :
-      i < n →
+    Lemma chunk_span_update {l dq n} (i : Z) :
+      (0 ≤ i < n)%Z →
       chunk_span l dq n ⊢
         ∃ v,
         (l +ₗ i) ↦{dq} v ∗
         (∀ w, (l +ₗ i) ↦{dq} w -∗ chunk_span l dq n).
     Proof.
       iIntros "%Hi (%vs & %Hvs & Hmodel)".
-      iDestruct (chunk_model_update i with "Hmodel") as "(H↦ & Hmodel)".
-      { rewrite list_lookup_lookup_total_lt; naive_solver. }
-      iExists (vs !!! i). iFrame. iIntros "%v H↦".
-      iExists (<[i := v]> vs). iSplit; first rewrite insert_length //.
+      iDestruct (chunk_model_update i with "Hmodel") as "(H↦ & Hmodel)"; [lia | | done |].
+      { rewrite list_lookup_lookup_total_lt; naive_solver lia. }
+      iExists (vs !!! Z.to_nat i). iFrame. iIntros "%v H↦".
+      iExists (<[Z.to_nat i := v]> vs). iSplit; first rewrite insert_length //.
       iSmash.
     Qed.
-    Lemma chunk_span_lookup_acc {l dq n} i :
-      i < n →
+    Lemma chunk_span_lookup_acc {l dq n} (i : Z) :
+      (0 ≤ i < n)%Z →
       chunk_span l dq n ⊢
         ∃ v,
         (l +ₗ i) ↦{dq} v ∗
@@ -536,8 +587,8 @@ Section heap_GS.
       iDestruct (chunk_span_update with "Hspan") as "(%v & H↦ & Hspan)"; first done.
       auto with iFrame.
     Qed.
-    Lemma chunk_span_lookup {l dq n} i :
-      i < n →
+    Lemma chunk_span_lookup {l dq n} (i : Z) :
+      (0 ≤ i < n)%Z →
       chunk_span l dq n ⊢
         ∃ v,
         (l +ₗ i) ↦{dq} v.
@@ -545,6 +596,42 @@ Section heap_GS.
       iIntros "%Hi Hspan".
       iDestruct (chunk_span_lookup_acc with "Hspan") as "(%v & H↦ & _)"; first done.
       iSmash.
+    Qed.
+
+    Lemma chunk_span_update' {l} {i : Z} {dq n} (j : Z) :
+      (0 ≤ i ≤ j ∧ j < i + n)%Z →
+      chunk_span (l +ₗ i) dq n ⊢
+        ∃ v,
+        (l +ₗ j) ↦{dq} v ∗
+        (∀ w, (l +ₗ j) ↦{dq} w -∗ chunk_span (l +ₗ i) dq n).
+    Proof.
+      intros Hij.
+      Z_to_nat i. Z_to_nat j. remember (j - i) as k eqn:Hk.
+      rewrite {1}(chunk_span_update k); last lia.
+      rewrite Loc.add_assoc -Nat2Z.inj_add Hk -Nat.le_add_sub //. lia.
+    Qed.
+    Lemma chunk_span_lookup_acc' {l} {i : Z} {dq n} (j : Z) :
+      (0 ≤ i ≤ j ∧ j < i + n)%Z →
+      chunk_span (l +ₗ i) dq n ⊢
+        ∃ v,
+        (l +ₗ j) ↦{dq} v ∗
+        ((l +ₗ j) ↦{dq} v -∗ chunk_span (l +ₗ i) dq n).
+    Proof.
+      intros Hij.
+      Z_to_nat i. Z_to_nat j. remember (j - i) as k eqn:Hk.
+      rewrite {1}(chunk_span_lookup_acc k); last lia.
+      rewrite Loc.add_assoc -Nat2Z.inj_add Hk -Nat.le_add_sub //. lia.
+    Qed.
+    Lemma chunk_span_lookup' {l} {i : Z} {dq n} (j : Z) :
+      (0 ≤ i ≤ j ∧ j < i + n)%Z →
+      chunk_span (l +ₗ i) dq n ⊢
+        ∃ v,
+        (l +ₗ j) ↦{dq} v.
+    Proof.
+      intros Hij.
+      Z_to_nat i. Z_to_nat j. remember (j - i) as k eqn:Hk.
+      rewrite {1}(chunk_span_lookup k); last lia.
+      rewrite Loc.add_assoc -Nat2Z.inj_add Hk -Nat.le_add_sub //. lia.
     Qed.
 
     Lemma chunk_span_valid l dq n :
@@ -658,9 +745,10 @@ Section heap_GS.
       iApply chunk_model_nil.
   Qed.
 
-  Lemma chunk_get_spec v l (i : Z) dq vs E :
+  Lemma chunk_get_spec i_ v l (i : Z) dq vs E :
     (0 ≤ i)%Z →
-    vs !! Z.to_nat i = Some v →
+    vs !! i_ = Some v →
+    i_ = Z.to_nat i →
     {{{
       chunk_model l dq vs
     }}}
@@ -670,9 +758,25 @@ Section heap_GS.
       chunk_model l dq vs
     }}}.
   Proof.
-    iIntros "%Hi %Hlookup %Φ Hmodel HΦ".
-    iDestruct (chunk_model_lookup_acc with "Hmodel") as "(H↦ & Hmodel)"; first done.
-    rewrite (Z2Nat.id i) //. wp_load.
+    iIntros (Hi Hlookup ->) "%Φ Hmodel HΦ".
+    iDestruct (chunk_model_lookup_acc with "Hmodel") as "(H↦ & Hmodel)"; [done.. |].
+    iSmash.
+  Qed.
+  Lemma chunk_get_spec' k v l (i j : Z) dq vs E :
+    (0 ≤ i ≤ j)%Z →
+    vs !! k = Some v →
+    k = Z.to_nat j - Z.to_nat i →
+    {{{
+      chunk_model (l +ₗ i) dq vs
+    }}}
+      !#(l +ₗ j) @ E
+    {{{
+      RET v;
+      chunk_model (l +ₗ i) dq vs
+    }}}.
+  Proof.
+    iIntros (Hj Hlookup ->) "%Φ Hmodel HΦ".
+    iDestruct (chunk_model_lookup_acc' with "Hmodel") as "(H↦ & Hmodel)"; [done.. |].
     iSmash.
   Qed.
 
@@ -688,9 +792,24 @@ Section heap_GS.
     }}}.
   Proof.
     iIntros "%Hi %Φ Hmodel HΦ".
-    iDestruct (chunk_model_update with "Hmodel") as "(H↦ & Hmodel)".
+    iDestruct (chunk_model_update i with "Hmodel") as "(H↦ & Hmodel)"; [lia | | done |].
     { destruct (nth_lookup_or_length vs (Z.to_nat i) inhabitant); [done | lia]. }
-    rewrite (Z2Nat.id i); last lia. wp_store.
+    iSmash.
+  Qed.
+  Lemma chunk_set_spec' l (i j : Z) vs v E :
+    (0 ≤ i ≤ j ∧ j < i + length vs)%Z →
+    {{{
+      chunk_model (l +ₗ i) (DfracOwn 1) vs
+    }}}
+      #(l +ₗ j) <- v @ E
+    {{{
+      RET #();
+      chunk_model (l +ₗ i) (DfracOwn 1) (<[Z.to_nat j - Z.to_nat i := v]> vs)
+    }}}.
+  Proof.
+    iIntros "%Hi %Φ Hmodel HΦ".
+    iDestruct (chunk_model_update' j with "Hmodel") as "(H↦ & Hmodel)"; [lia | | done |].
+    { destruct (nth_lookup_or_length vs (Z.to_nat j - Z.to_nat i) inhabitant); [done | lia]. }
     iSmash.
   Qed.
 
@@ -811,7 +930,7 @@ Section heap_GS.
     - iSmash.
     - clear acc. iIntros "!> %i %vs_left %acc (%Hi & _) (-> & Hmodel & HΨ & _)".
       feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
-      iDestruct (chunk_model_lookup_acc with "Hmodel") as "(H↦ & Hmodel)"; first done.
+      iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
       iAuIntro. iAaccIntro with "H↦"; iSmash.
     - clear acc. iIntros "!> %i %vs_left %v %acc (%Hi1 & %Hi2) (-> & Hmodel & HΨ & %Hv)". rewrite Hv.
       feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
@@ -1050,9 +1169,9 @@ Section heap_GS.
     - rewrite Hsz drop_all. iSmash.
     - clear acc. iIntros "!> %i %acc %vs_right %Hi (-> & Hmodel & HΨ & _)".
       feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
-      iDestruct (chunk_model_lookup_acc with "Hmodel") as "(H↦ & Hmodel)"; first done.
-      iAuIntro. iAaccIntro with "H↦"; first iSmash. iIntros "H↦ !>". iSteps;
-        iPureIntro; rewrite drop_length; f_equal; lia.
+      iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
+      iAuIntro. iAaccIntro with "H↦"; first iSmash. iIntros "H↦ !>".
+      iSteps; iPureIntro; rewrite drop_length; f_equal; lia.
     - clear acc. iIntros "!> %i %v %acc %vs_right %Hi (-> & Hmodel & HΨ & %Hv)". rewrite Hv.
       feed pose proof (list_lookup_lookup_total_lt vs i) as Hlookup; first lia.
       wp_apply (wp_wand with "(Hfn [] HΨ)").
@@ -1587,7 +1706,7 @@ Section heap_GS.
         rewrite lookup_drop list_lookup_lookup_total_lt; last lia.
         repeat f_equal. lia.
       }
-      iDestruct (chunk_model_lookup_acc with "Hmodel") as "(H↦ & Hmodel)"; first done.
+      iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
       iAuIntro. iAaccIntro with "H↦"; iSmash.
     - iIntros "!> %i %vs_left %v %ws (%Hvs_left & %Hi & %Hws) (-> & Hmodel & -> & HΨ)".
       feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
@@ -1599,7 +1718,7 @@ Section heap_GS.
         rewrite lookup_drop list_lookup_lookup_total_lt; last lia.
         repeat f_equal. lia.
       }
-      iDestruct (chunk_model_update with "Hmodel") as "(H↦ & Hmodel)"; first done.
+      iDestruct (chunk_model_update i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
       iAuIntro. iAaccIntro with "H↦"; first iSmash. iIntros "H↦ !>". iFrame.
       iSplit; first rewrite -take_S_r //.
       iDestruct ("Hmodel" with "H↦") as "Hmodel".
@@ -2174,7 +2293,7 @@ Section heap_GS.
     - iSmash.
     - iIntros "!> %i %vs_left %ws (%Hi & _ & %Hws) (%Hvs_left & Hmodel & HΨ & _)".
       feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
-      iDestruct (chunk_model_lookup_acc with "Hmodel") as "(H↦ & Hmodel)"; first done.
+      iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
       iAuIntro. iAaccIntro with "H↦"; iSmash.
     - iIntros "!> %i %vs_left %v %ws (%Hi1 & %Hi2 & %Hws) (-> & Hmodel & HΨ & %Hv)". rewrite Hv.
       feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
@@ -2499,11 +2618,11 @@ Section heap_GS.
     repeat iSplit; first iSmash.
     - iIntros "!> %i %vs1_done (%Hi & _) (-> & Hmodel1 & Hmodel2 & _)".
       feed pose proof (list_lookup_lookup_total_lt vs1 i); first lia.
-      iDestruct (chunk_model_lookup_acc with "Hmodel1") as "(H↦1 & Hmodel1)"; first done.
+      iDestruct (chunk_model_lookup_acc i with "Hmodel1") as "(H↦1 & Hmodel1)"; [lia | done | lia |].
       iAuIntro. iAaccIntro with "H↦1"; iSmash.
     - iIntros "!> %i %vs1_done %v1 (%Hi & _) (-> & Hmodel1 & Hmodel2 & %Hlookup)".
       feed pose proof (list_lookup_lookup_total_lt vs2 i); first lia.
-      iDestruct (chunk_model_update with "Hmodel2") as "(H↦2 & Hmodel2)".
+      iDestruct (chunk_model_update i i with "Hmodel2") as "(H↦2 & Hmodel2)"; [lia | | lia |].
       { rewrite lookup_app_r take_length Nat.min_l //; try lia.
         rewrite Nat.sub_diag lookup_drop right_id list_lookup_lookup_total_lt //. lia.
       }
@@ -2515,7 +2634,7 @@ Section heap_GS.
       iSmash.
   Qed.
 
-  Lemma chunk_resize_spec_atomic Ψ l sz sz' n v' :
+  Lemma chunk_resize_spec_atomic Ψ l sz sz' (n : Z) v' :
     Z.to_nat n ≤ Z.to_nat sz →
     Z.to_nat n ≤ Z.to_nat sz' →
     {{{
@@ -2552,7 +2671,7 @@ Section heap_GS.
       iApply (atomic_update_wand with "(Hau [//] HΨ)").
       iSmash.
     - iIntros "!> %i %vs %v (%Hi1 & %Hi2) (Hmodel' & HΨ)".
-      iDestruct (chunk_model_update i with "Hmodel'") as "(H↦ & Hmodel')".
+      iDestruct (chunk_model_update i i with "Hmodel'") as "(H↦ & Hmodel')"; [lia | | lia |].
       { rewrite lookup_app_r; last lia. rewrite lookup_replicate. naive_solver lia. }
       iAuIntro. iAaccIntro with "H↦"; first iSmash. iIntros "H↦ !>". iFrame.
       iDestruct ("Hmodel'" with "H↦") as "Hmodel'".
@@ -2560,7 +2679,7 @@ Section heap_GS.
       rewrite Hi2 Nat.sub_diag /= Nat.sub_1_r -Nat.sub_succ_r -(assoc (++)).
       iSmash.
   Qed.
-  Lemma chunk_resize_spec l dq vs (sz : Z) sz' n v' :
+  Lemma chunk_resize_spec l dq vs (sz : Z) sz' (n : Z) v' :
     Z.to_nat sz = length vs →
     Z.to_nat n ≤ Z.to_nat sz →
     Z.to_nat n ≤ Z.to_nat sz' →
@@ -2583,7 +2702,7 @@ Section heap_GS.
     wp_apply (chunk_resize_spec_atomic Ψ with "[$Hmodel]"); [done.. | | iSmash].
     iStep. iIntros "!> %i %vs_left (%Hi1 & %Hi2) (-> & Hmodel)".
     feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
-    iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; first done.
+    iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
     iAuIntro. iAaccIntro with "H↦"; first iSmash.
     rewrite -take_S_r //. iSmash.
   Qed.
@@ -2825,7 +2944,7 @@ Section heap_GS.
     Z_to_nat i.
     iInv "Hl" as "(%vs & >%Hvs & Hmodel & #Hvs)".
     feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
-    iDestruct (chunk_model_lookup_acc with "Hmodel") as "(H↦ & Hmodel)"; first done.
+    iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
     wp_load.
     iDestruct (big_sepL_lookup with "Hvs") as "Hv"; first done.
     iSmash.
@@ -2846,7 +2965,7 @@ Section heap_GS.
     Z_to_nat i.
     iInv "Hl" as "(%vs & >%Hvs & Hmodel & Hvs)".
     feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
-    iDestruct (chunk_model_update with "Hmodel") as "(H↦ & Hmodel)"; first done.
+    iDestruct (chunk_model_update i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
     wp_store.
     iDestruct (big_sepL_insert_acc with "Hvs") as "(_ & Hvs)"; first done.
     iModIntro. iSplitR "HΦ"; last iSmash. iExists (<[i := v]> vs).
@@ -2877,7 +2996,7 @@ Section heap_GS.
       iAuIntro.
       iInv "Hl" as "(%vs & >%Hvs & >Hmodel & #Hvs)".
       feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
-      iDestruct (chunk_model_lookup_acc with "Hmodel") as "(H↦ & Hmodel)"; first done.
+      iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
       iAaccIntro with "H↦"; first iSmash.
       iDestruct (big_sepL_lookup with "Hvs") as "Hv"; first done.
       iSmash.
@@ -2930,7 +3049,7 @@ Section heap_GS.
       iAuIntro.
       iInv "Hl" as "(%vs & >%Hvs & >Hmodel & #Hvs)".
       feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
-      iDestruct (chunk_model_lookup_acc with "Hmodel") as "(H↦ & Hmodel)"; first done.
+      iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
       iAaccIntro with "H↦"; first iSmash.
       iDestruct (big_sepL_lookup with "Hvs") as "Hv"; first done.
       iSmash.
@@ -3158,12 +3277,12 @@ Section heap_GS.
       iAuIntro.
       iInv "Hl1" as "(%vs1 & >%Hvs1 & >Hmodel1 & #Hvs1)".
       feed pose proof (list_lookup_lookup_total_lt vs1 i); first lia.
-      iDestruct (chunk_model_lookup_acc with "Hmodel1") as "(H↦1 & Hmodel1)"; first done.
+      iDestruct (chunk_model_lookup_acc i with "Hmodel1") as "(H↦1 & Hmodel1)"; [lia | done | lia |].
       iAaccIntro with "H↦1"; first iSmash.
       iDestruct (big_sepL_lookup with "Hvs1") as "Hv1"; first done.
       iSmash.
     - iIntros "!> %i %vs %v (%Hi1 & %Hi2) (Hmodel2 & Hvs & Hv)".
-      iDestruct (chunk_model_update i with "Hmodel2") as "(H↦2 & Hmodel2)".
+      iDestruct (chunk_model_update i i with "Hmodel2") as "(H↦2 & Hmodel2)"; [lia | | lia |].
       { apply list_lookup_lookup_total_lt. rewrite app_length drop_length. lia. }
       wp_store.
       iDestruct ("Hmodel2" with "H↦2") as "Hmodel2".
@@ -3173,7 +3292,7 @@ Section heap_GS.
       rewrite drop_drop Nat.add_1_r -(assoc (++)) //.
   Qed.
 
-  Lemma chunk_resize_type τ `{!iType _ τ} l sz sz_ sz' n v' :
+  Lemma chunk_resize_type τ `{!iType _ τ} l sz sz_ sz' (n : Z) v' :
     sz_ = Z.of_nat sz →
     (n ≤ sz)%Z →
     (n ≤ sz')%Z →
@@ -3214,11 +3333,11 @@ Section heap_GS.
       iAuIntro.
       iInv "Hl" as "(%vs & >%Hvs & >Hmodel & #Hvs)".
       feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
-      iDestruct (chunk_model_lookup_acc with "Hmodel") as "(H↦ & Hmodel)"; first done.
+      iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
       iDestruct (big_sepL_lookup with "Hvs") as "Hv"; first done.
       iAaccIntro with "H↦"; iSmash.
     - iIntros "!> %i %vs' %v'' (%Hi1 & %Hi2) (Hmodel' & Hvs' & Hv'')".
-      iDestruct (chunk_model_update i with "Hmodel'") as "(H↦' & Hmodel')".
+      iDestruct (chunk_model_update i i with "Hmodel'") as "(H↦' & Hmodel')"; [lia | | lia |].
       { rewrite lookup_app_r; last lia. rewrite lookup_replicate. naive_solver lia. }
       iAuIntro. iAaccIntro with "H↦'"; first iSmash. iIntros "H↦' !> !>". iFrame. rewrite /= right_id.
       iDestruct ("Hmodel'" with "H↦'") as "Hmodel'".

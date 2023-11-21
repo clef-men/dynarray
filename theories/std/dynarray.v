@@ -355,7 +355,7 @@ Section heap_GS.
   Proof.
     iIntros "%Hi %Hlookup %Φ (%l & %data & %extra & -> & Hsz & Hdata & Hdata_model) HΦ".
     wp_rec. wp_load.
-    wp_apply (array_unsafe_get_spec with "Hdata_model"); first done.
+    wp_apply (array_unsafe_get_spec with "Hdata_model"); [lia | | done |].
     { rewrite lookup_app_l //. eapply lookup_lt_Some. done. }
     iSmash.
   Qed.
@@ -507,7 +507,7 @@ Section heap_GS.
     iIntros (->) "%Φ (%l & %data & %extra & -> & Hsz & Hdata & Hdata_model) HΦ".
     wp_rec. wp_load. wp_store. wp_load.
     rewrite app_length Nat.add_1_r Z.sub_1_r -Nat2Z.inj_pred /=; last lia.
-    wp_smart_apply (array_unsafe_get_spec with "Hdata_model"); first lia.
+    wp_smart_apply (array_unsafe_get_spec with "Hdata_model"); [lia | | done |].
     { rewrite lookup_app_l; last (rewrite app_length /=; lia).
       rewrite lookup_app_r; last lia.
       rewrite Nat2Z.id Nat.sub_diag //.

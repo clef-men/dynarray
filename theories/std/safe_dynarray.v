@@ -436,7 +436,7 @@ Section heap_GS.
     destruct (lookup_lt_is_Some_2 slots i) as (slot & Hslots_lookup); first lia.
     iDestruct (big_sepL2_lookup_acc with "Hslots") as "((%r & %Hr & Hr) & Hslots)"; [done.. | subst slot].
     wp_rec. rewrite /safe_dynarray_data. wp_load.
-    wp_smart_apply (array_get_spec with "Hdata_model"); first lia.
+    wp_smart_apply (array_get_spec with "Hdata_model"); [lia | | done |].
     { rewrite Nat2Z.id lookup_app_l //. lia. }
     iSmash.
   Qed.
@@ -460,7 +460,7 @@ Section heap_GS.
     destruct (lookup_lt_is_Some_2 slots i) as (slot & Hslots_lookup); first lia.
     iDestruct (big_sepL2_insert_acc with "Hslots") as "((%r & %Hr & Hr) & Hslots)"; [done.. | subst slot].
     wp_rec. rewrite /safe_dynarray_data. wp_load.
-    wp_smart_apply (array_get_spec with "Hdata_model"); first lia.
+    wp_smart_apply (array_get_spec with "Hdata_model"); [lia | | done |].
     { rewrite Nat2Z.id lookup_app_l //. lia. }
     iIntros "Hdata_model".
     wp_store.
@@ -619,7 +619,7 @@ Section heap_GS.
     destruct (rev_elim slots) as [-> | (slots_ & slot & ->)]; first (simpl in Hslots; lia).
     rewrite app_length Nat.add_cancel_r in Hslots. iEval (rewrite -Hslots).
     iDestruct (big_sepL2_snoc with "Hslots") as "(Hslots & (%r & -> & Hr))".
-    wp_apply (array_unsafe_get_spec with "Hdata_model"); first lia.
+    wp_apply (array_unsafe_get_spec with "Hdata_model"); [lia | | done |].
     { rewrite Nat2Z.id lookup_app_l; last (rewrite app_length /=; lia).
       rewrite lookup_app_r // Nat.sub_diag //.
     }
