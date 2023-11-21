@@ -398,10 +398,10 @@ Section heap_GS.
       dynarray_model_inner l (length vs) data (vs ++ replicate extra #())
     }}}
       dynarray_reserve #l #n
-    {{{ data' δ,
+    {{{ data' extra',
       RET #();
-      ⌜Z.to_nat n ≤ length vs + δ⌝ ∗
-      dynarray_model_inner l (length vs) data' (vs ++ replicate δ #())
+      ⌜Z.to_nat n ≤ length vs + extra'⌝ ∗
+      dynarray_model_inner l (length vs) data' (vs ++ replicate extra' #())
     }}}.
   Proof.
     iIntros "%Hn %Φ (Hsz & Hdata & Hdata_model) HΦ".
@@ -435,7 +435,7 @@ Section heap_GS.
     }}}.
   Proof.
     iIntros "%Hn %Φ (%l & %data & %extra & -> & Hmodel) HΦ".
-    wp_apply (dynarray_reserve_spec' with "Hmodel"); first done. iIntros "%data' %δ (%Hδ & Hmodel)".
+    wp_apply (dynarray_reserve_spec' with "Hmodel"); first done. iIntros "%data' %extra' (%Hextra' & Hmodel)".
     iSmash.
   Qed.
   #[local] Lemma dynarray_reserve_extra_spec' l data vs extra n :
@@ -444,18 +444,18 @@ Section heap_GS.
       dynarray_model_inner l (length vs) data (vs ++ replicate extra #())
     }}}
       dynarray_reserve_extra #l #n
-    {{{ data' δ,
+    {{{ data' extra',
       RET #();
-      ⌜Z.to_nat n ≤ δ⌝ ∗
-      dynarray_model_inner l (length vs) data' (vs ++ replicate δ #())
+      ⌜Z.to_nat n ≤ extra'⌝ ∗
+      dynarray_model_inner l (length vs) data' (vs ++ replicate extra' #())
     }}}.
   Proof.
     iIntros "%Hn %Φ (Hsz & Hdata & Hdata_model) HΦ".
     wp_rec. wp_pures.
     case_bool_decide; wp_pures; last iSmash.
     wp_load.
-    wp_smart_apply (dynarray_reserve_spec' with "[Hsz Hdata Hdata_model]"); [lia | iSmash |]. iIntros "%data' %δ (%Hδ & Hmodel)".
-    iApply ("HΦ" $! data' δ). iSmash.
+    wp_smart_apply (dynarray_reserve_spec' with "[Hsz Hdata Hdata_model]"); [lia | iSmash |]. iIntros "%data' %extra' (%Hextra' & Hmodel)".
+    iApply ("HΦ" $! data' extra'). iSmash.
   Qed.
   Lemma dynarray_reserve_extra_spec t vs n :
     (0 ≤ n)%Z →
@@ -469,7 +469,7 @@ Section heap_GS.
     }}}.
   Proof.
     iIntros "%Hn %Φ (%l & %data & %extra & -> & Hmodel) HΦ".
-    wp_apply (dynarray_reserve_extra_spec' with "Hmodel"); first done. iIntros "%data' %δ (%Hδ & Hmodel)".
+    wp_apply (dynarray_reserve_extra_spec' with "Hmodel"); first done. iIntros "%data' %extra' (%Hextra' & Hmodel)".
     iSmash.
   Qed.
 
@@ -485,7 +485,7 @@ Section heap_GS.
   Proof.
     iIntros "%Φ (%l & %data & %extra & -> & Hmodel) HΦ".
     wp_rec.
-    wp_smart_apply (dynarray_reserve_extra_spec' with "Hmodel"); first lia. iIntros "%data' %δ (%Hδ & (Hsz & Hdata & Hdata_model))".
+    wp_smart_apply (dynarray_reserve_extra_spec' with "Hmodel"); first lia. iIntros "%data' %extra' (%Hextra' & (Hsz & Hdata & Hdata_model))".
     wp_load. wp_store. wp_load.
     wp_apply (array_unsafe_set_spec with "Hdata_model").
     { rewrite app_length replicate_length. lia. }
