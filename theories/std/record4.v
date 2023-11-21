@@ -19,69 +19,119 @@ Section heap_GS.
       "l".[3] <- "v₃" ;;
       "l".
 
-  Definition record4_model l dq v₀ v₁ v₂ v₃ : iProp Σ :=
-    l.[0] ↦{dq} v₀ ∗
-    l.[1] ↦{dq} v₁ ∗
-    l.[2] ↦{dq} v₂ ∗
-    l.[3] ↦{dq} v₃.
+  Definition record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ : iProp Σ :=
+    l.[0] ↦{dq₀} v₀ ∗
+    l.[1] ↦{dq₁} v₁ ∗
+    l.[2] ↦{dq₂} v₂ ∗
+    l.[3] ↦{dq₃} v₃.
+  Definition record4_model' l dq v₀ v₁ v₂ v₃ :=
+    record4_model l dq v₀ dq v₁ dq v₂ dq v₃.
 
-  Lemma record4_model_eq l dq v₀ v₁ v₂ v₃ :
-    record4_model l dq v₀ v₁ v₂ v₃ ⊣⊢
-    l.[0] ↦{dq} v₀ ∗ l.[1] ↦{dq} v₁ ∗ l.[2] ↦{dq} v₂ ∗ l.[3] ↦{dq} v₃.
+  Lemma record4_model_eq l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ :
+    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ ⊣⊢
+      l.[0] ↦{dq₀} v₀ ∗
+      l.[1] ↦{dq₁} v₁ ∗
+      l.[2] ↦{dq₂} v₂ ∗
+      l.[3] ↦{dq₃} v₃.
   Proof.
     iSmash.
   Qed.
-  Lemma record4_model_eq_1 l dq v₀ v₁ v₂ v₃ :
-    record4_model l dq v₀ v₁ v₂ v₃ ⊢
-      l.[0] ↦{dq} v₀ ∗
-      l.[1] ↦{dq} v₁ ∗
-      l.[2] ↦{dq} v₂ ∗
-      l.[3] ↦{dq} v₃.
+  Lemma record4_model_eq_1 l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ :
+    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ ⊢
+      l.[0] ↦{dq₀} v₀ ∗
+      l.[1] ↦{dq₁} v₁ ∗
+      l.[2] ↦{dq₂} v₂ ∗
+      l.[3] ↦{dq₃} v₃.
   Proof.
     iSmash.
   Qed.
-  Lemma record4_model_eq_2 l dq v₀ v₁ v₂ v₃ :
-    l.[0] ↦{dq} v₀ -∗
-    l.[1] ↦{dq} v₁ -∗
-    l.[2] ↦{dq} v₂ -∗
-    l.[3] ↦{dq} v₃ -∗
-    record4_model l dq v₀ v₁ v₂ v₃.
+  Lemma record4_model_eq_2 l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ :
+    l.[0] ↦{dq₀} v₀ -∗
+    l.[1] ↦{dq₁} v₁ -∗
+    l.[2] ↦{dq₂} v₂ -∗
+    l.[3] ↦{dq₃} v₃ -∗
+    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃.
   Proof.
     iSmash.
   Qed.
 
-  #[global] Instance record4_model_timeless l dq v₀ v₁ v₂ v₃ :
-    Timeless (record4_model l dq v₀ v₁ v₂ v₃).
+  #[global] Instance record4_model_timeless l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ :
+    Timeless (record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃).
   Proof.
     apply _.
   Qed.
   #[global] Instance record4_model_persistent l v₀ v₁ v₂ v₃ :
-    Persistent (record4_model l DfracDiscarded v₀ v₁ v₂ v₃).
+    Persistent (record4_model' l DfracDiscarded v₀ v₁ v₂ v₃).
   Proof.
     apply _.
   Qed.
 
+  #[global] Instance record4_model_fractional₀ l v₀ v₁ v₂ v₃ :
+    Fractional (λ q₀, record4_model l (DfracOwn q₀) v₀ DfracDiscarded v₁ DfracDiscarded v₂ DfracDiscarded v₃).
+  Proof.
+    apply _.
+  Qed.
+  #[global] Instance record4_model_as_fractional₀ l q₀ v₀ v₁ v₂ v₃ :
+    AsFractional (record4_model l (DfracOwn q₀) v₀ DfracDiscarded v₁ DfracDiscarded v₂ DfracDiscarded v₃) (λ q₀, record4_model l (DfracOwn q₀) v₀ DfracDiscarded v₁ DfracDiscarded v₂ DfracDiscarded v₃) q₀.
+  Proof.
+    split; done || apply _.
+  Qed.
+  #[global] Instance record4_model_fractional₁ l v₀ v₁ v₂ v₃ :
+    Fractional (λ q₁, record4_model l DfracDiscarded v₀ (DfracOwn q₁) v₁ DfracDiscarded v₂ DfracDiscarded v₃).
+  Proof.
+    apply _.
+  Qed.
+  #[global] Instance record4_model_as_fractional₁ l v₀ q₁ v₁ v₂ v₃ :
+    AsFractional (record4_model l DfracDiscarded v₀ (DfracOwn q₁) v₁ DfracDiscarded v₂ DfracDiscarded v₃) (λ q₁, record4_model l DfracDiscarded v₀ (DfracOwn q₁) v₁ DfracDiscarded v₂ DfracDiscarded v₃) q₁.
+  Proof.
+    split; done || apply _.
+  Qed.
+  #[global] Instance record4_model_fractional₂ l v₀ v₁ v₂ v₃ :
+    Fractional (λ q₂, record4_model l DfracDiscarded v₀ DfracDiscarded v₁ (DfracOwn q₂) v₂ DfracDiscarded v₃).
+  Proof.
+    apply _.
+  Qed.
+  #[global] Instance record4_model_as_fractional₂ l v₀ v₁ q₂ v₂ v₃ :
+    AsFractional (record4_model l DfracDiscarded v₀ DfracDiscarded v₁ (DfracOwn q₂) v₂ DfracDiscarded v₃) (λ q₂, record4_model l DfracDiscarded v₀ DfracDiscarded v₁ (DfracOwn q₂) v₂ DfracDiscarded v₃) q₂.
+  Proof.
+    split; done || apply _.
+  Qed.
+  #[global] Instance record4_model_fractional₃ l v₀ v₁ v₂ v₃ :
+    Fractional (λ q₃, record4_model l DfracDiscarded v₀ DfracDiscarded v₁ DfracDiscarded v₂ (DfracOwn q₃) v₃).
+  Proof.
+    apply _.
+  Qed.
+  #[global] Instance record4_model_as_fractional₃ l v₀ v₁ v₂ q₃ v₃ :
+    AsFractional (record4_model l DfracDiscarded v₀ DfracDiscarded v₁ DfracDiscarded v₂ (DfracOwn q₃) v₃) (λ q₃, record4_model l DfracDiscarded v₀ DfracDiscarded v₁ DfracDiscarded v₂ (DfracOwn q₃) v₃) q₃.
+  Proof.
+    split; done || apply _.
+  Qed.
   #[global] Instance record4_model_fractional l v₀ v₁ v₂ v₃ :
-    Fractional (λ q, record4_model l (DfracOwn q) v₀ v₁ v₂ v₃).
+    Fractional (λ q, record4_model' l (DfracOwn q) v₀ v₁ v₂ v₃).
   Proof.
     apply _.
   Qed.
   #[global] Instance record4_model_as_fractional l q v₀ v₁ v₂ v₃ :
-    AsFractional (record4_model l (DfracOwn q) v₀ v₁ v₂ v₃) (λ q, record4_model l (DfracOwn q) v₀ v₁ v₂ v₃) q.
+    AsFractional (record4_model' l (DfracOwn q) v₀ v₁ v₂ v₃) (λ q, record4_model' l (DfracOwn q) v₀ v₁ v₂ v₃) q.
   Proof.
     split; done || apply _.
   Qed.
 
-  Lemma record4_model_valid l dq v₀ v₁ v₂ v₃ :
-    record4_model l dq v₀ v₁ v₂ v₃ ⊢
-    ⌜✓ dq⌝.
+  Lemma record4_model_valid l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ :
+    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ ⊢
+    ⌜✓ dq₀ ∧ ✓ dq₁ ∧ ✓ dq₂ ∧ ✓ dq₃⌝.
   Proof.
-    iIntros "(Hv₀ & Hv₁ & Hv₂ & Hv₃)". iApply (mapsto_valid with "Hv₀").
+    iIntros "(Hv₀ & Hv₁ & Hv₂ & Hv₃)".
+    iDestruct (mapsto_valid with "Hv₀") as %Hdq₀.
+    iDestruct (mapsto_valid with "Hv₁") as %Hdq₁.
+    iDestruct (mapsto_valid with "Hv₂") as %Hdq₂.
+    iDestruct (mapsto_valid with "Hv₃") as %Hdq₃.
+    iSmash.
   Qed.
-  Lemma record4_model_combine l dq1 v₀1 v₁1 v₂1 v₃1 dq2 v₀2 v₁2 v₂2 v₃2 :
-    record4_model l dq1 v₀1 v₁1 v₂1 v₃1 -∗
-    record4_model l dq2 v₀2 v₁2 v₂2 v₃2 -∗
-      record4_model l (dq1 ⋅ dq2) v₀1 v₁1 v₂1 v₃1 ∗
+  Lemma record4_model_combine l dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 dq₃1 v₃1 dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 dq₃2 v₃2 :
+    record4_model l dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 dq₃1 v₃1 -∗
+    record4_model l dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 dq₃2 v₃2 -∗
+      record4_model l (dq₀1 ⋅ dq₀2) v₀1 (dq₁1 ⋅ dq₁2) v₁1 (dq₂1 ⋅ dq₂2) v₂1 (dq₃1 ⋅ dq₃2) v₃1 ∗
       ⌜v₀1 = v₀2 ∧ v₁1 = v₁2 ∧ v₂1 = v₂2 ∧ v₃1 = v₃2⌝.
   Proof.
     iIntros "(Hv₀1 & Hv₁1 & Hv₂1 & Hv₃1) (Hv₀2 & Hv₁2 & Hv₂2 & Hv₃2)".
@@ -91,64 +141,126 @@ Section heap_GS.
     iDestruct (mapsto_combine with "Hv₃1 Hv₃2") as "(Hv₃ & <-)".
     iSmash.
   Qed.
-  Lemma record4_model_valid_2 l dq1 v₀1 v₁1 v₂1 v₃1 dq2 v₀2 v₁2 v₂2 v₃2 :
-    record4_model l dq1 v₀1 v₁1 v₂1 v₃1 -∗
-    record4_model l dq2 v₀2 v₁2 v₂2 v₃2 -∗
-    ⌜✓ (dq1 ⋅ dq2) ∧ v₀1 = v₀2 ∧ v₁1 = v₁2 ∧ v₂1 = v₂2 ∧ v₃1 = v₃2⌝.
+  Lemma record4_model_valid_2 l dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 dq₃1 v₃1 dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 dq₃2 v₃2 :
+    record4_model l dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 dq₃1 v₃1 -∗
+    record4_model l dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 dq₃2 v₃2 -∗
+    ⌜✓ (dq₀1 ⋅ dq₀2) ∧ ✓ (dq₁1 ⋅ dq₁2) ∧ ✓ (dq₂1 ⋅ dq₂2) ∧ ✓ (dq₃1 ⋅ dq₃2) ∧ v₀1 = v₀2 ∧ v₁1 = v₁2 ∧ v₂1 = v₂2 ∧ v₃1 = v₃2⌝.
   Proof.
     iIntros "Hl1 Hl2".
     iDestruct (record4_model_combine with "Hl1 Hl2") as "(Hl & %)".
     iDestruct (record4_model_valid with "Hl") as %?.
-    iSmash+.
+    naive_solver.
   Qed.
-  Lemma record4_model_agree l dq1 v₀1 v₁1 v₂1 v₃1 dq2 v₀2 v₁2 v₂2 v₃2 :
-    record4_model l dq1 v₀1 v₁1 v₂1 v₃1 -∗
-    record4_model l dq2 v₀2 v₁2 v₂2 v₃2 -∗
+  Lemma record4_model_agree l dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 dq₃1 v₃1 dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 dq₃2 v₃2 :
+    record4_model l dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 dq₃1 v₃1 -∗
+    record4_model l dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 dq₃2 v₃2 -∗
     ⌜v₀1 = v₀2 ∧ v₁1 = v₁2 ∧ v₂1 = v₂2 ∧ v₃1 = v₃2⌝.
   Proof.
     iSmash.
   Qed.
-  Lemma record4_model_dfrac_ne l1 dq1 v₀1 v₁1 v₂1 v₃1 l2 dq2 v₀2 v₁2 v₂2 v₃2 :
-    ¬ ✓ (dq1 ⋅ dq2) →
-    record4_model l1 dq1 v₀1 v₁1 v₂1 v₃1 -∗
-    record4_model l2 dq2 v₀2 v₁2 v₂2 v₃2 -∗
+  Lemma record4_model_dfrac_ne l1 dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 dq₃1 v₃1 l2 dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 dq₃2 v₃2 :
+    ¬ ✓ (dq₀1 ⋅ dq₀2) ∨ ¬ ✓ (dq₁1 ⋅ dq₁2) ∨ ¬ ✓ (dq₂1 ⋅ dq₂2) ∨ ¬ ✓ (dq₃1 ⋅ dq₃2) →
+    record4_model l1 dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 dq₃1 v₃1 -∗
+    record4_model l2 dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 dq₃2 v₃2 -∗
     ⌜l1 ≠ l2⌝.
   Proof.
     iIntros "% Hl1 Hl2" (->).
     iDestruct (record4_model_valid_2 with "Hl1 Hl2") as %?.
     naive_solver.
   Qed.
-  Lemma record4_model_ne l1 v₀1 v₁1 v₂1 v₃1 l2 dq2 v₀2 v₁2 v₂2 v₃2 :
-    record4_model l1 (DfracOwn 1) v₀1 v₁1 v₂1 v₃1 -∗
-    record4_model l2 dq2 v₀2 v₁2 v₂2 v₃2 -∗
+  Lemma record4_model_ne l1 dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 dq₃1 v₃1 l2 dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 dq₃2 v₃2 :
+    dq₀1 = DfracOwn 1 ∨ dq₁1 = DfracOwn 1 ∨ dq₂1 = DfracOwn 1 ∨ dq₃1 = DfracOwn 1 →
+    record4_model l1 dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 dq₃1 v₃1 -∗
+    record4_model l2 dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 dq₃2 v₃2 -∗
     ⌜l1 ≠ l2⌝.
   Proof.
-    iSmash.
+    intros [| [| []]]; iSmash.
   Qed.
-  Lemma record4_model_exclusive l v₀1 v₁1 v₂1 v₃1 v₀2 v₁2 v₂2 v₃2 :
-    record4_model l (DfracOwn 1) v₀1 v₁1 v₂1 v₃1 -∗
-    record4_model l (DfracOwn 1) v₀2 v₁2 v₂2 v₃2 -∗
+  Lemma record4_model_exclusive l dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 dq₃1 v₃1 dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 dq₃2 v₃2 :
+    dq₀1 = DfracOwn 1 ∨ dq₁1 = DfracOwn 1 ∨ dq₂1 = DfracOwn 1 ∨ dq₃1 = DfracOwn 1 →
+    record4_model l dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 dq₃1 v₃1 -∗
+    record4_model l dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 dq₃2 v₃2 -∗
     False.
+  Proof.
+    intros [| [| []]]; iSmash.
+  Qed.
+  Lemma record4_model_persist₀ l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ :
+    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ ⊢ |==>
+    record4_model l DfracDiscarded v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃.
   Proof.
     iSmash.
   Qed.
-  Lemma record4_model_persist l dq v₀ v₁ v₂ v₃ :
-    record4_model l dq v₀ v₁ v₂ v₃ ⊢ |==>
-    record4_model l DfracDiscarded v₀ v₁ v₂ v₃.
+  Lemma record4_model_persist₁ l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ :
+    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ ⊢ |==>
+    record4_model l dq₀ v₀ DfracDiscarded v₁ dq₂ v₂ dq₃ v₃.
+  Proof.
+    iSmash.
+  Qed.
+  Lemma record4_model_persist₂ l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ :
+    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ ⊢ |==>
+    record4_model l dq₀ v₀ dq₁ v₁ DfracDiscarded v₂ dq₃ v₃.
+  Proof.
+    iSmash.
+  Qed.
+  Lemma record4_model_persist₃ l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ :
+    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ ⊢ |==>
+    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ DfracDiscarded v₃.
+  Proof.
+    iSmash.
+  Qed.
+  Lemma record4_model_persist l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ :
+    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ ⊢ |==>
+    record4_model l DfracDiscarded v₀ DfracDiscarded v₁ DfracDiscarded v₂ DfracDiscarded v₃.
   Proof.
     iSmash.
   Qed.
 
-  Lemma record4_dfrac_relax dq l v₀ v₁ v₂ v₃ :
-    ✓ dq →
-    record4_model l (DfracOwn 1) v₀ v₁ v₂ v₃ ⊢ |==>
-    record4_model l dq v₀ v₁ v₂ v₃.
+  Lemma record4_dfrac_relax₀ dq₀ l v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ :
+    ✓ dq₀ →
+    record4_model l (DfracOwn 1) v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ ⊢ |==>
+    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃.
   Proof.
     iIntros "% (Hv₀ & Hv₁ & Hv₂ & Hv₃)".
     iMod (mapsto_dfrac_relax with "Hv₀") as "Hv₀"; first done.
+    iSmash.
+  Qed.
+  Lemma record4_dfrac_relax₁ dq₁ l dq₀ v₀ v₁ dq₂ v₂ dq₃ v₃ :
+    ✓ dq₁ →
+    record4_model l dq₀ v₀ (DfracOwn 1) v₁ dq₂ v₂ dq₃ v₃ ⊢ |==>
+    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃.
+  Proof.
+    iIntros "% (Hv₀ & Hv₁ & Hv₂ & Hv₃)".
     iMod (mapsto_dfrac_relax with "Hv₁") as "Hv₁"; first done.
+    iSmash.
+  Qed.
+  Lemma record4_dfrac_relax₂ dq₂ l dq₀ v₀ dq₁ v₁ v₂ dq₃ v₃ :
+    ✓ dq₂ →
+    record4_model l dq₀ v₀ dq₁ v₁ (DfracOwn 1) v₂ dq₃ v₃ ⊢ |==>
+    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃.
+  Proof.
+    iIntros "% (Hv₀ & Hv₁ & Hv₂ & Hv₃)".
     iMod (mapsto_dfrac_relax with "Hv₂") as "Hv₂"; first done.
+    iSmash.
+  Qed.
+  Lemma record4_dfrac_relax₃ dq₃ l dq₀ v₀ dq₁ v₁ dq₂ v₂ v₃ :
+    ✓ dq₃ →
+    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ (DfracOwn 1) v₃ ⊢ |==>
+    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃.
+  Proof.
+    iIntros "% (Hv₀ & Hv₁ & Hv₂ & Hv₃)".
     iMod (mapsto_dfrac_relax with "Hv₃") as "Hv₃"; first done.
+    iSmash.
+  Qed.
+  Lemma record4_dfrac_relax dq l v₀ v₁ v₂ v₃ :
+    ✓ dq →
+    record4_model' l (DfracOwn 1) v₀ v₁ v₂ v₃ ⊢ |==>
+    record4_model' l dq v₀ v₁ v₂ v₃.
+  Proof.
+    iIntros "% Hl".
+    iMod (record4_dfrac_relax₀ with "Hl") as "Hl"; first done.
+    iMod (record4_dfrac_relax₁ with "Hl") as "Hl"; first done.
+    iMod (record4_dfrac_relax₂ with "Hl") as "Hl"; first done.
+    iMod (record4_dfrac_relax₃ with "Hl") as "Hl"; first done.
     iSmash.
   Qed.
 
@@ -157,7 +269,7 @@ Section heap_GS.
       record4_make v₀ v₁ v₂ v₃
     {{{ l,
       RET #l;
-      record4_model l (DfracOwn 1) v₀ v₁ v₂ v₃ ∗
+      record4_model' l (DfracOwn 1) v₀ v₁ v₂ v₃ ∗
       meta_token l ⊤
     }}}.
   Proof.
@@ -170,87 +282,99 @@ Section heap_GS.
     iSmash.
   Qed.
 
-  Lemma record4_get0_spec l dq v₀ v₁ v₂ v₃ :
+  Lemma record4_get_spec₀ l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ :
     {{{
-      record4_model l dq v₀ v₁ v₂ v₃
+      record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃
     }}}
       !#l.[0]
     {{{
       RET v₀;
-      record4_model l dq v₀ v₁ v₂ v₃
+      record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃
     }}}.
   Proof.
     iSmash.
   Qed.
-  Lemma record4_get1_spec l dq v₀ v₁ v₂ v₃ :
+  Lemma record4_get_spec₁ l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ :
     {{{
-      record4_model l dq v₀ v₁ v₂ v₃
+      record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃
     }}}
       !#l.[1]
     {{{
       RET v₁;
-      record4_model l dq v₀ v₁ v₂ v₃
+      record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃
     }}}.
   Proof.
     iSmash.
   Qed.
-  Lemma record4_get2_spec l dq v₀ v₁ v₂ v₃ :
+  Lemma record4_get_spec₂ l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ :
     {{{
-      record4_model l dq v₀ v₁ v₂ v₃
+      record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃
     }}}
       !#l.[2]
     {{{
       RET v₂;
-      record4_model l dq v₀ v₁ v₂ v₃
+      record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃
     }}}.
   Proof.
     iSmash.
   Qed.
-  Lemma record4_get3_spec l dq v₀ v₁ v₂ v₃ :
+  Lemma record4_get_spec₃ l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ :
     {{{
-      record4_model l dq v₀ v₁ v₂ v₃
+      record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃
     }}}
       !#l.[3]
     {{{
       RET v₃;
-      record4_model l dq v₀ v₁ v₂ v₃
+      record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃
     }}}.
   Proof.
     iSmash.
   Qed.
 
-  Lemma record4_set0_spec l v₀ v₁ v₂ v₃ v :
+  Lemma record4_set_spec₀ l v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ v :
     {{{
-      record4_model l (DfracOwn 1) v₀ v₁ v₂ v₃
+      record4_model l (DfracOwn 1) v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃
     }}}
       #l.[0] <- v
     {{{
       RET #();
-      record4_model l (DfracOwn 1) v v₁ v₂ v₃
+      record4_model l (DfracOwn 1) v dq₁ v₁ dq₂ v₂ dq₃ v₃
     }}}.
   Proof.
     iSmash.
   Qed.
-  Lemma record4_set1_spec l v₀ v₁ v₂ v₃ v :
+  Lemma record4_set_spec₁ l dq₀ v₀ v₁ dq₂ v₂ dq₃ v₃ v :
     {{{
-      record4_model l (DfracOwn 1) v₀ v₁ v₂ v₃
+      record4_model l dq₀ v₀ (DfracOwn 1) v₁ dq₂ v₂ dq₃ v₃
     }}}
       #l.[1] <- v
     {{{
       RET #();
-      record4_model l (DfracOwn 1) v₀ v v₂ v₃
+      record4_model l dq₀ v₀ (DfracOwn 1) v dq₂ v₂ dq₃ v₃
     }}}.
   Proof.
     iSmash.
   Qed.
-  Lemma record4_set2_spec l v₀ v₁ v₂ v₃ v :
+  Lemma record4_set_spec₂ l dq₀ v₀ dq₁ v₁ v₂ dq₃ v₃ v :
     {{{
-      record4_model l (DfracOwn 1) v₀ v₁ v₂ v₃
+      record4_model l dq₀ v₀ dq₁ v₁ (DfracOwn 1) v₂ dq₃ v₃
     }}}
       #l.[2] <- v
     {{{
       RET #();
-      record4_model l (DfracOwn 1) v₀ v₁ v v₃
+      record4_model l dq₀ v₀ dq₁ v₁ (DfracOwn 1) v dq₃ v₃
+    }}}.
+  Proof.
+    iSmash.
+  Qed.
+  Lemma record4_set_spec₃ l dq₀ v₀ dq₁ v₁ dq₂ v₂ v₃ v :
+    {{{
+      record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ (DfracOwn 1) v₃
+    }}}
+      #l.[3] <- v
+    {{{
+      RET #();
+      record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ (DfracOwn 1) v
     }}}.
   Proof.
     iSmash.
