@@ -23,43 +23,14 @@ Notation "e .2" := (
   Snd e
 ) : expr_scope.
 
-Notation "l .[0]" :=
-  (l +ₗ 0)%stdpp
+Notation "l .[ i ]" :=
+  (l +ₗ i)%stdpp
 ( at level 2,
-  left associativity
+  left associativity,
+  format "l .[ i ]"
 ) : stdpp_scope.
-Notation "l .[1]" :=
-  (l +ₗ 1)%stdpp
-( at level 2,
-  left associativity
-) : stdpp_scope.
-Notation "l .[2]" :=
-  (l +ₗ 2)%stdpp
-( at level 2,
-  left associativity
-) : stdpp_scope.
-Notation "l .[3]" :=
-  (l +ₗ 3)%stdpp
-( at level 2,
-  left associativity
-) : stdpp_scope.
-Notation "e .[0]" :=
-  (e +ₗ #0)%E
-( at level 2,
-  left associativity
-) : expr_scope.
-Notation "e .[1]" :=
-  (e +ₗ #1)%E
-( at level 2,
-  left associativity
-) : expr_scope.
-Notation "e .[2]" :=
-  (e +ₗ #2)%E
-( at level 2,
-  left associativity
-) : expr_scope.
-Notation "e .[3]" :=
-  (e +ₗ #3)%E
+Notation "e .[ i ]" :=
+  (e +ₗ #i)%E
 ( at level 2,
   left associativity
 ) : expr_scope.
