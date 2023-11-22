@@ -819,20 +819,19 @@ Section heap_GS.
     {{{
       ▷ Ψ i vs None acc ∗
       □ (
-        ∀ i vs acc,
+        ∀ i vs (o : option val) acc,
         ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
-        Ψ i vs None acc -∗
-        chunk_au_load l i (λ v,
-          ▷ Ψ i vs (Some v) acc
-        )
-      ) ∗
-      □ (
-        ∀ i vs v acc,
-        ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
-        Ψ i vs (Some v) acc -∗
-        WP fn acc #i v {{ acc,
-          ▷ Ψ (S i) (vs ++ [v]) None acc
-        }}
+        Ψ i vs o acc -∗
+        match o with
+        | None =>
+            chunk_au_load l i (λ v,
+              ▷ Ψ i vs (Some v) acc
+            )
+        | Some v =>
+            WP fn acc #i v {{ acc,
+              ▷ Ψ (S i) (vs ++ [v]) None acc
+            }}
+        end
       )
     }}}
       chunk_foldli_aux #l #sz acc fn #i
@@ -842,7 +841,7 @@ Section heap_GS.
       Ψ (Z.to_nat sz) (vs ++ vs') None acc
     }}}.
   Proof.
-    iIntros "%Hi1 %Hi2 %Φ (HΨ & #Hau & #Hfn) HΦ".
+    iIntros "%Hi1 %Hi2 %Φ (HΨ & #H) HΦ".
     remember (Z.to_nat sz - i) as j eqn:Hj.
     iInduction j as [| j] "IH" forall (i vs acc Hi1 Hi2 Hj);
       wp_rec; wp_pure credit:"H£"; wp_pures.
@@ -851,11 +850,11 @@ Section heap_GS.
       rewrite !right_id. assert (Z.to_nat sz = i) as -> by lia. iSmash.
     - rewrite bool_decide_eq_false_2; last naive_solver lia. wp_pures.
       wp_bind (!_)%E.
-      iMod ("Hau" $! i with "[] HΨ") as "(%dq & %v & H↦ & _ & HΨ)"; first iSmash.
+      iMod ("H" $! i with "[] HΨ") as "(%dq & %v & H↦ & _ & HΨ)"; first iSmash.
       wp_load.
       iMod ("HΨ" with "H↦") as "HΨ". iModIntro.
       iMod (lc_fupd_elim_later with "H£ HΨ") as "HΨ".
-      wp_apply (wp_wand with "(Hfn [] HΨ)"); first iSmash. iIntros "%acc' HΨ".
+      wp_apply (wp_wand with "(H [] HΨ)"); first iSmash. iIntros "%acc' HΨ".
       rewrite Z.add_1_l -Nat2Z.inj_succ.
       wp_apply ("IH" with "[] [] [] HΨ [HΦ]"); rewrite ?app_length; [iSmash.. |].
       clear acc. iIntros "!> %vs' %acc (<- & HΨ)".
@@ -866,20 +865,19 @@ Section heap_GS.
     {{{
       ▷ Ψ 0 [] None acc ∗
       □ (
-        ∀ i vs acc,
+        ∀ i vs (o : option val) acc,
         ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
-        Ψ i vs None acc -∗
-        chunk_au_load l i (λ v,
-          ▷ Ψ i vs (Some v) acc
-        )
-      ) ∗
-      □ (
-        ∀ i vs v acc,
-        ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
-        Ψ i vs (Some v) acc -∗
-        WP fn acc #i v {{ acc,
-          ▷ Ψ (S i) (vs ++ [v]) None acc
-        }}
+        Ψ i vs o acc -∗
+        match o with
+        | None =>
+            chunk_au_load l i (λ v,
+              ▷ Ψ i vs (Some v) acc
+            )
+        | Some v =>
+            WP fn acc #i v {{ acc,
+              ▷ Ψ (S i) (vs ++ [v]) None acc
+            }}
+        end
       )
     }}}
       chunk_foldli #l #sz acc fn
@@ -889,7 +887,7 @@ Section heap_GS.
       Ψ (Z.to_nat sz) vs None acc
     }}}.
   Proof.
-    iIntros "%Φ (HΨ & #Hau & #Hfn) HΦ".
+    iIntros "%Φ (HΨ & #H) HΦ".
     wp_rec.
     wp_smart_apply (chunk_foldli_aux_spec 0 [] Ψ with "[$HΨ] HΦ"); [lia | done |].
     auto with iFrame.
@@ -926,16 +924,15 @@ Section heap_GS.
     { clear acc. iIntros "%vs_left %acc (%Hvs_left & (-> & Hmodel & HΨ))".
       rewrite /Ψ' firstn_all2; last lia. iSmash.
     }
-    repeat iSplitR.
-    - iSmash.
-    - clear acc. iIntros "!> %i %vs_left %acc (%Hi & _) (-> & Hmodel & HΨ & _)".
-      feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
-      iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
-      iAuIntro. iAaccIntro with "H↦"; iSmash.
-    - clear acc. iIntros "!> %i %vs_left %v %acc (%Hi1 & %Hi2) (-> & Hmodel & HΨ & %Hv)". rewrite Hv.
-      feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
+    iSplitR; first iSmash.
+    clear acc. iIntros "!> %i %vs_left %o %acc (%Hi1 & %Hi2) (-> & Hmodel & HΨ & %Ho)".
+    feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
+    destruct o as [v |].
+    - rewrite Ho.
       wp_apply (wp_wand with "(Hfn [] HΨ)"); first iSmash. clear acc. iIntros "%acc HΨ". iFrame.
       erewrite take_S_r; done.
+    - iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
+      iAuIntro. iAaccIntro with "H↦"; iSmash.
   Qed.
   Lemma chunk_foldli_spec' Ψ l dq vs (sz : Z) acc fn :
     Z.to_nat sz = length vs →
@@ -974,20 +971,19 @@ Section heap_GS.
     {{{
       ▷ Ψ 0 [] None acc ∗
       □ (
-        ∀ i vs acc,
+        ∀ i vs (o : option val) acc,
         ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
-        Ψ i vs None acc -∗
-        chunk_au_load l i (λ v,
-          ▷ Ψ i vs (Some v) acc
-        )
-      ) ∗
-      □ (
-        ∀ i vs v acc,
-        ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
-        Ψ i vs (Some v) acc -∗
-        WP fn acc v {{ acc,
-          ▷ Ψ (S i) (vs ++ [v]) None acc
-        }}
+        Ψ i vs o acc -∗
+        match o with
+        | None =>
+            chunk_au_load l i (λ v,
+              ▷ Ψ i vs (Some v) acc
+            )
+        | Some v =>
+            WP fn acc v {{ acc,
+              ▷ Ψ (S i) (vs ++ [v]) None acc
+            }}
+        end
       )
     }}}
       chunk_foldl #l #sz acc fn
@@ -997,10 +993,10 @@ Section heap_GS.
       Ψ (Z.to_nat sz) vs None acc
     }}}.
   Proof.
-    iIntros "%Φ (HΨ & #Hau & #Hfn) HΦ".
+    iIntros "%Φ (HΨ & #H) HΦ".
     wp_rec.
-    wp_smart_apply (chunk_foldli_spec_atomic Ψ with "[$HΨ $Hau] HΦ").
-    iSmash.
+    wp_smart_apply (chunk_foldli_spec_atomic Ψ with "[$HΨ] HΦ"). clear acc. iIntros "!> %i %vs %o %acc %Hi HΨ".
+    case_match; try wp_pures; iApply ("H" with "[//] HΨ").
   Qed.
   Lemma chunk_foldl_spec Ψ l dq vs (sz : Z) acc fn :
     Z.to_nat sz = length vs →
@@ -1060,20 +1056,19 @@ Section heap_GS.
     {{{
       ▷ Ψ (Z.to_nat i) acc None vs ∗
       □ (
-        ∀ i acc vs,
+        ∀ i acc (o : option val) vs,
         ⌜(S i + length vs)%nat = Z.to_nat sz⌝ -∗
-        Ψ (S i) acc None vs -∗
-        chunk_au_load l i (λ v,
-          ▷ Ψ (S i) acc (Some v) vs
-        )
-      ) ∗
-      □ (
-        ∀ i v acc vs,
-        ⌜(S i + length vs)%nat = Z.to_nat sz⌝ -∗
-        Ψ (S i) acc (Some v) vs -∗
-        WP fn #i v acc {{ acc,
-          ▷ Ψ i acc None (v :: vs)
-        }}
+        Ψ (S i) acc o vs -∗
+        match o with
+        | None =>
+            chunk_au_load l i (λ v,
+              ▷ Ψ (S i) acc (Some v) vs
+            )
+        | Some v =>
+            WP fn #i v acc {{ acc,
+              ▷ Ψ i acc None (v :: vs)
+            }}
+        end
       )
     }}}
       chunk_foldri_aux #l fn acc #i
@@ -1083,7 +1078,7 @@ Section heap_GS.
       Ψ 0 acc None (vs' ++ vs)
     }}}.
   Proof.
-    iIntros "%Hi %Φ (HΨ & #Hau & #Hfn) HΦ".
+    iIntros "%Hi %Φ (HΨ & #H) HΦ".
     remember (Z.to_nat i) as j eqn:Hj.
     iInduction j as [| j] "IH" forall (i vs acc Hi Hj);
       wp_rec; wp_pure credit:"H£"; wp_pures.
@@ -1093,11 +1088,11 @@ Section heap_GS.
     - rewrite bool_decide_eq_false_2; last lia. wp_pures.
       assert (i = S j) as -> by lia. rewrite Z.sub_1_r -Nat2Z.inj_pred /=; last lia.
       wp_bind (!_)%E.
-      iMod ("Hau" $! j with "[] HΨ") as "(%dq & %v & H↦ & _ & HΨ)"; first iSmash.
+      iMod ("H" $! j with "[] HΨ") as "(%dq & %v & H↦ & _ & HΨ)"; first iSmash.
       wp_load.
       iMod ("HΨ" with "H↦") as "HΨ". iModIntro.
       iMod (lc_fupd_elim_later with "H£ HΨ") as "HΨ".
-      wp_apply (wp_wand with "(Hfn [] HΨ)"); first iSmash. iIntros "%acc' HΨ".
+      wp_apply (wp_wand with "(H [] HΨ)"); first iSmash. iIntros "%acc' HΨ".
       wp_apply ("IH" with "[] [] HΨ [HΦ]"); rewrite ?app_length; [iSmash.. |]. clear acc. iIntros "!> %acc %vs' (<- & HΨ)".
       iApply ("HΦ" $! _ (vs' ++ [v])).
       rewrite app_length -(assoc (++)). iSmash.
@@ -1106,20 +1101,19 @@ Section heap_GS.
     {{{
       ▷ Ψ (Z.to_nat sz) acc None [] ∗
       □ (
-        ∀ i acc vs,
+        ∀ i acc (o : option val) vs,
         ⌜(S i + length vs)%nat = Z.to_nat sz⌝ -∗
-        Ψ (S i) acc None vs -∗
-        chunk_au_load l i (λ v,
-          ▷ Ψ (S i) acc (Some v) vs
-        )
-      ) ∗
-      □ (
-        ∀ i v acc vs,
-        ⌜(S i + length vs)%nat = Z.to_nat sz⌝ -∗
-        Ψ (S i) acc (Some v) vs -∗
-        WP fn #i v acc {{ acc,
-          ▷ Ψ i acc None (v :: vs)
-        }}
+        Ψ (S i) acc o vs -∗
+        match o with
+        | None =>
+            chunk_au_load l i (λ v,
+              ▷ Ψ (S i) acc (Some v) vs
+            )
+        | Some v =>
+            WP fn #i v acc {{ acc,
+              ▷ Ψ i acc None (v :: vs)
+            }}
+        end
       )
     }}}
       chunk_foldri #l #sz fn acc
@@ -1129,9 +1123,9 @@ Section heap_GS.
       Ψ 0 acc None vs
     }}}.
   Proof.
-    iIntros "%Φ (HΨ & #Hau & #Hfn) HΦ".
+    iIntros "%Φ (HΨ & #H) HΦ".
     wp_rec.
-    wp_smart_apply (chunk_foldri_aux_spec sz sz [] Ψ with "[$HΨ $Hau $Hfn] [HΦ]").
+    wp_smart_apply (chunk_foldri_aux_spec sz sz [] Ψ with "[$HΨ $H] [HΦ]").
     { rewrite right_id. lia. }
     clear acc. iIntros "!> %acc %vs".
     rewrite !right_id. iSmash.
@@ -1165,19 +1159,19 @@ Section heap_GS.
       ⌜from_option (λ v, v = vs !!! (i - 1)) True o⌝%I
     )%I).
     wp_apply (chunk_foldri_spec_atomic Ψ' with "[$Hmodel $HΨ]"); last iSmash.
-    repeat iSplitR.
+    iSplitR.
     - rewrite Hsz drop_all. iSmash.
-    - clear acc. iIntros "!> %i %acc %vs_right %Hi (-> & Hmodel & HΨ & _)".
-      feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
-      iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
-      iAuIntro. iAaccIntro with "H↦"; first iSmash. iIntros "H↦ !>".
-      iSteps; iPureIntro; rewrite drop_length; f_equal; lia.
-    - clear acc. iIntros "!> %i %v %acc %vs_right %Hi (-> & Hmodel & HΨ & %Hv)". rewrite Hv.
+    - clear acc. iIntros "!> %i %acc %o %vs_right %Hi (-> & Hmodel & HΨ & %Ho)".
       feed pose proof (list_lookup_lookup_total_lt vs i) as Hlookup; first lia.
-      wp_apply (wp_wand with "(Hfn [] HΨ)").
-      { iPureIntro. rewrite Hlookup. repeat f_equal. lia. }
-      clear acc. iIntros "%acc HΨ". iFrame.
-      iPureIntro. rewrite -drop_S ?Hlookup; repeat f_equal; lia.
+      destruct o as [v |].
+      + rewrite Ho.
+        wp_apply (wp_wand with "(Hfn [] HΨ)").
+        { iPureIntro. rewrite Hlookup. repeat f_equal. lia. }
+        clear acc. iIntros "%acc HΨ". iFrame.
+        iPureIntro. rewrite -drop_S ?Hlookup; repeat f_equal; lia.
+      + iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
+        iAuIntro. iAaccIntro with "H↦"; first iSmash. iIntros "H↦ !>".
+        iSteps; iPureIntro; rewrite drop_length; f_equal; lia.
   Qed.
   Lemma chunk_foldri_spec' Ψ l dq vs (sz : Z) fn acc :
     Z.to_nat sz = length vs →
@@ -1218,20 +1212,19 @@ Section heap_GS.
     {{{
       ▷ Ψ (Z.to_nat sz) acc None [] ∗
       □ (
-        ∀ i acc vs,
+        ∀ i acc (o : option val) vs,
         ⌜(S i + length vs)%nat = Z.to_nat sz⌝ -∗
-        Ψ (S i) acc None vs -∗
-        chunk_au_load l i (λ v,
-          ▷ Ψ (S i) acc (Some v) vs
-        )
-      ) ∗
-      □ (
-        ∀ i v acc vs,
-        ⌜(S i + length vs)%nat = Z.to_nat sz⌝ -∗
-        Ψ (S i) acc (Some v) vs -∗
-        WP fn v acc {{ acc,
-          ▷ Ψ i acc None (v :: vs)
-        }}
+        Ψ (S i) acc o vs -∗
+        match o with
+        | None =>
+            chunk_au_load l i (λ v,
+              ▷ Ψ (S i) acc (Some v) vs
+            )
+        | Some v =>
+            WP fn v acc {{ acc,
+              ▷ Ψ i acc None (v :: vs)
+            }}
+        end
       )
     }}}
       chunk_foldr #l #sz fn acc
@@ -1241,10 +1234,10 @@ Section heap_GS.
       Ψ 0 acc None vs
     }}}.
   Proof.
-    iIntros "%Φ (HΨ & #Hau & #Hfn) HΦ".
+    iIntros "%Φ (HΨ & #H) HΦ".
     wp_rec.
-    wp_smart_apply (chunk_foldri_spec_atomic Ψ with "[$HΨ $Hau] HΦ").
-    iSmash.
+    wp_smart_apply (chunk_foldri_spec_atomic Ψ with "[$HΨ] HΦ"). clear acc. iIntros "!> %i %acc %o %vs %Hi HΨ".
+    case_match; try wp_pures; iApply ("H" with "[//] HΨ").
   Qed.
   Lemma chunk_foldr_spec Ψ l dq vs (sz : Z) fn acc :
     Z.to_nat sz = length vs →
@@ -1303,21 +1296,20 @@ Section heap_GS.
     {{{
       ▷ Ψ 0 [] None ∗
       □ (
-        ∀ i vs,
+        ∀ i vs (o : option val),
         ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
-        Ψ i vs None -∗
-        chunk_au_load l i (λ v,
-          ▷ Ψ i vs (Some v)
-        )
-      ) ∗
-      □ (
-        ∀ i vs v,
-        ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
-        Ψ i vs (Some v) -∗
-        WP fn #i v {{ res,
-          ⌜res = #()⌝ ∗
-          ▷ Ψ (S i) (vs ++ [v]) None
-        }}
+        Ψ i vs o -∗
+        match o with
+        | None =>
+            chunk_au_load l i (λ v,
+              ▷ Ψ i vs (Some v)
+            )
+        | Some v =>
+            WP fn #i v {{ res,
+              ⌜res = #()⌝ ∗
+              ▷ Ψ (S i) (vs ++ [v]) None
+            }}
+        end
       )
     }}}
       chunk_iteri #l #sz fn
@@ -1327,16 +1319,19 @@ Section heap_GS.
       Ψ (Z.to_nat sz) vs None
     }}}.
   Proof.
-    iIntros "%Φ (HΨ & #Hau & #Hfn) HΦ".
+    iIntros "%Φ (HΨ & #H) HΦ".
     wp_rec.
     pose Ψ' i vs o acc := (
       ⌜acc = #()⌝ ∗
       Ψ i vs o
     )%I.
     wp_smart_apply (chunk_foldli_spec_atomic Ψ' with "[$HΨ]"); last iSmash.
-    repeat iSplit; try iSmash. iIntros "!> %i %vs %acc (%Hi& %Hi2) (-> & HΨ)".
-    iApply (atomic_update_wand with "(Hau [//] HΨ)").
-    iSmash.
+    iSplit; try iSmash. iIntros "!> %i %vs %o %acc %Hi (-> & HΨ)".
+    destruct o as [v |].
+    - wp_smart_apply (wp_wand with "(H [//] HΨ)").
+      iSmash.
+    - iApply (atomic_update_wand with "(H [//] HΨ)").
+      iSmash.
   Qed.
   Lemma chunk_iteri_spec Ψ l dq vs (sz : Z) fn :
     Z.to_nat sz = length vs →
@@ -1464,21 +1459,20 @@ Section heap_GS.
     {{{
       ▷ Ψ 0 [] None ∗
       □ (
-        ∀ i vs,
+        ∀ i vs (o : option val),
         ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
-        Ψ i vs None -∗
-        chunk_au_load l i (λ v,
-          ▷ Ψ i vs (Some v)
-        )
-      ) ∗
-      □ (
-        ∀ i vs v,
-        ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
-        Ψ i vs (Some v) -∗
-        WP fn v {{ res,
-          ⌜res = #()⌝ ∗
-          ▷ Ψ (S i) (vs ++ [v]) None
-        }}
+        Ψ i vs o -∗
+        match o with
+        | None =>
+            chunk_au_load l i (λ v,
+              ▷ Ψ i vs (Some v)
+            )
+        | Some v =>
+            WP fn v {{ res,
+              ⌜res = #()⌝ ∗
+              ▷ Ψ (S i) (vs ++ [v]) None
+            }}
+        end
       )
     }}}
       chunk_iter #l #sz fn
@@ -1488,10 +1482,10 @@ Section heap_GS.
       Ψ (Z.to_nat sz) vs None
     }}}.
   Proof.
-    iIntros "%Φ (HΨ & #Hau & #Hfn) HΦ".
+    iIntros "%Φ (HΨ & #H) HΦ".
     wp_rec.
-    wp_smart_apply (chunk_iteri_spec_atomic Ψ with "[$HΨ $Hau] HΦ").
-    iSmash.
+    wp_smart_apply (chunk_iteri_spec_atomic Ψ with "[$HΨ] HΦ"). iIntros "!> %i %vs %o %Hi HΨ".
+    case_match; try wp_pures; iApply ("H" with "[//] HΨ").
   Qed.
   Lemma chunk_iter_spec Ψ l dq vs (sz : Z) fn :
     Z.to_nat sz = length vs →
@@ -1604,28 +1598,23 @@ Section heap_GS.
     {{{
       ▷ Ψ 0 [] None [] ∗
       □ (
-        ∀ i vs ws,
+        ∀ i vs (o : option (val + val * val)) ws,
         ⌜i < Z.to_nat sz ∧ i = length vs ∧ length vs = length ws⌝ -∗
-        Ψ i vs None ws -∗
-        chunk_au_load l i (λ v,
-          ▷ Ψ i vs (Some $ inl v) ws
-        )
-      ) ∗
-      □ (
-        ∀ i vs v ws,
-        ⌜i < Z.to_nat sz ∧ i = length vs ∧ length vs = length ws⌝ -∗
-        Ψ i vs (Some $ inl v) ws -∗
-        WP fn #i v {{ w,
-          ▷ Ψ i vs (Some $ inr (v, w)) ws
-        }}
-      ) ∗
-      □ (
-        ∀ i vs v ws w,
-        ⌜i < Z.to_nat sz ∧ i = length vs ∧ length vs = length ws⌝ -∗
-        Ψ i vs (Some $ inr (v, w)) ws -∗
-        chunk_au_store l i w (
-          ▷ Ψ (S i) (vs ++ [v]) None (ws ++ [w])
-        )
+        Ψ i vs o ws -∗
+        match o with
+        | None =>
+            chunk_au_load l i (λ v,
+              ▷ Ψ i vs (Some $ inl v) ws
+            )
+        | Some (inl v) =>
+            WP fn #i v {{ w,
+              ▷ Ψ i vs (Some $ inr (v, w)) ws
+            }}
+        | Some (inr (v, w)) =>
+            chunk_au_store l i w (
+              ▷ Ψ (S i) (vs ++ [v]) None (ws ++ [w])
+            )
+        end
       )
     }}}
       chunk_applyi #l #sz fn
@@ -1635,7 +1624,7 @@ Section heap_GS.
       Ψ (Z.to_nat sz) vs None ws
     }}}.
   Proof.
-    iIntros "%Φ (HΨ & #Hau1 & #Hfn & #Hau2) HΦ".
+    iIntros "%Φ (HΨ & #H) HΦ".
     wp_rec.
     pose (Ψ' i vs o := (
       ∃ ws,
@@ -1644,18 +1633,17 @@ Section heap_GS.
     )%I).
     wp_smart_apply (chunk_iteri_spec_atomic Ψ' with "[HΨ]"); last iSmash.
     iSplitL "HΨ". { iExists []. iSmash. }
-    iSplit; iIntros "!> %i %vs".
-    - iIntros "(%Hi1 & %Hi2) (%ws & %Hws & HΨ)".
-      iApply (atomic_update_wand with "(Hau1 [//] HΨ)").
-      iSmash.
-    - iIntros "%v (%Hi1 & %Hi2) (%ws & %Hws & HΨ)".
-      wp_smart_apply (wp_wand with "(Hfn [//] HΨ)"). iIntros "%w HΨ".
+    iIntros "!> %i %vs %o (%Hi1 & %Hi2) (%ws & %Hws & HΨ)".
+    destruct o as [v |].
+    - wp_smart_apply (wp_wand with "(H [//] HΨ)"). iIntros "%w HΨ".
       wp_pures.
-      iMod ("Hau2" with "[//] HΨ") as "(%v' & H↦ & _ & Hau2')".
+      iMod ("H" with "[//] HΨ") as "(%v' & H↦ & _ & H')".
       wp_store.
       iStep. iExists (ws ++ [w]).
-      iMod ("Hau2'" with "H↦") as "$".
+      iMod ("H'" with "H↦") as "$".
       rewrite !app_length. iSmash.
+    - iApply (atomic_update_wand with "(H [//] HΨ)").
+      iSmash.
   Qed.
   Lemma chunk_applyi_spec Ψ l vs (sz : Z) fn :
     Z.to_nat sz = length vs →
@@ -1700,19 +1688,12 @@ Section heap_GS.
       iApply ("HΦ" $! ws). iSmash.
     }
     iSplit; first iSmash. repeat iSplit.
-    - iIntros "!> %i %vs_left %ws (%Hvs_left & %Hi & %Hws) (-> & Hmodel & HΨ)".
-      assert ((ws ++ drop i vs) !! i = Some (vs !!! i)).
-      { rewrite lookup_app_r; last lia.
-        rewrite lookup_drop list_lookup_lookup_total_lt; last lia.
-        repeat f_equal. lia.
-      }
-      iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
-      iAuIntro. iAaccIntro with "H↦"; iSmash.
-    - iIntros "!> %i %vs_left %v %ws (%Hvs_left & %Hi & %Hws) (-> & Hmodel & -> & HΨ)".
-      feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
+    iIntros "!> %i %vs_left %o %ws (%Hvs_left & %Hi & %Hws) (-> & Hmodel & HΨ)".
+    feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
+    destruct o as [[v | (v & w)] |].
+    - iDestruct "HΨ" as "(-> & HΨ)".
       wp_apply (wp_wand with "(Hfn [] HΨ)"); iSmash.
-    - iIntros "!> %i %vs_left %v %ws %w (%Hvs_left & %Hi & %Hws) (-> & Hmodel & -> & HΨ)".
-      feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
+    - iDestruct "HΨ" as "(-> & HΨ)".
       assert ((ws ++ drop i vs) !! i = Some (vs !!! i)).
       { rewrite lookup_app_r; last lia.
         rewrite lookup_drop list_lookup_lookup_total_lt; last lia.
@@ -1725,6 +1706,13 @@ Section heap_GS.
       rewrite insert_app_r_alt; last lia.
       erewrite drop_S; last done.
       rewrite Hi Hws Nat.sub_diag -assoc //.
+    - assert ((ws ++ drop i vs) !! i = Some (vs !!! i)).
+      { rewrite lookup_app_r; last lia.
+        rewrite lookup_drop list_lookup_lookup_total_lt; last lia.
+        repeat f_equal. lia.
+      }
+      iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
+      iAuIntro. iAaccIntro with "H↦"; iSmash.
   Qed.
   Lemma chunk_applyi_spec' Ψ l vs (sz : Z) fn :
     Z.to_nat sz = length vs →
@@ -1823,28 +1811,23 @@ Section heap_GS.
     {{{
       ▷ Ψ 0 [] None [] ∗
       □ (
-        ∀ i vs ws,
+        ∀ i vs (o : option (val + val * val)) ws,
         ⌜i < Z.to_nat sz ∧ i = length vs ∧ length vs = length ws⌝ -∗
-        Ψ i vs None ws -∗
-        chunk_au_load l i (λ v,
-          ▷ Ψ i vs (Some $ inl v) ws
-        )
-      ) ∗
-      □ (
-        ∀ i vs v ws,
-        ⌜i < Z.to_nat sz ∧ i = length vs ∧ length vs = length ws⌝ -∗
-        Ψ i vs (Some $ inl v) ws -∗
-        WP fn v {{ w,
-          ▷ Ψ i vs (Some $ inr (v, w)) ws
-        }}
-      ) ∗
-      □ (
-        ∀ i vs v ws w,
-        ⌜i < Z.to_nat sz ∧ i = length vs ∧ length vs = length ws⌝ -∗
-        Ψ i vs (Some $ inr (v, w)) ws -∗
-        chunk_au_store l i w (
-          ▷ Ψ (S i) (vs ++ [v]) None (ws ++ [w])
-        )
+        Ψ i vs o ws -∗
+        match o with
+        | None =>
+            chunk_au_load l i (λ v,
+              ▷ Ψ i vs (Some $ inl v) ws
+            )
+        | Some (inl v) =>
+            WP fn v {{ w,
+              ▷ Ψ i vs (Some $ inr (v, w)) ws
+            }}
+        | Some (inr (v, w)) =>
+            chunk_au_store l i w (
+              ▷ Ψ (S i) (vs ++ [v]) None (ws ++ [w])
+            )
+        end
       )
     }}}
       chunk_apply #l #sz fn
@@ -1854,11 +1837,10 @@ Section heap_GS.
       Ψ (Z.to_nat sz) vs None ws
     }}}.
   Proof.
-    iIntros "%Φ (HΨ & #Hau1 & #Hfn & #Hau2) HΦ".
+    iIntros "%Φ (HΨ & #H) HΦ".
     wp_rec.
-    wp_smart_apply (chunk_applyi_spec_atomic Ψ with "[$HΨ $Hau1 $Hau2] HΦ"). iIntros "!> %i %vs %v %ws (%Hi1 & %Hi2 & %Hws) HΨ".
-    wp_smart_apply (wp_wand with "(Hfn [//] HΨ)").
-    iSmash.
+    wp_smart_apply (chunk_applyi_spec_atomic Ψ with "[$HΨ H] HΦ"). iIntros "!> %i %vs %o %ws (%Hi1 & %Hi2 & %Hws) HΨ".
+    repeat case_match; try wp_pures; iApply ("H" with "[//] HΨ").
   Qed.
   Lemma chunk_apply_spec Ψ l vs (sz : Z) fn :
     Z.to_nat sz = length vs →
@@ -2207,20 +2189,19 @@ Section heap_GS.
     {{{
       ▷ Ψ 0 [] None [] ∗
       □ (
-        ∀ i vs ws,
+        ∀ i vs (o : option val) ws,
         ⌜i < Z.to_nat sz ∧ i = length vs ∧ length vs = length ws⌝ -∗
-        Ψ i vs None ws -∗
-        chunk_au_load l i (λ v,
-          ▷ Ψ i vs (Some v) ws
-        )
-      ) ∗
-      □ (
-        ∀ i vs v ws,
-        ⌜i < Z.to_nat sz ∧ i = length vs ∧ length vs = length ws⌝ -∗
-        Ψ i vs (Some v) ws -∗
-        WP fn #i v {{ w,
-          ▷ Ψ (S i) (vs ++ [v]) None (ws ++ [w])
-        }}
+        Ψ i vs o ws -∗
+        match o with
+        | None =>
+            chunk_au_load l i (λ v,
+              ▷ Ψ i vs (Some v) ws
+            )
+        | Some v =>
+            WP fn #i v {{ w,
+              ▷ Ψ (S i) (vs ++ [v]) None (ws ++ [w])
+            }}
+        end
       )
     }}}
       chunk_mapi #l #sz fn
@@ -2232,7 +2213,7 @@ Section heap_GS.
       if decide (0 < sz)%Z then meta_token l' ⊤ else True
     }}}.
   Proof.
-    iIntros "%Φ (HΨ & #Hau & #Hfn) HΦ".
+    iIntros "%Φ (HΨ & #H) HΦ".
     wp_rec.
     pose Ψ' i ws := (
       ∃ vs,
@@ -2247,11 +2228,11 @@ Section heap_GS.
     iSplit. { iExists []. iSmash. }
     iIntros "!> %i %ws (%Hi1 & %Hi2) (%vs & %Hvs & HΨ)".
     wp_pure credit:"H£". wp_pures. wp_bind (!_)%E.
-    iMod ("Hau" with "[] HΨ") as "(%dq & %v & H↦ & _ & HΨ)"; first iSmash.
+    iMod ("H" with "[] HΨ") as "(%dq & %v & H↦ & _ & HΨ)"; first iSmash.
     wp_load.
     iMod ("HΨ" with "H↦") as "HΨ". iModIntro.
     iMod (lc_fupd_elim_later with "H£ HΨ") as "HΨ".
-    wp_apply (wp_wand with "(Hfn [] HΨ)"); first iSmash. iIntros "%w HΨ".
+    wp_apply (wp_wand with "(H [] HΨ)"); first iSmash. iIntros "%w HΨ".
     iExists (vs ++ [v]). iFrame. rewrite !app_length. iSmash.
   Qed.
   Lemma chunk_mapi_spec Ψ l dq vs (sz : Z) fn :
@@ -2289,16 +2270,15 @@ Section heap_GS.
     { iIntros "%l' %vs_left %ws ((%Hvs_left & %Hws) & Hmodel' & (-> & Hmodel & HΨ & _) & Hmeta)".
       rewrite /Ψ' firstn_all2 in Hws |- *; last lia. rewrite -Hsz in Hws. apply symmetry in Hws. iSmash.
     }
-    repeat iSplitR.
-    - iSmash.
-    - iIntros "!> %i %vs_left %ws (%Hi & _ & %Hws) (%Hvs_left & Hmodel & HΨ & _)".
-      feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
-      iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
-      iAuIntro. iAaccIntro with "H↦"; iSmash.
-    - iIntros "!> %i %vs_left %v %ws (%Hi1 & %Hi2 & %Hws) (-> & Hmodel & HΨ & %Hv)". rewrite Hv.
-      feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
+    iSplitR; first iSmash.
+    iIntros "!> %i %vs_left %o %ws (%Hi1 & %Hi2 & %Hws) (-> & Hmodel & HΨ & %Ho)".
+    feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
+    destruct o as [v |].
+    - rewrite Ho.
       wp_apply (wp_wand with "(Hfn [] HΨ)"); first iSmash. iIntros "%w HΨ". iFrame.
       erewrite take_S_r; done.
+    - iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
+      iAuIntro. iAaccIntro with "H↦"; iSmash.
   Qed.
   Lemma chunk_mapi_spec' Ψ l dq vs (sz : Z) fn :
     Z.to_nat sz = length vs →
@@ -2406,20 +2386,19 @@ Section heap_GS.
     {{{
       ▷ Ψ 0 [] None [] ∗
       □ (
-        ∀ i vs ws,
+        ∀ i vs (o : option val) ws,
         ⌜i < Z.to_nat sz ∧ i = length vs ∧ length vs = length ws⌝ -∗
-        Ψ i vs None ws -∗
-        chunk_au_load l i (λ v,
-          ▷ Ψ i vs (Some v) ws
-        )
-      ) ∗
-      □ (
-        ∀ i vs v ws,
-        ⌜i < Z.to_nat sz ∧ i = length vs ∧ length vs = length ws⌝ -∗
-        Ψ i vs (Some v) ws -∗
-        WP fn v {{ w,
-          ▷ Ψ (S i) (vs ++ [v]) None (ws ++ [w])
-        }}
+        Ψ i vs o ws -∗
+        match o with
+        | None =>
+            chunk_au_load l i (λ v,
+              ▷ Ψ i vs (Some v) ws
+            )
+        | Some v =>
+            WP fn v {{ w,
+              ▷ Ψ (S i) (vs ++ [v]) None (ws ++ [w])
+            }}
+        end
       )
     }}}
       chunk_map #l #sz fn
@@ -2431,10 +2410,10 @@ Section heap_GS.
       if decide (0 < sz)%Z then meta_token l' ⊤ else True
     }}}.
   Proof.
-    iIntros "%Φ (HΨ & #Hau & #Hfn) HΦ".
+    iIntros "%Φ (HΨ & #H) HΦ".
     wp_rec.
-    wp_smart_apply (chunk_mapi_spec_atomic Ψ with "[$HΨ $Hau] HΦ"). iIntros "!> %i %vs %v %ws (%Hi1 & %Hi2 & %Hws) HΨ".
-    wp_smart_apply ("Hfn" with "[//] HΨ").
+    wp_smart_apply (chunk_mapi_spec_atomic Ψ with "[$HΨ H] HΦ"). iIntros "!> %i %vs %o %ws (%Hi1 & %Hi2 & %Hws) HΨ".
+    case_match; try wp_pures; iApply ("H" with "[//] HΨ").
   Qed.
   Lemma chunk_map_spec Ψ l dq vs (sz : Z) fn :
     Z.to_nat sz = length vs →
@@ -2557,20 +2536,19 @@ Section heap_GS.
     {{{
       ▷ Ψ 0 [] None ∗
       □ (
-        ∀ i vs,
+        ∀ i vs o,
         ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
-        Ψ i vs None -∗
-        chunk_au_load l1 i (λ v,
-          ▷ Ψ i vs (Some v)
-        )
-      ) ∗
-      □ (
-        ∀ i vs v,
-        ⌜i < Z.to_nat sz ∧ i = length vs⌝ -∗
-        Ψ i vs (Some v) -∗
-        chunk_au_store l2 i v (
-          ▷ Ψ (S i) (vs ++ [v]) None
-        )
+        Ψ i vs o -∗
+        match o with
+        | None =>
+            chunk_au_load l1 i (λ v,
+              ▷ Ψ i vs (Some v)
+            )
+        | Some v =>
+            chunk_au_store l2 i v (
+              ▷ Ψ (S i) (vs ++ [v]) None
+            )
+        end
       )
     }}}
       chunk_copy #l1 #sz #l2
@@ -2580,14 +2558,15 @@ Section heap_GS.
       Ψ (Z.to_nat sz) vs None
     }}}.
   Proof.
-    iIntros "%Φ (HΨ & #Hau1 & #Hau2) HΦ".
+    iIntros "%Φ (HΨ & #H) HΦ".
     wp_rec.
-    wp_smart_apply (chunk_iteri_spec_atomic Ψ with "[$HΨ]"); last iSmash.
-    iSplit; first iSmash. iIntros "!> %i %vs %v (%Hi1 & %Hi2) HΨ".
-    wp_pures.
-    iMod ("Hau2" with "[] HΨ") as "(%v' & H↦ & _ & HΨ)"; first iSmash.
-    wp_store.
-    iStep. iApply ("HΨ" with "H↦").
+    wp_smart_apply (chunk_iteri_spec_atomic Ψ with "[$HΨ]"); last iSmash. iIntros "!> %i %vs %o (%Hi1 & %Hi2) HΨ".
+    destruct o as [v |].
+    - wp_pures.
+      iMod ("H" with "[] HΨ") as "(%v' & H↦ & _ & HΨ)"; first iSmash.
+      wp_store.
+      iStep. iApply ("HΨ" with "H↦").
+    - iApply ("H" with "[//] HΨ").
   Qed.
   Lemma chunk_copy_spec l1 dq1 vs1 (sz : Z) l2 vs2 :
     Z.to_nat sz = length vs1 →
@@ -2615,13 +2594,11 @@ Section heap_GS.
       iApply ("HΦ" with "[$Hmodel1 Hmodel2]").
       rewrite firstn_all2; last lia. rewrite skipn_all2; last lia. rewrite right_id //.
     }
-    repeat iSplit; first iSmash.
-    - iIntros "!> %i %vs1_done (%Hi & _) (-> & Hmodel1 & Hmodel2 & _)".
-      feed pose proof (list_lookup_lookup_total_lt vs1 i); first lia.
-      iDestruct (chunk_model_lookup_acc i with "Hmodel1") as "(H↦1 & Hmodel1)"; [lia | done | lia |].
-      iAuIntro. iAaccIntro with "H↦1"; iSmash.
-    - iIntros "!> %i %vs1_done %v1 (%Hi & _) (-> & Hmodel1 & Hmodel2 & %Hlookup)".
-      feed pose proof (list_lookup_lookup_total_lt vs2 i); first lia.
+    iSplit; first iSmash.
+    iIntros "!> %i %vs1_done %o (%Hi & _) (-> & Hmodel1 & Hmodel2 & %Hlookup)".
+    feed pose proof (list_lookup_lookup_total_lt vs2 i); first lia.
+    destruct o as [v1 |].
+    - feed pose proof (list_lookup_lookup_total_lt vs2 i); first lia.
       iDestruct (chunk_model_update i i with "Hmodel2") as "(H↦2 & Hmodel2)"; [lia | | lia |].
       { rewrite lookup_app_r take_length Nat.min_l //; try lia.
         rewrite Nat.sub_diag lookup_drop right_id list_lookup_lookup_total_lt //. lia.
@@ -2632,6 +2609,9 @@ Section heap_GS.
       rewrite insert_app_r_alt take_length Nat.min_l //; try lia.
       rewrite Nat.sub_diag. erewrite drop_S; last done. rewrite -(assoc (++)).
       iSmash.
+    - feed pose proof (list_lookup_lookup_total_lt vs1 i); first lia.
+      iDestruct (chunk_model_lookup_acc i with "Hmodel1") as "(H↦1 & Hmodel1)"; [lia | done | lia |].
+      iAuIntro. iAaccIntro with "H↦1"; iSmash.
   Qed.
 
   Lemma chunk_resize_spec_atomic Ψ l sz sz' (n : Z) v' :
@@ -2657,7 +2637,7 @@ Section heap_GS.
       if decide (0 < sz')%Z then meta_token l' ⊤ else True
     }}}.
   Proof.
-    iIntros "%Hn1 %Hn2 %Φ (HΨ & #Hau) HΦ".
+    iIntros "%Hn1 %Hn2 %Φ (HΨ & #H) HΦ".
     wp_rec.
     wp_smart_apply (chunk_make_spec with "[//]"). iIntros "%l' (Hmodel' & Hmeta)".
     pose Ψ' i vs o := (
@@ -2665,19 +2645,19 @@ Section heap_GS.
       from_option (λ v, Ψ (S i) (vs ++ [v])) (Ψ i vs) o
     )%I.
     wp_smart_apply (chunk_copy_spec_atomic Ψ' with "[Hmodel' $HΨ]"); last iSmash.
-    repeat iSplit.
+    iSplit.
     - rewrite Nat.sub_0_r. iSmash.
-    - iIntros "!> %i %vs (%Hi1 & %Hi2) (Hmodel' & HΨ)".
-      iApply (atomic_update_wand with "(Hau [//] HΨ)").
-      iSmash.
-    - iIntros "!> %i %vs %v (%Hi1 & %Hi2) (Hmodel' & HΨ)".
-      iDestruct (chunk_model_update i i with "Hmodel'") as "(H↦ & Hmodel')"; [lia | | lia |].
-      { rewrite lookup_app_r; last lia. rewrite lookup_replicate. naive_solver lia. }
-      iAuIntro. iAaccIntro with "H↦"; first iSmash. iIntros "H↦ !>". iFrame.
-      iDestruct ("Hmodel'" with "H↦") as "Hmodel'".
-      rewrite insert_app_r_alt; last lia. rewrite insert_replicate_lt; last lia.
-      rewrite Hi2 Nat.sub_diag /= Nat.sub_1_r -Nat.sub_succ_r -(assoc (++)).
-      iSmash.
+    - iIntros "!> %i %vs %o (%Hi1 & %Hi2) (Hmodel' & HΨ)".
+      destruct o as [v |].
+      + iDestruct (chunk_model_update i i with "Hmodel'") as "(H↦ & Hmodel')"; [lia | | lia |].
+        { rewrite lookup_app_r; last lia. rewrite lookup_replicate. naive_solver lia. }
+        iAuIntro. iAaccIntro with "H↦"; first iSmash. iIntros "H↦ !>". iFrame.
+        iDestruct ("Hmodel'" with "H↦") as "Hmodel'".
+        rewrite insert_app_r_alt; last lia. rewrite insert_replicate_lt; last lia.
+        rewrite Hi2 Nat.sub_diag /= Nat.sub_1_r -Nat.sub_succ_r -(assoc (++)).
+        iSmash.
+      + iApply (atomic_update_wand with "(H [//] HΨ)").
+        iSmash.
   Qed.
   Lemma chunk_resize_spec l dq vs (sz : Z) sz' (n : Z) v' :
     Z.to_nat sz = length vs →
@@ -2729,9 +2709,9 @@ Section heap_GS.
       if decide (0 < sz')%Z then meta_token l' ⊤ else True
     }}}.
   Proof.
-    iIntros "%Hsz %Φ (HΨ & #Hau) HΦ".
+    iIntros "%Hsz %Φ (HΨ & #H) HΦ".
     wp_rec.
-    wp_smart_apply (chunk_resize_spec_atomic Ψ with "[$HΨ $Hau]"); [done.. | iSmash].
+    wp_smart_apply (chunk_resize_spec_atomic Ψ with "[$HΨ $H]"); [done.. | iSmash].
   Qed.
   Lemma chunk_grow_spec l dq vs (sz : Z) sz' v' :
     Z.to_nat sz = length vs →
@@ -2775,9 +2755,9 @@ Section heap_GS.
       if decide (0 < sz')%Z then meta_token l' ⊤ else True
     }}}.
   Proof.
-    iIntros "%Hsz %Φ (HΨ & #Hau) HΦ".
+    iIntros "%Hsz %Φ (HΨ & #H) HΦ".
     wp_rec.
-    wp_smart_apply (chunk_resize_spec_atomic Ψ with "[$HΨ $Hau]"); [done.. |].
+    wp_smart_apply (chunk_resize_spec_atomic Ψ with "[$HΨ $H]"); [done.. |].
     iSteps. rewrite Nat.sub_diag right_id. iSmash.
   Qed.
   Lemma chunk_shrink_spec l dq vs (sz : Z) sz' :
@@ -2821,9 +2801,9 @@ Section heap_GS.
       if decide (0 < sz)%Z then meta_token l' ⊤ else True
     }}}.
   Proof.
-    iIntros "%Φ (HΨ & #Hau) HΦ".
+    iIntros "%Φ (HΨ & #H) HΦ".
     wp_rec.
-    wp_smart_apply (chunk_shrink_spec_atomic Ψ with "[$HΨ $Hau]"); [done | iSmash].
+    wp_smart_apply (chunk_shrink_spec_atomic Ψ with "[$HΨ $H]"); [done | iSmash].
   Qed.
   Lemma chunk_clone_spec l dq vs (sz : Z) :
     Z.to_nat sz = length vs →
@@ -2991,19 +2971,18 @@ Section heap_GS.
       υ acc
     )%I).
     wp_apply (chunk_foldli_spec_atomic Ψ with "[$Hacc]"); last iSmash.
-    clear acc. iSplit.
-    - iIntros "!> %i %vs_left %acc (%Hi1 & %Hi2) HΨ".
-      iAuIntro.
+    clear acc. iIntros "!> %i %vs_left %o %acc (%Hi1 & %Hi2) (Ho & Hacc)".
+    destruct o as [v |].
+    - wp_apply (wp_wand with "(Hfn Hacc)"). iClear "Hfn". clear fn. iIntros "%fn Hfn".
+      wp_apply (wp_wand with "(Hfn [])"); first iSmash. clear fn. iIntros "%fn Hfn".
+      wp_apply (wp_wand with "(Hfn Ho)").
+      iSmash.
+    - iAuIntro.
       iInv "Hl" as "(%vs & >%Hvs & >Hmodel & #Hvs)".
       feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
       iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
       iAaccIntro with "H↦"; first iSmash.
       iDestruct (big_sepL_lookup with "Hvs") as "Hv"; first done.
-      iSmash.
-    - iIntros "!> %i %vs_left %v %acc (%Hi1 & %Hi2) (Hv & Hacc)".
-      wp_apply (wp_wand with "(Hfn Hacc)"). iClear "Hfn". clear fn. iIntros "%fn Hfn".
-      wp_apply (wp_wand with "(Hfn [])"); first iSmash. clear fn. iIntros "%fn Hfn".
-      wp_apply (wp_wand with "(Hfn Hv)").
       iSmash.
   Qed.
 
@@ -3044,19 +3023,18 @@ Section heap_GS.
       υ acc
     )%I).
     wp_apply (chunk_foldri_spec_atomic Ψ with "[$Hacc]"); last iSmash.
-    clear acc. repeat iSplit.
-    - iIntros "!> %i %acc %vs_right %Hi HΨ".
-      iAuIntro.
+    clear acc. iIntros "!> %i %acc %o %vs_right %Hi (Ho & Hacc)".
+    destruct o as [v |].
+    - wp_apply (wp_wand with "(Hfn [])"); first iSmash. iClear "Hfn". clear fn. iIntros "%fn Hfn".
+      wp_apply (wp_wand with "(Hfn Ho)"). clear fn. iIntros "%fn Hfn".
+      wp_apply (wp_wand with "(Hfn Hacc)").
+      iSmash.
+    - iAuIntro.
       iInv "Hl" as "(%vs & >%Hvs & >Hmodel & #Hvs)".
       feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
       iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
       iAaccIntro with "H↦"; first iSmash.
       iDestruct (big_sepL_lookup with "Hvs") as "Hv"; first done.
-      iSmash.
-    - iIntros "!> %i %v %acc %vs_right %Hi (Hv & Hacc)".
-      wp_apply (wp_wand with "(Hfn [])"); first iSmash. iClear "Hfn". clear fn. iIntros "%fn Hfn".
-      wp_apply (wp_wand with "(Hfn Hv)"). clear fn. iIntros "%fn Hfn".
-      wp_apply (wp_wand with "(Hfn Hacc)").
       iSmash.
   Qed.
 
@@ -3272,17 +3250,10 @@ Section heap_GS.
       iApply inv_alloc. iExists vs.
       rewrite Nat2Z.id drop_all right_id. iSmash.
     }
-    repeat iSplit; try iSmash.
-    - iIntros "!> %i %vs (%Hi1 & %Hi2) (Hmodel2 & Hvs & _)".
-      iAuIntro.
-      iInv "Hl1" as "(%vs1 & >%Hvs1 & >Hmodel1 & #Hvs1)".
-      feed pose proof (list_lookup_lookup_total_lt vs1 i); first lia.
-      iDestruct (chunk_model_lookup_acc i with "Hmodel1") as "(H↦1 & Hmodel1)"; [lia | done | lia |].
-      iAaccIntro with "H↦1"; first iSmash.
-      iDestruct (big_sepL_lookup with "Hvs1") as "Hv1"; first done.
-      iSmash.
-    - iIntros "!> %i %vs %v (%Hi1 & %Hi2) (Hmodel2 & Hvs & Hv)".
-      iDestruct (chunk_model_update i i with "Hmodel2") as "(H↦2 & Hmodel2)"; [lia | | lia |].
+    iSplit; try iSmash.
+    iIntros "!> %i %vs %o (%Hi1 & %Hi2) (Hmodel2 & Hvs & Ho)".
+    destruct o as [v |].
+    - iDestruct (chunk_model_update i i with "Hmodel2") as "(H↦2 & Hmodel2)"; [lia | | lia |].
       { apply list_lookup_lookup_total_lt. rewrite app_length drop_length. lia. }
       wp_store.
       iDestruct ("Hmodel2" with "H↦2") as "Hmodel2".
@@ -3290,6 +3261,13 @@ Section heap_GS.
       rewrite /= right_id insert_app_r_alt; last lia.
       rewrite Nat.sub_diag insert_take_drop; last (rewrite drop_length; lia).
       rewrite drop_drop Nat.add_1_r -(assoc (++)) //.
+    - iAuIntro.
+      iInv "Hl1" as "(%vs1 & >%Hvs1 & >Hmodel1 & #Hvs1)".
+      feed pose proof (list_lookup_lookup_total_lt vs1 i); first lia.
+      iDestruct (chunk_model_lookup_acc i with "Hmodel1") as "(H↦1 & Hmodel1)"; [lia | done | lia |].
+      iAaccIntro with "H↦1"; first iSmash.
+      iDestruct (big_sepL_lookup with "Hvs1") as "Hv1"; first done.
+      iSmash.
   Qed.
 
   Lemma chunk_resize_type τ `{!iType _ τ} l sz sz_ sz' (n : Z) v' :
@@ -3327,23 +3305,23 @@ Section heap_GS.
         iApply big_sepL_intro. auto.
       - assert (n = sz') as -> by lia. rewrite Nat.sub_diag //.
     }
-    iSplit; last iSplit.
+    iSplit.
     - iSteps. rewrite Nat.sub_0_r. iSmash.
-    - iIntros "!> %i %vs' (%Hi1 & %Hi2) (Hmodel' & Hvs' & _)".
-      iAuIntro.
-      iInv "Hl" as "(%vs & >%Hvs & >Hmodel & #Hvs)".
-      feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
-      iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
-      iDestruct (big_sepL_lookup with "Hvs") as "Hv"; first done.
-      iAaccIntro with "H↦"; iSmash.
-    - iIntros "!> %i %vs' %v'' (%Hi1 & %Hi2) (Hmodel' & Hvs' & Hv'')".
-      iDestruct (chunk_model_update i i with "Hmodel'") as "(H↦' & Hmodel')"; [lia | | lia |].
-      { rewrite lookup_app_r; last lia. rewrite lookup_replicate. naive_solver lia. }
-      iAuIntro. iAaccIntro with "H↦'"; first iSmash. iIntros "H↦' !> !>". iFrame. rewrite /= right_id.
-      iDestruct ("Hmodel'" with "H↦'") as "Hmodel'".
-      rewrite insert_app_r_alt; last lia. rewrite insert_replicate_lt; last lia.
-      rewrite Hi2 Nat.sub_diag /= Nat.sub_1_r -Nat.sub_succ_r -(assoc (++)).
-      iSmash.
+    - iIntros "!> %i %vs' %o (%Hi1 & %Hi2) (Hmodel' & Hvs' & Ho)".
+      destruct o as [v |].
+      + iDestruct (chunk_model_update i i with "Hmodel'") as "(H↦' & Hmodel')"; [lia | | lia |].
+        { rewrite lookup_app_r; last lia. rewrite lookup_replicate. naive_solver lia. }
+        iAuIntro. iAaccIntro with "H↦'"; first iSmash. iIntros "H↦' !> !>". iFrame. rewrite /= right_id.
+        iDestruct ("Hmodel'" with "H↦'") as "Hmodel'".
+        rewrite insert_app_r_alt; last lia. rewrite insert_replicate_lt; last lia.
+        rewrite Hi2 Nat.sub_diag /= Nat.sub_1_r -Nat.sub_succ_r -(assoc (++)).
+        iSmash.
+      + iAuIntro.
+        iInv "Hl" as "(%vs & >%Hvs & >Hmodel & #Hvs)".
+        feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
+        iDestruct (chunk_model_lookup_acc i with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | lia |].
+        iDestruct (big_sepL_lookup with "Hvs") as "Hv"; first done.
+        iAaccIntro with "H↦"; iSmash.
   Qed.
 
   Lemma chunk_grow_type τ `{!iType _ τ} l sz sz_ sz' v' :
