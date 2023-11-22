@@ -26,11 +26,13 @@ Notation "e .2" := (
 Notation "l .[ i ]" :=
   (l +ₗ i)%stdpp
 ( at level 2,
+  i at level 200,
   left associativity,
   format "l .[ i ]"
 ) : stdpp_scope.
-Notation "e .[ i ]" :=
-  (e +ₗ #i)%E
+Notation "e1 .[ e2 ]" :=
+  (e1 +ₗ e2)%E
 ( at level 2,
+  e2 at level 200,
   left associativity
 ) : expr_scope.

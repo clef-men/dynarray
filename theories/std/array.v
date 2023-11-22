@@ -28,11 +28,11 @@ Section heap_GS.
   ( at level 5
   ) : stdpp_scope.
   Notation "t '.[size]'" :=
-    t.[0]%E
+    t.[#0]%E
   ( at level 5
   ) : expr_scope.
   Notation "t '.[data]'" :=
-    t.[1]%E
+    t.[#1]%E
   ( at level 5
   ) : expr_scope.
 
@@ -66,7 +66,7 @@ Section heap_GS.
 
   Definition array_unsafe_get : val :=
     λ: "t" "i",
-      !(array_data "t" +ₗ "i").
+      !(array_data "t").["i"].
   Definition array_get : val :=
     λ: "t" "i",
       assume (#0 ≤ "i") ;;
@@ -75,7 +75,7 @@ Section heap_GS.
 
   Definition array_unsafe_set : val :=
     λ: "t" "i" "v",
-      array_data "t" +ₗ "i" <- "v".
+      (array_data "t").["i"] <- "v".
   Definition array_set : val :=
     λ: "t" "i" "v",
       assume (#0 ≤ "i") ;;
@@ -106,7 +106,7 @@ Section heap_GS.
       assume (#0 ≤ "n") ;;
       assume ("i1" + "n" ≤ "sz1") ;;
       assume ("i2" + "n" ≤ "sz2") ;;
-      chunk_copy (array_data "t1" +ₗ "i1") "n" (array_data "t2" +ₗ "i2").
+      chunk_copy (array_data "t1").["i1"] "n" (array_data "t2").["i2"].
   Definition array_copy : val :=
     λ: "t1" "t2" "i2",
       array_blit "t1" #0 "t2" "i2" (array_size "t1").
@@ -123,7 +123,7 @@ Section heap_GS.
       assume (#0 ≤ "n") ;;
       assume ("i" + "n" ≤ "sz") ;;
       let: "t'" := array_make "n" #() in
-      chunk_copy (array_data "t" +ₗ "i") "n" (array_data "t'") ;;
+      chunk_copy (array_data "t").["i"] "n" (array_data "t'") ;;
       "t'".
   Definition array_shrink : val :=
     λ: "t" "n",
@@ -137,7 +137,7 @@ Section heap_GS.
       ∃ l,
       ⌜t = #l⌝ ∗
       l.[size] ↦□ #sz ∗
-      chunk_model (l.[data] +ₗ i) dq vs.
+      chunk_model l.[data].[i] dq vs.
 
     #[global] Instance array_slice_timeless t sz i dq vs :
       Timeless (array_slice t sz i dq vs).

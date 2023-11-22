@@ -14,8 +14,8 @@ Section heap_GS.
   Definition record3_make : val :=
     λ: "v₀" "v₁" "v₂",
       let: "l" := AllocN #3 "v₀" in
-      "l".[1] <- "v₁" ;;
-      "l".[2] <- "v₂" ;;
+      "l".[#1] <- "v₁" ;;
+      "l".[#2] <- "v₂" ;;
       "l".
 
   Definition record3_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ : iProp Σ :=

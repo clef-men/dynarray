@@ -36,11 +36,11 @@ Section heap_GS.
   ( at level 5
   ) : stdpp_scope.
   Notation "t '.[size]'" :=
-    t.[0]%E
+    t.[#0]%E
   ( at level 5
   ) : expr_scope.
   Notation "t '.[data]'" :=
-    t.[1]%E
+    t.[#1]%E
   ( at level 5
   ) : expr_scope.
 

@@ -14,7 +14,7 @@ Section heap_GS.
   Definition record2_make : val :=
     λ: "v₀" "v₁",
       let: "l" := AllocN #2 "v₀" in
-      "l".[1] <- "v₁" ;;
+      "l".[#1] <- "v₁" ;;
       "l".
 
   Definition record2_model l dq₀ v₀ dq₁ v₁ : iProp Σ :=
