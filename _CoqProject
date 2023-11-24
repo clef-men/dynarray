@@ -1,5 +1,6 @@
 -arg -w -arg -uniform-inheritance
 -arg -w -arg -notation-overridden
+-arg -w -arg -redundant-canonical-projection
 -arg -w -arg -masking-absolute-name
 
 -Q theories heap_lang
@@ -10,15 +11,37 @@ theories/prelude/prelude.v
 
 theories/common/list.v
 
+theories/iris/algebra/base.v
+theories/iris/algebra/nat_max.v
+theories/iris/algebra/nat_min.v
+theories/iris/algebra/lib/auth_option.v
+theories/iris/algebra/lib/auth_excl.v
+theories/iris/algebra/lib/auth_nat_max.v
+theories/iris/algebra/lib/auth_nat_min.v
+
 theories/iris/bi/big_op.v
+
+theories/iris/base_logic/algebra/auth_excl.v
+theories/iris/base_logic/lib/base.v
+theories/iris/base_logic/lib/agree.v
+theories/iris/base_logic/lib/excl.v
+theories/iris/base_logic/lib/auth_excl.v
+theories/iris/base_logic/lib/auth_nat_max.v
+theories/iris/base_logic/lib/auth_nat_min.v
+theories/iris/base_logic/lib/mono_list.v
+
 theories/iris/program_logic/atomic.v
+
 theories/iris/proofmode.v
 
 theories/language/base.v
 theories/language/itype.v
-theories/language/language.v
 theories/language/notations.v
 theories/language/proofmode.v
+theories/language/language.v
+theories/language/identifier.v
+theories/language/typed_prophet.v
+theories/language/wise_prophet.v
 
 theories/std/base.v
 theories/std/diverge.v
@@ -35,4 +58,9 @@ theories/std/chunk.v
 theories/std/array.v
 theories/std/dynarray.v
 theories/std/safe_dynarray.v
+theories/std/inf_array.v
 theories/std/stack.v
+theories/std/mutex.v
+
+theories/saturn/base.v
+theories/saturn/inf_cl_deque.v
