@@ -132,6 +132,17 @@ Section heap_GS.
     λ: "t",
       array_shrink "t" (array_size "t").
 
+  Definition array_fill_slice : val :=
+    λ: "t" "i" "n" "v",
+      let: "sz" := array_size "t" in
+      assume (#0 ≤ "i") ;;
+      assume (#0 ≤ "n") ;;
+      assume ("i" + "n" ≤ "sz") ;;
+      chunk_fill (array_data "t").["i"] "n" "v".
+  Definition array_fill : val :=
+    λ: "t" "v",
+      array_fill_slice "t" #0 (array_size "t") "v".
+
   Section array_slice.
     Definition array_slice t (sz : nat) i dq vs : iProp Σ :=
       ∃ l,
@@ -1703,6 +1714,44 @@ Section heap_GS.
     iApply ("HΦ" with "[$Hmodel $Hmodel']").
   Qed.
 
+  Lemma array_fill_slice_spec t sz vs i (i_ n : Z) v :
+    i_ = Z.of_nat i →
+    n = length vs →
+    {{{
+      array_slice t sz i (DfracOwn 1) vs
+    }}}
+      array_fill_slice t #i_ #n v
+    {{{
+      RET #();
+      array_slice t sz i (DfracOwn 1) (replicate (Z.to_nat n) v)
+    }}}.
+  Proof.
+    iIntros (-> ->) "%Φ (%l & -> & #Hsz & Hmodel) HΦ".
+    wp_rec. rewrite /array_size /array_data.
+    wp_load.
+    repeat (wp_smart_apply assume_spec'; iIntros "_").
+    wp_smart_apply (chunk_fill_spec with "Hmodel"); first lia.
+    iSmash.
+  Qed.
+
+  Lemma array_fill_spec t vs v :
+    {{{
+      array_model t (DfracOwn 1) vs
+    }}}
+      array_fill t v
+    {{{
+      RET #();
+      array_model t (DfracOwn 1) (replicate (length vs) v)
+    }}}.
+  Proof.
+    iIntros "%Φ Hmodel HΦ".
+    wp_rec.
+    wp_smart_apply (array_size_spec with "Hmodel"). iIntros "Hmodel".
+    wp_apply (array_fill_slice_spec with "Hmodel"); [lia | done |]. iIntros "model".
+    iApply "HΦ".
+    rewrite Nat2Z.id -{1}(replicate_length (length vs) v) //.
+  Qed.
+
   Context τ `{!iType (iPropI Σ) τ}.
 
   Definition array_type (sz : nat) t : iProp Σ :=
@@ -2025,6 +2074,44 @@ Section heap_GS.
     wp_smart_apply (array_shrink_type with "Ht").
     rewrite Nat2Z.id. iSmash.
   Qed.
+
+  Lemma array_fill_slice_type t sz (i n : val) v :
+    {{{
+      array_type sz t ∗
+      int_type i ∗
+      int_type n ∗
+      τ v
+    }}}
+      array_fill_slice t i n v
+    {{{
+      RET #(); True
+    }}}.
+  Proof.
+    iIntros "%Φ (#Ht & (%i_ & ->) & (%n_ & ->) & #Hv) HΦ".
+    wp_rec.
+    wp_smart_apply (array_size_type with "Ht"). iIntros "_".
+    repeat (wp_smart_apply assume_spec'; iIntros "%").
+    wp_smart_apply (array_data_type with "Ht"). iIntros "%l Hl".
+    iDestruct (chunk_type_shift i_ with "Hl") as "Hl"; first lia.
+    iDestruct (chunk_type_le (Z.to_nat n_) with "Hl") as "Hl"; first lia.
+    wp_smart_apply (chunk_fill_type with "[$Hl $Hv] HΦ"); first lia.
+  Qed.
+
+  Lemma array_fill_type t sz v :
+    {{{
+      array_type sz t ∗
+      τ v
+    }}}
+      array_fill t v
+    {{{
+      RET #(); True
+    }}}.
+  Proof.
+    iIntros "%Φ (#Ht & #Hv) HΦ".
+    wp_rec.
+    wp_smart_apply (array_size_type with "Ht"). iIntros "_".
+    wp_apply (array_fill_slice_type with "[$Ht] HΦ"); first iSmash.
+  Qed.
 End heap_GS.
 
 #[global] Opaque array_create.
@@ -2042,6 +2129,8 @@ End heap_GS.
 #[global] Opaque array_sub.
 #[global] Opaque array_shrink.
 #[global] Opaque array_clone.
+#[global] Opaque array_fill_slice.
+#[global] Opaque array_fill.
 
 #[global] Opaque array_slice.
 #[global] Opaque array_model.

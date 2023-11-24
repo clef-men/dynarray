@@ -26,6 +26,7 @@ theories/std/assume.v
 theories/std/record2.v
 theories/std/record3.v
 theories/std/record4.v
+theories/std/for_.v
 theories/std/math.v
 theories/std/reference.v
 theories/std/opt.v

@@ -7,6 +7,8 @@ From heap_lang.language Require Import
   proofmode.
 From heap_lang.std Require Export
   base.
+From heap_lang.std Require Import
+  for_.
 
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
@@ -101,6 +103,12 @@ Section heap_GS.
   Definition chunk_clone : val :=
     λ: "t" "sz",
       chunk_shrink "t" "sz" "sz".
+
+  Definition chunk_fill : val :=
+    λ: "t" "sz" "v",
+      for: "i" = #0 to "sz" begin
+        "t".["i"] <- "v"
+      end.
 
   Section chunk_model.
     Definition chunk_model l dq vs : iProp Σ :=
@@ -2825,6 +2833,62 @@ Section heap_GS.
     rewrite Hsz firstn_all. iSmash.
   Qed.
 
+  Lemma chunk_fill_spec_atomic Ψ l sz v :
+    {{{
+      ▷ Ψ 0 ∗
+      □ (
+        ∀ i,
+        ⌜i < Z.to_nat sz⌝ -∗
+        Ψ i -∗
+        chunk_au_store l i v (
+          ▷ Ψ (S i)
+        )
+      )
+    }}}
+      chunk_fill #l #sz v
+    {{{
+      RET #();
+      Ψ (Z.to_nat sz)
+    }}}.
+  Proof.
+    iIntros "%Φ (HΨ & #H) HΦ".
+    wp_rec.
+    pose Ψ' (_ : Z) i :=
+      Ψ i.
+    wp_smart_apply (for_spec_strong Ψ' with "[$HΨ]"); last rewrite Z.sub_0_r //.
+    iIntros "!> %i_ %i (-> & %Hi) HΨ". rewrite Z.add_0_l in Hi |- *.
+    wp_pures.
+    iMod ("H" with "[] HΨ") as "(%v' & H↦ & _ & H')"; first iSmash.
+    wp_store.
+    iMod ("H'" with "H↦") as "HΨ".
+    iSmash.
+  Qed.
+  Lemma chunk_fill_spec l vs (sz : Z) v :
+    Z.to_nat sz = length vs →
+    {{{
+      chunk_model l (DfracOwn 1) vs
+    }}}
+      chunk_fill #l #sz v
+    {{{
+      RET #();
+      chunk_model l (DfracOwn 1) (replicate (Z.to_nat sz) v)
+    }}}.
+  Proof.
+    iIntros "%Hsz %Φ Hmodel HΦ".
+    pose Ψ i :=
+      chunk_model l (DfracOwn 1) (replicate i v ++ drop i vs).
+    wp_apply (chunk_fill_spec_atomic Ψ with "[$Hmodel]"); last first.
+    { rewrite /Ψ skipn_all2; last lia. rewrite right_id //. }
+    iIntros "!> %i %Hi Hmodel".
+    efeed pose proof (list_lookup_lookup_total_lt vs i) as Hlookup; first lia.
+    iDestruct (chunk_model_update i i with "Hmodel") as "(H↦ & Hmodel)"; [lia | | lia |].
+    { rewrite lookup_app_r replicate_length // lookup_drop Nat.sub_diag right_id //. }
+    iAuIntro. iAaccIntro with "H↦"; first iSmash. iIntros "H↦".
+    iDestruct ("Hmodel" with "H↦") as "Hmodel".
+    rewrite /Ψ replicate_S_end -assoc insert_app_r_alt replicate_length // Nat.sub_diag.
+    erewrite drop_S; done.
+  Qed.
+
   Definition chunk_type τ `{!iType _ τ} (sz : nat) l : iProp Σ :=
     inv nroot (
       ∃ vs,
@@ -3377,6 +3441,34 @@ Section heap_GS.
     wp_smart_apply (chunk_shrink_type with "Hl"); [done.. |].
     rewrite Nat2Z.id. iSmash.
   Qed.
+
+  Lemma chunk_fill_type τ `{!iType _ τ} l sz sz_ v :
+    sz_ = Z.of_nat sz →
+    {{{
+      chunk_type τ sz l ∗
+      τ v
+    }}}
+      chunk_fill #l #sz_ v
+    {{{
+      RET #(); True
+    }}}.
+  Proof.
+    iIntros (->) "%Φ (#Hl & #Hv) HΦ".
+    pose Ψ i : iProp Σ :=
+      True%I.
+    wp_apply (chunk_fill_spec_atomic Ψ); last iSmash.
+    iStep. iIntros "!> %i %Hi _". iAuIntro.
+    iInv "Hl" as "(%vs & >%Hvs & >Hmodel & #Hvs)".
+    feed pose proof (list_lookup_lookup_total_lt vs i) as Hlookup; first lia.
+    iDestruct (chunk_model_update i i with "Hmodel") as "(H↦ & Hmodel)"; [lia | | lia |].
+    { apply list_lookup_lookup_total_lt. lia. }
+    iAaccIntro with "H↦"; iIntros "H↦ !>".
+    - iDestruct ("Hmodel" with "H↦") as "Hmodel".
+      rewrite list_insert_id //. iSmash.
+    - iSplit; last iSmash.
+      iDestruct (big_sepL_insert_acc with "Hvs") as "(_ & Hvs')"; first done.
+      iExists (<[i := v]> vs). iSteps. rewrite insert_length //.
+  Qed.
 End heap_GS.
 
 #[global] Opaque chunk_make.
@@ -3397,6 +3489,7 @@ End heap_GS.
 #[global] Opaque chunk_grow.
 #[global] Opaque chunk_shrink.
 #[global] Opaque chunk_clone.
+#[global] Opaque chunk_fill.
 
 #[global] Opaque chunk_model.
 #[global] Opaque chunk_span.
