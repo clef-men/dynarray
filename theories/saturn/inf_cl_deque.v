@@ -776,8 +776,8 @@ Section inf_cl_deque_G.
       - erewrite lookup_app_l_Some; done.
       - destruct model as [| w model]; simpl in *; first lia.
         rewrite (assoc (++) hist [w]). erewrite lookup_app_l_Some; done.
-      - rewrite (nil_length_inv model); last lia. list_simplifier. done.
-      - rewrite (nil_length_inv model); last lia. erewrite lookup_app_l_Some; done.
+      - rewrite (nil_length_inv model); first lia. list_simplifier. done.
+      - rewrite (nil_length_inv model); first lia. erewrite lookup_app_l_Some; done.
     }
     iAaccIntro with "Harray_model"; iIntros "Harray_model".
     { iModIntro. rewrite right_id. repeat iExists _. iFrame. iSmash. }
@@ -787,7 +787,7 @@ Section inf_cl_deque_G.
     iIntros "_ HΦ".
     clear- Hlookup.
 
-    rewrite Nat2Z.id decide_True; last eauto using lookup_lt_Some.
+    rewrite Nat2Z.id decide_True; first eauto using lookup_lt_Some.
     erewrite list_lookup_total_correct; last done.
     iApply ("HΦ" with "[//]").
   Qed.
@@ -847,7 +847,7 @@ Section inf_cl_deque_G.
     iIntros "_".
     clear- Hi Hback Hback'.
 
-    rewrite decide_False; last lia.
+    rewrite decide_False; first lia.
     assert (Z.to_nat i - length (hist ++ model) = Z.to_nat (i - back)) as -> by lia.
     iApply "HΦ". iFrame.
   Qed.
@@ -1087,7 +1087,7 @@ Section inf_cl_deque_G.
     }
     (* hence [back = length (hist ++ model)] *)
     assert (Z.to_nat back = length (hist ++ model)) as Heq. { rewrite app_length. lia. }
-    rewrite Heq decide_False; last lia. rewrite Nat.sub_diag.
+    rewrite Heq decide_False; first lia. rewrite Nat.sub_diag.
     (* close invariant *)
     iModIntro. iSplitR "Hctl₂ Hlock".
     { iExists front, back, hist, model, priv', past, prophs. iFrame.
@@ -1225,7 +1225,7 @@ Section inf_cl_deque_G.
       wp_pures.
 
       (* → [if: #(bool_decide (front1 < back2))] *)
-      rewrite bool_decide_eq_false_2; last done.
+      rewrite bool_decide_eq_false_2; first done.
 
       wp_pures.
 
@@ -1243,7 +1243,7 @@ Section inf_cl_deque_G.
       wp_pures.
 
       (* → [if: #(bool_decide (front1 < back2))] *)
-      rewrite bool_decide_eq_true_2; last done.
+      rewrite bool_decide_eq_true_2; first done.
 
       wp_pures.
 
@@ -1294,7 +1294,7 @@ Section inf_cl_deque_G.
     destruct model as [| v model]; first naive_solver lia.
     (* emit history fragment at [front1] *)
     iDestruct (inf_cl_deque_hist_mapsto_get front1 v with "Hhist_auth") as "#Hhist_mapsto".
-    { rewrite lookup_app_r; last lia. rewrite Hhist Nat.sub_diag //. }
+    { rewrite lookup_app_r; first lia. rewrite Hhist Nat.sub_diag //. }
     (* emit prophet lower bound at [prophs2] *)
     iDestruct (wise_prophet_lb_get with "Hprophet_model") as "#Hprophet_lb".
     (* branching 3: enforce [filter (λ '(_, _, front', _), front' = front1) prophs2 ≠ []] *)
@@ -1311,7 +1311,7 @@ Section inf_cl_deque_G.
       wp_pures.
 
       (* → [if: #(bool_decide (front1 < back2))] *)
-      rewrite bool_decide_eq_true_2; last done.
+      rewrite bool_decide_eq_true_2; first done.
 
       wp_pures.
 
@@ -1337,7 +1337,7 @@ Section inf_cl_deque_G.
       wp_pures.
 
       (* → [if: #(bool_decide (front1 < back2))] *)
-      rewrite bool_decide_eq_true_2; last done.
+      rewrite bool_decide_eq_true_2; first done.
 
       wp_pures.
 
@@ -1382,7 +1382,7 @@ Section inf_cl_deque_G.
     wp_pures.
 
     (* → [if: #(bool_decide (front1 < back2))] *)
-    rewrite bool_decide_eq_true_2; last done.
+    rewrite bool_decide_eq_true_2; first done.
 
     wp_pures.
 
@@ -1419,7 +1419,7 @@ Section inf_cl_deque_G.
       { (* exploit history fragment *)
         iDestruct (inf_cl_deque_hist_agree with "Hhist_auth Hhist_mapsto") as %Hlookup.
         iPureIntro.
-        rewrite lookup_app_r in Hlookup; last lia.
+        rewrite lookup_app_r in Hlookup; first lia.
         rewrite list_lookup_singleton_Some in Hlookup. naive_solver.
       }
       iMod (inf_cl_deque_model_update model with "Hmodel₁ Hmodel₂") as "(Hmodel₁ & Hmodel₂)".
@@ -1601,7 +1601,7 @@ Section inf_cl_deque_G.
       wp_pures.
 
       (* → [if: #(bool_decide (back - 1 < back))] *)
-      rewrite bool_decide_eq_true_2; last lia.
+      rewrite bool_decide_eq_true_2; first lia.
 
       wp_pures.
 
@@ -1679,7 +1679,7 @@ Section inf_cl_deque_G.
       wp_pures.
 
       (* → [if: #(bool_decide (back - 1 < front3))] *)
-      rewrite bool_decide_eq_false_2; last lia.
+      rewrite bool_decide_eq_false_2; first lia.
 
       wp_pures.
 
@@ -1689,7 +1689,7 @@ Section inf_cl_deque_G.
 
       (* branch 2.1: [front3 < back - 1] *)
       + (* → [if: #(bool_decide (back - 1 < front3))] *)
-        rewrite bool_decide_eq_true_2; last lia.
+        rewrite bool_decide_eq_true_2; first lia.
 
         wp_pures.
 
@@ -1703,7 +1703,7 @@ Section inf_cl_deque_G.
 
       (* branch 2.2: [front3 = back - 1] *)
       + (* → [if: #(bool_decide (front3 < front3))] *)
-        rewrite bool_decide_eq_false_2; last lia.
+        rewrite bool_decide_eq_false_2; first lia.
 
         wp_pures.
 
@@ -1743,7 +1743,7 @@ Section inf_cl_deque_G.
         iMod (inf_cl_deque_hist_update v with "Hhist_auth") as "Hhist_auth".
         (* emit history fragment at [front3] *)
         iDestruct (inf_cl_deque_hist_mapsto_get front3 v with "Hhist_auth") as "#Hhist_mapsto".
-        { rewrite lookup_app_r; last lia. rewrite Hhist Nat.sub_diag //. }
+        { rewrite lookup_app_r; first lia. rewrite Hhist Nat.sub_diag //. }
         (* update private values in control tokens *)
         iMod (inf_cl_deque_ctl_update front3 priv with "Hctl₁ Hctl₂") as "(Hctl₁ & Hctl₂)".
         (* update data model *)
@@ -1802,7 +1802,7 @@ Section inf_cl_deque_G.
       iDestruct (inf_cl_deque_front_lb_get with "Hfront_auth") as "#Hfront_lb".
       (* emit history fragment at [front2] *)
       iDestruct (inf_cl_deque_hist_mapsto_get front2 v with "Hhist_auth") as "#Hhist_mapsto".
-      { rewrite lookup_app_r; last lia. rewrite Hhist Nat.sub_diag //. }
+      { rewrite lookup_app_r; first lia. rewrite Hhist Nat.sub_diag //. }
       (* emit prophet lower bound at [prophs2] *)
       iDestruct (wise_prophet_lb_get with "Hprophet_model") as "#Hprophet_lb".
       (* branching 2: enforce [filter (λ '(_, _, front', _), front' = front2) prophs2 ≠ []] *)
@@ -1854,12 +1854,12 @@ Section inf_cl_deque_G.
         wp_pures.
 
         (* → [if: #(bool_decide (front2 < front2))] *)
-        rewrite bool_decide_eq_false_2; last lia.
+        rewrite bool_decide_eq_false_2; first lia.
 
         wp_pures.
 
         (* → [if: #(bool_decide (front2 < front2))] *)
-        rewrite bool_decide_eq_false_2; last lia.
+        rewrite bool_decide_eq_false_2; first lia.
 
         wp_pures.
 
@@ -1898,7 +1898,7 @@ Section inf_cl_deque_G.
           unfold_state. do 2 iRight. iFrame. iLeft. iSplit; first done.
           iSplit. { rewrite app_length /=. auto with lia. }
           unfold_state. rewrite Hbranch2. iFrame. iExists Ψ. iFrame.
-          rewrite lookup_total_app_r; last lia. rewrite Hhist Nat.sub_diag //.
+          rewrite lookup_total_app_r; first lia. rewrite Hhist Nat.sub_diag //.
         }
         clear- Hbranch2.
 
@@ -1922,12 +1922,12 @@ Section inf_cl_deque_G.
         wp_pures.
 
         (* → [if: #(bool_decide (front2 < front2))] *)
-        rewrite bool_decide_eq_false_2; last lia.
+        rewrite bool_decide_eq_false_2; first lia.
 
         wp_pures.
 
         (* → [if: #(bool_decide (front2 < front2))] *)
-        rewrite bool_decide_eq_false_2; last lia.
+        rewrite bool_decide_eq_false_2; first lia.
 
         wp_pures.
 
@@ -2026,7 +2026,7 @@ Section inf_cl_deque_G.
             unfold_state. do 2 iRight. iFrame. iLeft. iSplit; first done.
             iSplit. { rewrite app_length /=. auto with lia. }
             unfold_state. rewrite Hbranch2. iFrame. iExists Ψ. iFrame.
-            rewrite lookup_total_app_r; last lia. rewrite Hhist Nat.sub_diag //.
+            rewrite lookup_total_app_r; first lia. rewrite Hhist Nat.sub_diag //.
           }
           clear- Hbranch2 Hbranch3.
 
@@ -2050,12 +2050,12 @@ Section inf_cl_deque_G.
           wp_pures.
 
           (* → [if: #(bool_decide (front2 < front2))] *)
-          rewrite bool_decide_eq_false_2; last lia.
+          rewrite bool_decide_eq_false_2; first lia.
 
           wp_pures.
 
           (* → [if: #(bool_decide (front2 < front2))] *)
-          rewrite bool_decide_eq_false_2; last lia.
+          rewrite bool_decide_eq_false_2; first lia.
 
           wp_pures.
 
@@ -2092,7 +2092,7 @@ Section inf_cl_deque_G.
             unfold_state. do 2 iRight. iFrame. iLeft. iSplit; first done.
             iSplit. { rewrite app_length /=. auto with lia. }
             unfold_state. rewrite Hbranch2. iFrame. iExists Φ'. iFrame.
-            rewrite lookup_total_app_r; last lia. rewrite Hhist Nat.sub_diag //.
+            rewrite lookup_total_app_r; first lia. rewrite Hhist Nat.sub_diag //.
           }
           clear- Hbranch2 Hbranch3.
 
@@ -2133,12 +2133,12 @@ Section inf_cl_deque_G.
               wp_pures.
 
               (* → [if: #(bool_decide (front2 < front2))] *)
-              rewrite bool_decide_eq_false_2; last lia.
+              rewrite bool_decide_eq_false_2; first lia.
 
               wp_pures.
 
               (* → [if: #(bool_decide (front2 < front2))] *)
-              rewrite bool_decide_eq_false_2; last lia.
+              rewrite bool_decide_eq_false_2; first lia.
 
               wp_pures.
 
@@ -2192,7 +2192,7 @@ Section inf_cl_deque_G.
               wp_pures.
 
               (* → [if: #(bool_decide (front2 < front2 + 1))] *)
-              rewrite bool_decide_eq_true_2; last lia.
+              rewrite bool_decide_eq_true_2; first lia.
 
               wp_pures.
 

@@ -44,9 +44,8 @@ Section upred.
       ✓ (●E a ⋅ ●E b) ⊣⊢
       False.
     Proof.
-      rewrite auth_excl_auth_dfrac_op_validI bi.pure_False.
-      - rewrite left_absorb //.
-      - naive_solver.
+      rewrite auth_excl_auth_dfrac_op_validI bi.pure_False; first naive_solver.
+      rewrite left_absorb //.
     Qed.
 
     Lemma auth_excl_frag_validI a :

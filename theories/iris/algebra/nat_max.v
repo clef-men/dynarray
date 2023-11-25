@@ -43,7 +43,7 @@ Lemma nat_max_included x1 x2 :
 Proof.
   split.
   - intros [y ->]. simpl. lia.
-  - exists x2. rewrite /op /nat_max_op Nat.max_r; last lia. destruct x2. done.
+  - exists x2. rewrite /op /nat_max_op Nat.max_r; first lia. destruct x2. done.
 Qed.
 
 Lemma nat_max_ra_mixin :

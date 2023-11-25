@@ -41,7 +41,7 @@ Lemma nat_min_included x1 x2 :
 Proof.
   split.
   - intros [y ->]. simpl. lia.
-  - exists x2. rewrite /op /nat_min_op Nat.min_r; last lia. destruct x2. done.
+  - exists x2. rewrite /op /nat_min_op Nat.min_r; first lia. destruct x2. done.
 Qed.
 
 Lemma nat_min_ra_mixin :

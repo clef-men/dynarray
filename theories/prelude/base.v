@@ -9,4 +9,6 @@ From stdpp Require Export
 
 #[export] Set Bullet Behavior "Strict Subproofs".
 
+#[export] Unset SsrOldRewriteGoalsOrder.
+
 Open Scope general_if_scope.
