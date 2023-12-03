@@ -72,15 +72,7 @@ Section parray_G.
 
   Definition parray_get : val :=
     λ: "t" "i",
-      let: "arr" :=
-        match: !"t" with
-        | Root "arr" =>
-            "arr"
-        | Diff "i", "v", "t'" =>
-            parray_reroot "t"
-        end
-      in
-      array_unsafe_get "arr" "i".
+      array_unsafe_get (parray_reroot "t") "i".
 
   Definition parray_set : val :=
     λ: "t" "eq" "i" "v",
@@ -303,22 +295,14 @@ Section parray_G.
       parray_inv τ γ
     }}}.
   Proof.
-    iIntros "%Hi %Hvs_lookup %Φ ((%map & %root & Hmap_auth & Hmap) & (%l & -> & #Hmap_elem)) HΦ".
+    iIntros "%Hi %Hvs_lookup %Φ ((%map & %root & Hinv) & (%l & -> & #Hmap_elem)) HΦ".
     wp_rec.
+    wp_smart_apply (parray_reroot_spec τ with "[$Hinv $Hmap_elem]"). iIntros "(Hmap_auth & Hmap)".
     iDestruct (parray_map_lookup with "Hmap_auth Hmap_elem") as %Hmap_lookup.
     iDestruct (big_sepM_lookup_acc with "Hmap") as "((%descr & %Hvs_len & Hl & Hdescr) & Hmap)"; first done.
-    destruct (decide (l = root)) as [<- | Hcase].
-    - iDestruct "Hdescr" as "(-> & Harr & Hvs)".
-      wp_load.
-      wp_smart_apply (array_unsafe_get_spec with "Harr"); [done.. |].
-      iSteps. iExists l. iSmash.
-    - iDestruct "Hdescr" as "(%j & %w & %l' & %vs' & (%Hj & %Hvs) & -> & #Hmap_elem' & Hw)".
-      wp_load.
-      wp_smart_apply (parray_reroot_spec τ with "[Hmap_auth Hl Hw Hmap]"); first iSmash. iIntros "(Hmap_auth & Hmap)".
-      iDestruct (big_sepM_lookup_acc _ _ l with "Hmap") as "((%descr & _ & Hl & Hdescr) & Hmap)"; first done.
-      rewrite decide_True //. iDestruct "Hdescr" as "(-> & Harr & Hvs)".
-      wp_smart_apply (array_unsafe_get_spec with "Harr"); [done.. |].
-      setoid_rewrite decide_True at 1; last done. iSteps. iExists l. iSmash.
+    rewrite decide_True //. iDestruct "Hdescr" as "(-> & Harr & Hvs)".
+    wp_apply (array_unsafe_get_spec with "Harr"); [done.. |].
+    setoid_rewrite decide_True at 1; last done. iSteps. iExists l. iSmash.
   Qed.
 
   Lemma parray_set_spec τ `{!iType _ τ} t γ vs eq (i : Z) v :
