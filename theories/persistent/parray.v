@@ -82,7 +82,7 @@ Section parray_G.
         "t"
       ) else (
         array_unsafe_set "arr" "i" "v" ;;
-        let: "t'" := ref (&Root "arr") in
+        let: "t'" := ref !"t" in
         "t" <- &Diff ("i", "v'", "t'") ;;
         "t'"
       ).
@@ -344,7 +344,7 @@ Section parray_G.
       { iExists _. rewrite decide_True //. iSmash. }
       iSmash.
     - wp_apply (array_unsafe_set_spec with "Harr"); first done. iIntros "Harr". rewrite Nat2Z.id.
-      clear root. wp_alloc root as "Hroot". wp_store.
+      wp_load. clear root. wp_alloc root as "Hroot". wp_store.
       iApply "HΦ".
       iAssert ⌜map !! root = None⌝%I as %Hmap_lookup_root.
       { rewrite -eq_None_ne_Some. iIntros "%vs_root %Hmap_lookup_root".
