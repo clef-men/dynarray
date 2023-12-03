@@ -62,5 +62,8 @@ theories/std/inf_array.v
 theories/std/stack.v
 theories/std/mutex.v
 
+theories/persistent/base.v
+theories/persistent/parray.v
+
 theories/saturn/base.v
 theories/saturn/inf_cl_deque.v
