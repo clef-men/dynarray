@@ -26,22 +26,22 @@ Section parray_G.
   Notation "&Root" := (
     InjL
   )(only parsing
-).
+  ).
   Notation "&&Root" := (
     InjLV
   )(only parsing
-).
+  ).
   Notation "&Diff" :=
     InjR
   ( only parsing
   ).
   Notation "&&Diff" :=
-InjRV
+    InjRV
   ( only parsing
   ).
 
   Notation "'match:' e0 'with' | 'Root' arr => e1 | 'Diff' i , v , next => e2 'end'" := (
-Match
+    Match
       e0
       arr%binder
       e1
