@@ -31,16 +31,16 @@ Section parray_G.
     InjLV
   )(only parsing
   ).
-  Notation "&Diff" :=
-    InjR
-  ( only parsing
+  Notation "&Diff" := (
+    λ e1 e2 e3, InjR (e1, e2, e3)
+  )(only parsing
   ).
-  Notation "&&Diff" :=
-    InjRV
-  ( only parsing
+  Notation "&&Diff" := (
+    λ v1 v2 v3, InjRV (v1, v2, v3)
+  )(only parsing
   ).
 
-  Notation "'match:' e0 'with' | 'Root' arr => e1 | 'Diff' i , v , next => e2 'end'" := (
+  Notation "'match:' e0 'with' | 'Root' arr => e1 | 'Diff' i v next => e2 'end'" := (
     Match
       e0
       arr%binder
@@ -61,11 +61,11 @@ Section parray_G.
       match: !"t" with
       | Root "arr" =>
           "arr"
-      | Diff "i", "v", "t'" =>
+      | Diff "i" "v" "t'" =>
           let: "arr" := "parray_reroot" "t'" in
           let: "v'" := array_unsafe_get "arr" "i" in
           array_unsafe_set "arr" "i" "v" ;;
-          "t'" <- &Diff ("i", "v'", "t") ;;
+          "t'" <- &Diff "i" "v'" "t" ;;
           "t" <- &Root "arr" ;;
           "arr"
       end.
@@ -83,7 +83,7 @@ Section parray_G.
       ) else (
         array_unsafe_set "arr" "i" "v" ;;
         let: "t'" := ref !"t" in
-        "t" <- &Diff ("i", "v'", "t'") ;;
+        "t" <- &Diff "i" "v'" "t'" ;;
         "t'"
       ).
 
@@ -116,7 +116,7 @@ Section parray_G.
       ) else (
         ∃ i v l' vs',
         ⌜i < γ.(parray_name_size) ∧ vs = <[i := v]> vs'⌝ ∗
-        ⌜descr = &&Diff (#i, v, #l')⌝ ∗
+        ⌜descr = &&Diff #i v #l'⌝ ∗
         parray_map_elem γ l' vs' ∗
         τ v
       ).
