@@ -109,7 +109,7 @@ Section heap_GS.
         #()
       ) else (
         let: "new_cap" := maximum "n" (safe_dynarray_next_capacity "cap") in
-        let: "new_data" := array_make "new_cap" &None in
+        let: "new_data" := array_make "new_cap" &&None in
         array_blit "data" #0 "new_data" #0 (safe_dynarray_size "t") ;;
         safe_dynarray_set_data "t" "new_data"
       ).
@@ -157,7 +157,7 @@ Section heap_GS.
       | None =>
           diverge #()
       | Some "ref" =>
-          array_unsafe_set "data" "sz" &None ;;
+          array_unsafe_set "data" "sz" &&None ;;
           safe_dynarray_set_size "t" "sz" ;;
           !"ref"
       end.

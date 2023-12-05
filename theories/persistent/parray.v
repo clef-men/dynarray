@@ -4,6 +4,7 @@ From iris.base_logic Require Import
 From heap_lang Require Import
   prelude.
 From heap_lang.language Require Import
+  tactics
   notations
   proofmode.
 From heap_lang.std Require Import
@@ -11,46 +12,102 @@ From heap_lang.std Require Import
 From heap_lang.persistent Require Export
   base.
 
+Implicit Types i : nat.
+Implicit Types l root : loc.
+Implicit Types v t eq : val.
+Implicit Types vs : list val.
+
+#[local] Definition descr_match : val :=
+  λ: "descr" "Root" "Diff",
+    match: "descr" with
+      InjL "x" =>
+        "Root" "x"
+    | InjR "y" =>
+        "Diff" "y".1.1 "y".1.2 "y".2
+    end.
+#[local] Notation "'match:' e0 'with' | 'Root' x => e1 | 'Diff' y1 y2 y3 => e2 'end'" :=
+  (descr_match e0 (λ: x, e1) (λ: y1 y2 y3, e2))%E
+( x, y1, y2, y3 at level 1,
+  e0, e1, e2 at level 200,
+  format "'[hv' match:  e0  with  '/' '[' |  Root  x  =>  '/    ' e1 ']'  '/' '[' |  Diff  y1  y2  y3  =>  '/    ' e2  ']' '/' end ']'"
+) : expr_scope.
+#[local] Notation "'match:' e0 'with' 'Root' x => e1 | 'Diff' y1 y2 y3 => e2 'end'" :=
+  (descr_match e0 (λ: x, e1) (λ: y1 y2 y3, e2))%E
+( x, y1, y2, y3 at level 1,
+  e0, e1, e2 at level 200,
+  only parsing
+) : expr_scope.
+#[local] Notation "'match::' e0 'with' | 'Root' x => e1 | 'Diff' y1 y2 y3 => e2 'end'" :=
+  (descr_match e0 (λ: x, e1)%V (λ: y1 y2 y3, e2)%V)%E
+( x, y1, y2, y3 at level 1,
+  e0, e1, e2 at level 200,
+  format "'[hv' match::  e0  with  '/' '[' |  Root  x  =>  '/    ' e1 ']'  '/' '[' |  Diff  y1  y2  y3  =>  '/    ' e2  ']' '/' end ']'"
+) : expr_scope.
+#[local] Notation "'match::' e0 'with' 'Root' x => e1 | 'Diff' y1 y2 y3 => e2 'end'" :=
+  (descr_match e0 (λ: x, e1)%V (λ: y1 y2 y3, e2)%V)%E
+( x, y1, y2, y3 at level 1,
+  e0, e1, e2 at level 200,
+  only parsing
+) : expr_scope.
+
+#[local] Definition descr_Root : val :=
+  λ: "v", InjL "v".
+#[local] Definition RootV :=
+  InjLV.
+#[local] Notation "'&Root'" :=
+  descr_Root.
+#[local] Notation "'&&Root'" :=
+  RootV.
+#[local] Instance pure_descr_Root v :
+  PureExec True 2
+    (&Root v)
+    (&&Root v).
+Proof.
+  solve_pure_exec.
+Qed.
+#[local] Instance pure_descr_match_Root v x e1 y1 y2 y3 e2 :
+  PureExec True 9
+    (match:: &&Root v with Root x => e1 | Diff y1 y2 y3 => e2 end)
+    (subst' x v e1).
+Proof.
+  solve_pure_exec.
+Qed.
+
+#[local] Definition descr_Diff : val :=
+  λ: "v1" "v2" "v3", InjR ("v1", "v2", "v3").
+#[local] Definition DiffV v1 v2 v3 :=
+  InjRV (v1, v2, v3).
+#[local] Notation "'&Diff'" :=
+  descr_Diff.
+#[local] Notation "'&&Diff'" :=
+  DiffV.
+#[local] Instance pure_descr_Diff v1 v2 v3 :
+  PureExec True 8
+    (&Diff v1 v2 v3)
+    (&&Diff v1 v2 v3).
+Proof.
+  solve_pure_exec.
+Qed.
+#[local] Instance pure_descr_match_Diff v1 v2 v3 x e1 y1 y2 y3 e2 :
+  PureExec True 18
+    (match:: &&Diff v1 v2 v3 with Root x => e1 | Diff y1 y2 y3 => e2 end)
+    (subst' y1 v1 (subst' y2 v2 (subst' y3 v3 e2))).
+Proof.
+  solve_pure_exec.
+Qed.
+
+#[global] Opaque descr_match.
+#[global] Opaque descr_Root.
+#[global] Opaque RootV.
+#[global] Opaque descr_Diff.
+#[global] Opaque DiffV.
+
 Class ParrayG Σ `{heap_GS : !heapGS Σ} := {
   parray_G_map_G : ghost_mapG Σ loc (list val) ;
 }.
 
 Section parray_G.
   Context `{parray_G : ParrayG Σ}.
-
-  Implicit Types i : nat.
-  Implicit Types l root : loc.
-  Implicit Types v t eq : val.
-  Implicit Types vs : list val.
-
-  Notation "&Root" := (
-    InjL
-  )(only parsing
-  ).
-  Notation "&&Root" := (
-    InjLV
-  )(only parsing
-  ).
-  Notation "&Diff" := (
-    λ e1 e2 e3, InjR (e1, e2, e3)
-  )(only parsing
-  ).
-  Notation "&&Diff" := (
-    λ v1 v2 v3, InjRV (v1, v2, v3)
-  )(only parsing
-  ).
-
-  Notation "'match:' e0 'with' | 'Root' arr => e1 | 'Diff' i v next => e2 'end'" := (
-    Match
-      e0
-      arr%binder
-      e1
-      "__diff"
-      (Let i "__diff".1.1 (Let v "__diff".1.2 (Let next "__diff".2 e2)))
-  )(arr, i, v, next at level 1,
-    e0, e1, e2 at level 200,
-    only parsing
-  ) : expr_scope.
 
   Definition parray_make : val :=
     λ: "sz" "v",

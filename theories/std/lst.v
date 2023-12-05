@@ -1,68 +1,102 @@
 From heap_lang Require Import
   prelude.
 From heap_lang.language Require Import
+  tactics
   notations
   proofmode.
 From heap_lang.std Require Export
   base.
 
-Notation "&Nil" := (
-  InjL #()
-)(only parsing
-).
-Notation "&&Nil" := (
-  InjLV #()
-)(only parsing
-).
-Notation "&Cons" := (
-  λ e1 e2, InjR (e1, e2)
-)(only parsing
-).
-Notation "&&Cons" := (
-  λ v1 v2, InjRV (v1, v2)
-)(only parsing
-).
+Implicit Types i j : nat.
+Implicit Types v w t fn acc : val.
+Implicit Types vs vs_left vs_right ws : list val.
 
-Notation "'match:' e0 'with' 'Nil' => e1 | 'Cons' x1 , x2 => e2 'end'" := (
-  Match
-    e0
-    <>%binder
-    e1
-    "__match" (Let x1%binder (Fst "__match") (Let x2%binder (Snd "__match") e2))
-)(e0, e1, x1, x2, e2 at level 200,
+Definition lst_match : val :=
+  λ: "t" "Nil" "Cons",
+    match: "t" with
+      InjL <> =>
+        "Nil" #()
+    | InjR "x" =>
+        "Cons" "x".1 "x".2
+    end.
+Notation "'match:' e0 'with' | 'Nil' => e1 | 'Cons' x1 x2 => e2 'end'" :=
+  (lst_match e0 (λ: <>, e1) (λ: x1 x2, e2))%E
+( x1, x2 at level 1,
+  e0, e1, e2 at level 200,
+  format "'[hv' match:  e0  with  '/' '[' |  Nil  =>  '/    ' e1 ']'  '/' '[' |  Cons  x1  x2  =>  '/    ' e2  ']' '/' end ']'"
+) : expr_scope.
+Notation "'match:' e0 'with' 'Nil' => e1 | 'Cons' x1 x2 => e2 'end'" :=
+  (lst_match e0 (λ: <>, e1) (λ: x1 x2, e2))%E
+( x1, x2 at level 1,
+  e0, e1, e2 at level 200,
   only parsing
 ) : expr_scope.
-Notation "'match:' e0 'with' | 'Nil' => e1 | 'Cons' x1 , x2 => e2 'end'" := (
-  Match
-    e0
-    <>%binder
-    e1
-    "__match" (Let x1%binder (Fst "__match") (Let x2%binder (Snd "__match") e2))
-)(e0, e1, x1, x2, e2 at level 200,
+Notation "'match::' e0 'with' | 'Nil' => e1 | 'Cons' x1 x2 => e2 'end'" :=
+  (lst_match e0 (λ: <>, e1)%V (λ: x1 x2, e2)%V)%E
+( x1, x2 at level 1,
+  e0, e1, e2 at level 200,
+  format "'[hv' match::  e0  with  '/' '[' |  Nil  =>  '/    ' e1 ']'  '/' '[' |  Cons  x1  x2  =>  '/    ' e2  ']' '/' end ']'"
+) : expr_scope.
+Notation "'match::' e0 'with' 'Nil' => e1 | 'Cons' x1 x2 => e2 'end'" :=
+  (lst_match e0 (λ: <>, e1)%V (λ: x1 x2, e2)%V)%E
+( x1, x2 at level 1,
+  e0, e1, e2 at level 200,
   only parsing
 ) : expr_scope.
+
+Definition NilV :=
+  InjLV #().
+Notation "'&&Nil'" :=
+  NilV.
+#[global] Instance pure_lst_match_Nil e1 x1 x2 e2 :
+  PureExec True 9
+    (match:: &&Nil with Nil => e1 | Cons x1 x2 => e2 end)
+    e1.
+Proof.
+  solve_pure_exec.
+Qed.
+
+Definition lst_Cons : val :=
+  λ: "v1" "v2", InjR ("v1", "v2").
+Definition ConsV v1 v2 :=
+  InjRV (v1, v2).
+Notation "'&Cons'" :=
+  lst_Cons.
+Notation "'&&Cons'" :=
+  ConsV.
+#[global] Instance pure_lst_Cons v1 v2 :
+  PureExec True 5
+    (&Cons v1 v2)
+    (&&Cons v1 v2).
+Proof.
+  solve_pure_exec.
+Qed.
+#[global] Instance pure_lst_match_Cons v1 v2 e1 x1 x2 e2 :
+  PureExec True 13
+    (match:: &&Cons v1 v2 with Nil => e1 | Cons x1 x2 => e2 end)
+    (subst' x1 v1 (subst' x2 v2 e2)).
+Proof.
+  solve_pure_exec.
+Qed.
+
+#[global] Opaque lst_match.
+#[global] Opaque NilV.
+#[global] Opaque lst_Cons.
+#[global] Opaque ConsV.
 
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
 
-  Implicit Types i j : nat.
-  Implicit Types v w t fn acc : val.
-  Implicit Types vs vs_left vs_right ws : list val.
-
-  Definition lst_cons : val :=
-    λ: "v" "t",
-      &Cons "v" "t".
-
   Definition lst_singleton : val :=
     λ: "v",
-      &Cons "v" &Nil.
+      &Cons "v" &&Nil.
 
   Definition lst_head : val :=
     λ: "t",
       match: "t" with
       | Nil =>
           Fail
-      | Cons "v", <> =>
+      | Cons "v" <> =>
           "v"
       end.
   Definition lst_tail : val :=
@@ -70,7 +104,7 @@ Section heap_GS.
       match: "t" with
       | Nil =>
           Fail
-      | Cons <>, "t" =>
+      | Cons <> "t" =>
           "t"
       end.
 
@@ -79,7 +113,7 @@ Section heap_GS.
       match: "t" with
       | Nil =>
           #true
-      | Cons <>, <> =>
+      | Cons <> <> =>
           #false
       end.
 
@@ -94,7 +128,7 @@ Section heap_GS.
   #[local] Definition lst_initi_aux : val :=
     rec: "lst_initi_aux" "sz" "fn" "i" :=
       if: "sz" ≤ "i" then (
-        &Nil
+        &&Nil
       ) else (
         let: "v" := "fn" "i" in
         &Cons "v" ("lst_initi_aux" "sz" "fn" (#1 + "i"))
@@ -111,7 +145,7 @@ Section heap_GS.
       match: "t" with
       | Nil =>
           "acc"
-      | Cons "v", "t" =>
+      | Cons "v" "t" =>
           "lst_foldli_aux" "t" ("fn" "acc" "i" "v") "fn" (#1 + "i")
       end.
   Definition lst_foldli : val :=
@@ -126,7 +160,7 @@ Section heap_GS.
       match: "t" with
       | Nil =>
           "acc"
-      | Cons "v", "t" =>
+      | Cons "v" "t" =>
           "fn" "i" "v" ("lst_foldri_aux" "t" "fn" "acc" (#1 + "i"))
       end.
   Definition lst_foldri : val :=
@@ -142,11 +176,11 @@ Section heap_GS.
 
   Definition lst_rev : val :=
     λ: "t",
-      lst_foldl "t" &Nil (λ: "acc" "v", &Cons "v" "acc").
+      lst_foldl "t" &&Nil (λ: "acc" "v", &Cons "v" "acc").
 
   Definition lst_app : val :=
     λ: "t1" "t2",
-      lst_foldr "t1" lst_cons "t2".
+      lst_foldr "t1" &Cons "t2".
   Definition lst_snoc : val :=
     λ: "t" "v",
       lst_app "t" (lst_singleton "v").
@@ -162,8 +196,8 @@ Section heap_GS.
     rec: "lst_mapi_aux" "t" "fn" "i" :=
       match: "t" with
       | Nil =>
-          &Nil
-      | Cons "v", "t" =>
+          &&Nil
+      | Cons "v" "t" =>
           let: "v" := "fn" "i" "v" in
           let: "t" := "lst_mapi_aux" "t" "fn" (#1 + "i") in
           &Cons "v" "t"
@@ -197,25 +231,37 @@ Section heap_GS.
     apply _.
   Qed.
 
-  Lemma lst_nil_spec :
+  Lemma lst_model_Nil :
     ⊢ lst_model &&Nil [].
   Proof.
     iSmash.
   Qed.
-
-  Lemma lst_cons_spec v t vs :
-    {{{
-      lst_model t vs
-    }}}
-      lst_cons v t
-    {{{ t',
-      RET t';
-      lst_model t' (v :: vs)
-    }}}.
+  Lemma wp_lst_match_Nil t e1 x1 x2 e2 Φ :
+    lst_model t [] -∗
+    WP e1 {{ Φ }} -∗
+    WP match: t with Nil => e1 | Cons x1 x2 => e2 end {{ Φ }}.
   Proof.
-    iIntros "%Φ" ([]) "HΦ".
-    all: wp_rec; wp_pures.
-    all: iApply "HΦ"; auto.
+    iIntros "%Ht H". invert Ht.
+    iSmash.
+  Qed.
+
+  Lemma lst_model_Cons v t vs :
+    lst_model t vs ⊢
+    lst_model (&&Cons v t) (v :: vs).
+  Proof.
+    auto.
+  Qed.
+  Lemma wp_lst_match_Cons {t vs} v vs' e1 x1 x2 e2 Φ :
+    vs = v :: vs' →
+    lst_model t vs -∗
+    ( ∀ t',
+      lst_model t' vs' -∗
+      WP subst x1 v (subst x2 t' e2) {{ Φ }}
+    ) -∗
+    WP match: t with Nil => e1 | Cons x1 x2 => e2 end {{ Φ }}.
+  Proof.
+    iIntros (->) "%Ht H". invert Ht.
+    iSmash.
   Qed.
 
   Lemma lst_singleton_spec v :
@@ -231,7 +277,7 @@ Section heap_GS.
     iApply "HΦ". auto.
   Qed.
 
-  Lemma lst_head_spec t vs v vs' :
+  Lemma lst_head_spec {t vs} v vs' :
     vs = v :: vs' →
     {{{
       lst_model t vs
@@ -245,7 +291,7 @@ Section heap_GS.
     iSmash.
   Qed.
 
-  Lemma lst_tail_spec t vs v vs' :
+  Lemma lst_tail_spec {t vs} v vs' :
     vs = v :: vs' →
     {{{
       lst_model t vs
@@ -1393,7 +1439,6 @@ Section heap_GS.
   Qed.
 End heap_GS.
 
-#[global] Opaque lst_cons.
 #[global] Opaque lst_singleton.
 #[global] Opaque lst_head.
 #[global] Opaque lst_tail.

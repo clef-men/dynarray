@@ -36,6 +36,8 @@ theories/iris/proofmode.v
 
 theories/language/base.v
 theories/language/itype.v
+theories/language/metatheory.v
+theories/language/tactics.v
 theories/language/notations.v
 theories/language/proofmode.v
 theories/language/language.v
