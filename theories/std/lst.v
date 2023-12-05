@@ -239,7 +239,7 @@ Section heap_GS.
   Lemma wp_lst_match_Nil t e1 x1 x2 e2 Φ :
     lst_model t [] -∗
     WP e1 {{ Φ }} -∗
-    WP match: t with Nil => e1 | Cons x1 x2 => e2 end {{ Φ }}.
+    WP match:: t with Nil => e1 | Cons x1 x2 => e2 end {{ Φ }}.
   Proof.
     iIntros "%Ht H". invert Ht.
     iSmash.
@@ -258,7 +258,7 @@ Section heap_GS.
       lst_model t' vs' -∗
       WP subst x1 v (subst x2 t' e2) {{ Φ }}
     ) -∗
-    WP match: t with Nil => e1 | Cons x1 x2 => e2 end {{ Φ }}.
+    WP match:: t with Nil => e1 | Cons x1 x2 => e2 end {{ Φ }}.
   Proof.
     iIntros (->) "%Ht H". invert Ht.
     iSmash.

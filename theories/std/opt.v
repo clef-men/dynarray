@@ -82,6 +82,12 @@ Qed.
 #[global] Opaque opt_Some.
 #[global] Opaque SomeV.
 
+Coercion val_of_option opt :=
+  match opt with
+  | None => &&None
+  | Some v => &&Some v
+  end.
+
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
   Context τ `{!iType (iPropI Σ) τ}.

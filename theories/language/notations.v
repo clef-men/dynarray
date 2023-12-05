@@ -6,12 +6,6 @@ From heap_lang Require Import
 From heap_lang Require Export
   language.
 
-Coercion val_of_option opt :=
-  match opt with
-  | None => NONEV
-  | Some v => SOMEV v
-  end.
-
 Notation Fail := (
   #() #()
 ).

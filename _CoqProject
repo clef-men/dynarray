@@ -65,6 +65,7 @@ theories/std/stack.v
 theories/std/mutex.v
 
 theories/persistent/base.v
+theories/persistent/pstack.v
 theories/persistent/parray.v
 
 theories/saturn/base.v
