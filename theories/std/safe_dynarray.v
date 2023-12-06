@@ -177,24 +177,22 @@ Definition safe_dynarray_reset : val :=
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
 
-  Section safe_dynarray_model.
-    #[local] Definition slot_model slot v : iProp Σ :=
-      ∃ r,
-      ⌜slot = &&Some #r⌝ ∗
-      r ↦ v.
-    Definition safe_dynarray_model t vs : iProp Σ :=
-      ∃ l data slots extra,
-      ⌜t = #l⌝ ∗
-      l.[size] ↦ #(length vs) ∗
-      l.[data] ↦ data ∗ array_model data (DfracOwn 1) (slots ++ replicate extra &&None) ∗
-      [∗ list] slot; v ∈ slots; vs, slot_model slot v.
+  #[local] Definition slot_model slot v : iProp Σ :=
+    ∃ r,
+    ⌜slot = &&Some #r⌝ ∗
+    r ↦ v.
+  Definition safe_dynarray_model t vs : iProp Σ :=
+    ∃ l data slots extra,
+    ⌜t = #l⌝ ∗
+    l.[size] ↦ #(length vs) ∗
+    l.[data] ↦ data ∗ array_model data (DfracOwn 1) (slots ++ replicate extra &&None) ∗
+    [∗ list] slot; v ∈ slots; vs, slot_model slot v.
 
-    #[global] Instance safe_dynarray_model_timeless t vs :
-      Timeless (safe_dynarray_model t vs).
-    Proof.
-      apply _.
-    Qed.
-  End safe_dynarray_model.
+  #[global] Instance safe_dynarray_model_timeless t vs :
+    Timeless (safe_dynarray_model t vs).
+  Proof.
+    apply _.
+  Qed.
 
   Lemma safe_dynarray_create_spec :
     {{{ True }}}

@@ -121,21 +121,19 @@ Definition dynarray_reset : val :=
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
 
-  Section dynarray_model.
-    #[local] Definition dynarray_model_inner l (sz : nat) data vs : iProp Σ :=
-      l.[size] ↦ #sz ∗
-      l.[data] ↦ data ∗ array_model data (DfracOwn 1) vs.
-    Definition dynarray_model t vs : iProp Σ :=
-      ∃ l data extra,
-      ⌜t = #l⌝ ∗
-      dynarray_model_inner l (length vs) data (vs ++ replicate extra #()).
+  #[local] Definition dynarray_model_inner l (sz : nat) data vs : iProp Σ :=
+    l.[size] ↦ #sz ∗
+    l.[data] ↦ data ∗ array_model data (DfracOwn 1) vs.
+  Definition dynarray_model t vs : iProp Σ :=
+    ∃ l data extra,
+    ⌜t = #l⌝ ∗
+    dynarray_model_inner l (length vs) data (vs ++ replicate extra #()).
 
-    #[global] Instance dynarray_model_timeless t vs :
-      Timeless (dynarray_model t vs).
-    Proof.
-      apply _.
-    Qed.
-  End dynarray_model.
+  #[global] Instance dynarray_model_timeless t vs :
+    Timeless (dynarray_model t vs).
+  Proof.
+    apply _.
+  Qed.
 
   Lemma dynarray_create_spec :
     {{{ True }}}
