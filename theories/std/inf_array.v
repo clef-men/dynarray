@@ -15,6 +15,36 @@ From heap_lang.std Require Import
   array
   mutex.
 
+Implicit Types l : loc.
+Implicit Types v t : val.
+Implicit Types us : list val.
+Implicit Types vs : nat → val.
+
+#[local] Notation "t '.[data]'" :=
+  t.[0]%stdpp
+( at level 5
+) : stdpp_scope.
+#[local] Notation "t '.[default]'" :=
+  t.[1]%stdpp
+( at level 5
+) : stdpp_scope.
+#[local] Notation "t '.[mutex]'" :=
+  t.[2]%stdpp
+( at level 5
+) : stdpp_scope.
+#[local] Notation "t '.[data]'" :=
+  t.[#0]%E
+( at level 5
+) : expr_scope.
+#[local] Notation "t '.[default]'" :=
+  t.[#1]%E
+( at level 5
+) : expr_scope.
+#[local] Notation "t '.[mutex]'" :=
+  t.[#2]%E
+( at level 5
+) : expr_scope.
+
 Class InfArrayG Σ `{heap_GS : !heapGS Σ} (mutex : mutex Σ) := {
   #[local] inf_array_G_model_G :: AuthExclG Σ (nat -d> valO) ;
 }.
@@ -31,36 +61,6 @@ Qed.
 
 Section inf_array_G.
   Context `{heap_GS : !heapGS Σ} mutex `{inf_array_G : !InfArrayG Σ mutex}.
-
-  Implicit Types l : loc.
-  Implicit Types v t : val.
-  Implicit Types us : list val.
-  Implicit Types vs : nat → val.
-
-  Notation "t '.[data]'" :=
-    t.[0]%stdpp
-  ( at level 5
-  ) : stdpp_scope.
-  Notation "t '.[default]'" :=
-    t.[1]%stdpp
-  ( at level 5
-  ) : stdpp_scope.
-  Notation "t '.[mutex]'" :=
-    t.[2]%stdpp
-  ( at level 5
-  ) : stdpp_scope.
-  Notation "t '.[data]'" :=
-    t.[#0]%E
-  ( at level 5
-  ) : expr_scope.
-  Notation "t '.[default]'" :=
-    t.[#1]%E
-  ( at level 5
-  ) : expr_scope.
-  Notation "t '.[mutex]'" :=
-    t.[#2]%E
-  ( at level 5
-  ) : expr_scope.
 
   Definition inf_array_create : val :=
     λ: "default",

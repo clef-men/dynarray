@@ -11,137 +11,137 @@ From heap_lang.std Require Import
   assume
   chunk.
 
+Implicit Types i j n : nat.
+Implicit Types l : loc.
+Implicit Types v t fn : val.
+Implicit Types vs : list val.
+
+#[local] Notation "t '.[size]'" :=
+  t.[0]%stdpp
+( at level 5
+) : stdpp_scope.
+#[local] Notation "t '.[data]'" :=
+  t.[1]%stdpp
+( at level 5
+) : stdpp_scope.
+#[local] Notation "t '.[size]'" :=
+  t.[#0]%E
+( at level 5
+) : expr_scope.
+#[local] Notation "t '.[data]'" :=
+  t.[#1]%E
+( at level 5
+) : expr_scope.
+
+Definition array_create : val :=
+  λ: <>,
+    chunk_make #1 #0.
+
+Definition array_make : val :=
+  λ: "sz" "v",
+    assume (#0 ≤ "sz") ;;
+    let: "t" := chunk_make (#1 + "sz") "v" in
+    "t".[size] <- "sz" ;;
+    "t".
+
+Definition array_initi : val :=
+  λ: "sz" "fn",
+    assume (#0 ≤ "sz") ;;
+    let: "t" := chunk_make (#1 + "sz") "sz" in
+    chunk_applyi "t".[data] "sz" (λ: "i" <>, "fn" "i") ;;
+    "t".
+Definition array_init : val :=
+  λ: "sz" "fn",
+    array_initi "sz" (λ: <>, "fn" #()).
+
+Definition array_size : val :=
+  λ: "t",
+    !"t".[size].
+#[local] Definition array_data : val :=
+  λ: "t",
+    "t".[data].
+
+Definition array_unsafe_get : val :=
+  λ: "t" "i",
+    !(array_data "t").["i"].
+Definition array_get : val :=
+  λ: "t" "i",
+    assume (#0 ≤ "i") ;;
+    assume ("i" < array_size "t") ;;
+    array_unsafe_get "t" "i".
+
+Definition array_unsafe_set : val :=
+  λ: "t" "i" "v",
+    (array_data "t").["i"] <- "v".
+Definition array_set : val :=
+  λ: "t" "i" "v",
+    assume (#0 ≤ "i") ;;
+    assume ("i" < array_size "t") ;;
+    array_unsafe_set "t" "i" "v".
+
+(* array_foldli *)
+(* array_foldl *)
+
+(* array_foldri *)
+(* array_foldr *)
+
+(* array_iteri *)
+(* array_iter *)
+
+(* array_applyi *)
+(* array_apply *)
+
+(* array_mapi *)
+(* array_map *)
+
+Definition array_blit : val :=
+  λ: "t1" "i1" "t2" "i2" "n",
+    let: "sz1" := array_size "t1" in
+    let: "sz2" := array_size "t2" in
+    assume (#0 ≤ "i1") ;;
+    assume (#0 ≤ "i2") ;;
+    assume (#0 ≤ "n") ;;
+    assume ("i1" + "n" ≤ "sz1") ;;
+    assume ("i2" + "n" ≤ "sz2") ;;
+    chunk_copy (array_data "t1").["i1"] "n" (array_data "t2").["i2"].
+Definition array_copy : val :=
+  λ: "t1" "t2" "i2",
+    array_blit "t1" #0 "t2" "i2" (array_size "t1").
+
+Definition array_grow : val :=
+  λ: "t" "sz'" "v'",
+    let: "t'" := array_make "sz'" "v'" in
+    array_copy "t" "t'" #0 ;;
+    "t'".
+Definition array_sub : val :=
+  λ: "t" "i" "n",
+    let: "sz" := array_size "t" in
+    assume (#0 ≤ "i") ;;
+    assume (#0 ≤ "n") ;;
+    assume ("i" + "n" ≤ "sz") ;;
+    let: "t'" := array_make "n" #() in
+    chunk_copy (array_data "t").["i"] "n" (array_data "t'") ;;
+    "t'".
+Definition array_shrink : val :=
+  λ: "t" "n",
+    array_sub "t" #0 "n".
+Definition array_clone : val :=
+  λ: "t",
+    array_shrink "t" (array_size "t").
+
+Definition array_fill_slice : val :=
+  λ: "t" "i" "n" "v",
+    let: "sz" := array_size "t" in
+    assume (#0 ≤ "i") ;;
+    assume (#0 ≤ "n") ;;
+    assume ("i" + "n" ≤ "sz") ;;
+    chunk_fill (array_data "t").["i"] "n" "v".
+Definition array_fill : val :=
+  λ: "t" "v",
+    array_fill_slice "t" #0 (array_size "t") "v".
+
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
-
-  Implicit Types i j n : nat.
-  Implicit Types l : loc.
-  Implicit Types v t fn : val.
-  Implicit Types vs : list val.
-
-  Notation "t '.[size]'" :=
-    t.[0]%stdpp
-  ( at level 5
-  ) : stdpp_scope.
-  Notation "t '.[data]'" :=
-    t.[1]%stdpp
-  ( at level 5
-  ) : stdpp_scope.
-  Notation "t '.[size]'" :=
-    t.[#0]%E
-  ( at level 5
-  ) : expr_scope.
-  Notation "t '.[data]'" :=
-    t.[#1]%E
-  ( at level 5
-  ) : expr_scope.
-
-  Definition array_create : val :=
-    λ: <>,
-      chunk_make #1 #0.
-
-  Definition array_make : val :=
-    λ: "sz" "v",
-      assume (#0 ≤ "sz") ;;
-      let: "t" := chunk_make (#1 + "sz") "v" in
-      "t".[size] <- "sz" ;;
-      "t".
-
-  Definition array_initi : val :=
-    λ: "sz" "fn",
-      assume (#0 ≤ "sz") ;;
-      let: "t" := chunk_make (#1 + "sz") "sz" in
-      chunk_applyi "t".[data] "sz" (λ: "i" <>, "fn" "i") ;;
-      "t".
-  Definition array_init : val :=
-    λ: "sz" "fn",
-      array_initi "sz" (λ: <>, "fn" #()).
-
-  Definition array_size : val :=
-    λ: "t",
-      !"t".[size].
-  #[local] Definition array_data : val :=
-    λ: "t",
-      "t".[data].
-
-  Definition array_unsafe_get : val :=
-    λ: "t" "i",
-      !(array_data "t").["i"].
-  Definition array_get : val :=
-    λ: "t" "i",
-      assume (#0 ≤ "i") ;;
-      assume ("i" < array_size "t") ;;
-      array_unsafe_get "t" "i".
-
-  Definition array_unsafe_set : val :=
-    λ: "t" "i" "v",
-      (array_data "t").["i"] <- "v".
-  Definition array_set : val :=
-    λ: "t" "i" "v",
-      assume (#0 ≤ "i") ;;
-      assume ("i" < array_size "t") ;;
-      array_unsafe_set "t" "i" "v".
-
-  (* array_foldli *)
-  (* array_foldl *)
-
-  (* array_foldri *)
-  (* array_foldr *)
-
-  (* array_iteri *)
-  (* array_iter *)
-
-  (* array_applyi *)
-  (* array_apply *)
-
-  (* array_mapi *)
-  (* array_map *)
-
-  Definition array_blit : val :=
-    λ: "t1" "i1" "t2" "i2" "n",
-      let: "sz1" := array_size "t1" in
-      let: "sz2" := array_size "t2" in
-      assume (#0 ≤ "i1") ;;
-      assume (#0 ≤ "i2") ;;
-      assume (#0 ≤ "n") ;;
-      assume ("i1" + "n" ≤ "sz1") ;;
-      assume ("i2" + "n" ≤ "sz2") ;;
-      chunk_copy (array_data "t1").["i1"] "n" (array_data "t2").["i2"].
-  Definition array_copy : val :=
-    λ: "t1" "t2" "i2",
-      array_blit "t1" #0 "t2" "i2" (array_size "t1").
-
-  Definition array_grow : val :=
-    λ: "t" "sz'" "v'",
-      let: "t'" := array_make "sz'" "v'" in
-      array_copy "t" "t'" #0 ;;
-      "t'".
-  Definition array_sub : val :=
-    λ: "t" "i" "n",
-      let: "sz" := array_size "t" in
-      assume (#0 ≤ "i") ;;
-      assume (#0 ≤ "n") ;;
-      assume ("i" + "n" ≤ "sz") ;;
-      let: "t'" := array_make "n" #() in
-      chunk_copy (array_data "t").["i"] "n" (array_data "t'") ;;
-      "t'".
-  Definition array_shrink : val :=
-    λ: "t" "n",
-      array_sub "t" #0 "n".
-  Definition array_clone : val :=
-    λ: "t",
-      array_shrink "t" (array_size "t").
-
-  Definition array_fill_slice : val :=
-    λ: "t" "i" "n" "v",
-      let: "sz" := array_size "t" in
-      assume (#0 ≤ "i") ;;
-      assume (#0 ≤ "n") ;;
-      assume ("i" + "n" ≤ "sz") ;;
-      chunk_fill (array_data "t").["i"] "n" "v".
-  Definition array_fill : val :=
-    λ: "t" "v",
-      array_fill_slice "t" #0 (array_size "t") "v".
 
   Section array_slice.
     Definition array_slice t (sz : nat) i dq vs : iProp Σ :=

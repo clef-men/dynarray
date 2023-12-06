@@ -6,18 +6,18 @@ From heap_lang.language Require Import
 From heap_lang.std Require Export
   base.
 
+Implicit Types l : loc.
+
+Definition record4_make : val :=
+  λ: "v₀" "v₁" "v₂" "v₃",
+    let: "l" := AllocN #4 "v₀" in
+    "l".[#1] <- "v₁" ;;
+    "l".[#2] <- "v₂" ;;
+    "l".[#3] <- "v₃" ;;
+    "l".
+
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
-
-  Implicit Types l : loc.
-
-  Definition record4_make : val :=
-    λ: "v₀" "v₁" "v₂" "v₃",
-      let: "l" := AllocN #4 "v₀" in
-      "l".[#1] <- "v₁" ;;
-      "l".[#2] <- "v₂" ;;
-      "l".[#3] <- "v₃" ;;
-      "l".
 
   Definition record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ : iProp Σ :=
     l.[0] ↦{dq₀} v₀ ∗

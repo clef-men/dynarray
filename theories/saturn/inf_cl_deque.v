@@ -25,6 +25,48 @@ From heap_lang.std Require Import
 From heap_lang.saturn Require Export
   base.
 
+Implicit Types front : nat.
+Implicit Types back : Z.
+Implicit Types l : loc.
+Implicit Types p : proph_id.
+Implicit Types id : identifier.
+Implicit Types v t data : val.
+Implicit Types hist model : list val.
+Implicit Types priv : nat → val.
+
+#[local] Notation "t '.[front]'" :=
+  t.[0]%stdpp
+( at level 5
+) : stdpp_scope.
+#[local] Notation "t '.[back]'" :=
+  t.[1]%stdpp
+( at level 5
+) : stdpp_scope.
+#[local] Notation "t '.[data]'" :=
+  t.[2]%stdpp
+( at level 5
+) : stdpp_scope.
+#[local] Notation "t '.[prophecy]'" :=
+  t.[3]%stdpp
+( at level 5
+) : stdpp_scope.
+#[local] Notation "t '.[front]'" :=
+  t.[#0]%E
+( at level 5
+) : expr_scope.
+#[local] Notation "t '.[back]'" :=
+  t.[#1]%E
+( at level 5
+) : expr_scope.
+#[local] Notation "t '.[data]'" :=
+  t.[#2]%E
+( at level 5
+) : expr_scope.
+#[local] Notation "t '.[prophecy]'" :=
+  t.[#3]%E
+( at level 5
+) : expr_scope.
+
 #[local] Program Definition inf_cl_deque_prophet_spec := {|
   typed_prophet_spec_type :=
     nat * identifier ;
@@ -75,38 +117,7 @@ Qed.
 Section inf_cl_deque_G.
   Context `{heap_GS : !heapGS Σ} mutex `{inf_cl_deque_G : !InfClDequeG Σ mutex}.
 
-  Notation "t '.[front]'" :=
-    t.[0]%stdpp
-  ( at level 5
-  ) : stdpp_scope.
-  Notation "t '.[back]'" :=
-    t.[1]%stdpp
-  ( at level 5
-  ) : stdpp_scope.
-  Notation "t '.[data]'" :=
-    t.[2]%stdpp
-  ( at level 5
-  ) : stdpp_scope.
-  Notation "t '.[prophecy]'" :=
-    t.[3]%stdpp
-  ( at level 5
-  ) : stdpp_scope.
-  Notation "t '.[front]'" :=
-    t.[#0]%E
-  ( at level 5
-  ) : expr_scope.
-  Notation "t '.[back]'" :=
-    t.[#1]%E
-  ( at level 5
-  ) : expr_scope.
-  Notation "t '.[data]'" :=
-    t.[#2]%E
-  ( at level 5
-  ) : expr_scope.
-  Notation "t '.[prophecy]'" :=
-    t.[#3]%E
-  ( at level 5
-  ) : expr_scope.
+  Implicit Types Φ : val → iProp Σ.
 
   Definition inf_cl_deque_create : val :=
     λ: <>,
@@ -158,6 +169,7 @@ Section inf_cl_deque_G.
 
   #[local] Definition inf_cl_deque_prophet :=
     make_wise_prophet inf_cl_deque_prophet_spec.
+  Implicit Types past prophs : list inf_cl_deque_prophet.(wise_prophet_type).
 
   Record inf_cl_deque_name := {
     inf_cl_deque_name_ctl : gname ;
@@ -168,6 +180,7 @@ Section inf_cl_deque_G.
     inf_cl_deque_name_prophet : inf_cl_deque_prophet.(wise_prophet_name) ;
     inf_cl_deque_name_winner : gname ;
   }.
+  Implicit Types γ : inf_cl_deque_name.
 
   #[local] Instance inf_cl_deque_name_eq_dec :
     EqDecision inf_cl_deque_name.
@@ -197,18 +210,6 @@ Section inf_cl_deque_G.
     |}.
     refine (inj_countable' encode decode _). intros []. done.
   Qed.
-
-  Implicit Types front : nat.
-  Implicit Types back : Z.
-  Implicit Types l : loc.
-  Implicit Types p : proph_id.
-  Implicit Types id : identifier.
-  Implicit Types v t data : val.
-  Implicit Types γ : inf_cl_deque_name.
-  Implicit Types hist model : list val.
-  Implicit Types priv : nat → val.
-  Implicit Types past prophs : list inf_cl_deque_prophet.(wise_prophet_type).
-  Implicit Types Φ : val → iProp Σ.
 
   #[local] Definition inf_cl_deque_ctl₁' γ_ctl back priv :=
     auth_excl_auth (auth_excl_G := inf_cl_deque_G_ctl_G) γ_ctl (DfracOwn 1) (back, priv).

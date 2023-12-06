@@ -18,164 +18,164 @@ From heap_lang.std Require Import
   opt
   array.
 
+Implicit Types b : bool.
+Implicit Types i : nat.
+Implicit Types l r : loc.
+Implicit Types v t fn : val.
+Implicit Types vs : list val.
+
+#[local] Notation "t '.[size]'" :=
+  t.[0]%stdpp
+( at level 5
+) : stdpp_scope.
+#[local] Notation "t '.[data]'" :=
+  t.[1]%stdpp
+( at level 5
+) : stdpp_scope.
+#[local] Notation "t '.[size]'" :=
+  t.[#0]%E
+( at level 5
+) : expr_scope.
+#[local] Notation "t '.[data]'" :=
+  t.[#1]%E
+( at level 5
+) : expr_scope.
+
+Definition safe_dynarray_create : val :=
+  λ: <>,
+    record2_make #0 (array_create #()).
+
+Definition safe_dynarray_make : val :=
+  λ: "sz" "v",
+    assume (#0 ≤ "sz") ;;
+    record2_make "sz" (array_initi "sz" (λ: <>, &Some (ref "v"))).
+
+Definition safe_dynarray_initi : val :=
+  λ: "sz" "fn",
+    assume (#0 ≤ "sz") ;;
+    record2_make "sz" (array_initi "sz" (λ: "i", &Some (ref ("fn" "i")))).
+
+Definition safe_dynarray_size : val :=
+  λ: "t",
+    !"t".[size].
+#[local] Definition safe_dynarray_data : val :=
+  λ: "t",
+    !"t".[data].
+Definition safe_dynarray_capacity : val :=
+  λ: "t",
+    array_size (safe_dynarray_data "t").
+
+#[local] Definition safe_dynarray_set_size : val :=
+  λ: "t" "sz",
+    "t".[size] <- "sz".
+#[local] Definition safe_dynarray_set_data : val :=
+  λ: "t" "data",
+    "t".[data] <- "data".
+
+Definition safe_dynarray_is_empty : val :=
+  λ: "t",
+    safe_dynarray_size "t" = #0.
+
+Definition safe_dynarray_get : val :=
+  λ: "t" "i",
+    match: array_get (safe_dynarray_data "t") "i" with
+    | None =>
+        diverge #()
+    | Some "ref" =>
+        !"ref"
+    end.
+
+Definition safe_dynarray_set : val :=
+  λ: "t" "i" "v",
+    match: array_get (safe_dynarray_data "t") "i" with
+    | None =>
+        diverge #()
+    | Some "ref" =>
+        "ref" <- "v"
+    end.
+
+#[local] Definition safe_dynarray_next_capacity : val :=
+  λ: "n",
+    maximum #8 (if: "n" ≤ #512 then #2 * "n" else "n" + "n" `quot` #2).
+Definition safe_dynarray_reserve : val :=
+  λ: "t" "n",
+    assume (#0 ≤ "n") ;;
+    let: "data" := safe_dynarray_data "t" in
+    let: "cap" := array_size "data" in
+    if: "n" ≤ "cap" then (
+      #()
+    ) else (
+      let: "new_cap" := maximum "n" (safe_dynarray_next_capacity "cap") in
+      let: "new_data" := array_make "new_cap" &&None in
+      array_blit "data" #0 "new_data" #0 (safe_dynarray_size "t") ;;
+      safe_dynarray_set_data "t" "new_data"
+    ).
+Definition safe_dynarray_reserve_extra : val :=
+  λ: "t" "n",
+    assume (#0 ≤ "n") ;;
+    safe_dynarray_reserve "t" (safe_dynarray_size "t" + "n").
+
+#[local] Definition safe_dynarray_try_push : val :=
+  λ: "t" "slot",
+    let: "sz" := safe_dynarray_size "t" in
+    let: "data" := safe_dynarray_data "t" in
+    if: array_size "data" ≤ "sz" then (
+      #false
+    ) else (
+      safe_dynarray_set_size "t" (#1 + "sz") ;;
+      array_unsafe_set "data" "sz" "slot" ;;
+      #true
+    ).
+#[local] Definition safe_dynarray_push_aux : val :=
+  rec: "safe_dynarray_push_aux" "t" "slot" :=
+    safe_dynarray_reserve_extra "t" #1 ;;
+    if: safe_dynarray_try_push "t" "slot" then (
+      #()
+    ) else (
+      "safe_dynarray_push_aux" "t" "slot"
+    ).
+Definition safe_dynarray_push : val :=
+  λ: "t" "v",
+    let: "slot" := &Some (ref "v") in
+    if: safe_dynarray_try_push "t" "slot" then (
+      #()
+    ) else (
+      safe_dynarray_push_aux "t" "slot"
+    ).
+
+Definition safe_dynarray_pop : val :=
+  λ: "t",
+    let: "sz" := safe_dynarray_size "t" in
+    let: "data" := safe_dynarray_data "t" in
+    assume ("sz" ≤ array_size "data") ;;
+    assume (#0 < "sz") ;;
+    let: "sz" := "sz" - #1 in
+    match: array_unsafe_get "data" "sz" with
+    | None =>
+        diverge #()
+    | Some "ref" =>
+        array_unsafe_set "data" "sz" &&None ;;
+        safe_dynarray_set_size "t" "sz" ;;
+        !"ref"
+    end.
+
+Definition safe_dynarray_fit_capacity : val :=
+  λ: "t",
+    let: "sz" := safe_dynarray_size "t" in
+    let: "data" := safe_dynarray_data "t" in
+    if: array_size "data" = "sz" then (
+      #()
+    ) else (
+      safe_dynarray_set_data "t" (array_shrink "data" "sz")
+    ).
+
+Definition safe_dynarray_reset : val :=
+  λ: "t",
+    safe_dynarray_set_size "t" #0 ;;
+    safe_dynarray_set_data "t" (array_create #()).
+
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
-
-  Implicit Types b : bool.
-  Implicit Types i : nat.
-  Implicit Types l r : loc.
-  Implicit Types v t fn : val.
-  Implicit Types vs : list val.
-
-  Notation "t '.[size]'" :=
-    t.[0]%stdpp
-  ( at level 5
-  ) : stdpp_scope.
-  Notation "t '.[data]'" :=
-    t.[1]%stdpp
-  ( at level 5
-  ) : stdpp_scope.
-  Notation "t '.[size]'" :=
-    t.[#0]%E
-  ( at level 5
-  ) : expr_scope.
-  Notation "t '.[data]'" :=
-    t.[#1]%E
-  ( at level 5
-  ) : expr_scope.
-
-  Definition safe_dynarray_create : val :=
-    λ: <>,
-      record2_make #0 (array_create #()).
-
-  Definition safe_dynarray_make : val :=
-    λ: "sz" "v",
-      assume (#0 ≤ "sz") ;;
-      record2_make "sz" (array_initi "sz" (λ: <>, &Some (ref "v"))).
-
-  Definition safe_dynarray_initi : val :=
-    λ: "sz" "fn",
-      assume (#0 ≤ "sz") ;;
-      record2_make "sz" (array_initi "sz" (λ: "i", &Some (ref ("fn" "i")))).
-
-  Definition safe_dynarray_size : val :=
-    λ: "t",
-      !"t".[size].
-  #[local] Definition safe_dynarray_data : val :=
-    λ: "t",
-      !"t".[data].
-  Definition safe_dynarray_capacity : val :=
-    λ: "t",
-      array_size (safe_dynarray_data "t").
-
-  #[local] Definition safe_dynarray_set_size : val :=
-    λ: "t" "sz",
-      "t".[size] <- "sz".
-  #[local] Definition safe_dynarray_set_data : val :=
-    λ: "t" "data",
-      "t".[data] <- "data".
-
-  Definition safe_dynarray_is_empty : val :=
-    λ: "t",
-      safe_dynarray_size "t" = #0.
-
-  Definition safe_dynarray_get : val :=
-    λ: "t" "i",
-      match: array_get (safe_dynarray_data "t") "i" with
-      | None =>
-          diverge #()
-      | Some "ref" =>
-          !"ref"
-      end.
-
-  Definition safe_dynarray_set : val :=
-    λ: "t" "i" "v",
-      match: array_get (safe_dynarray_data "t") "i" with
-      | None =>
-          diverge #()
-      | Some "ref" =>
-          "ref" <- "v"
-      end.
-
-  #[local] Definition safe_dynarray_next_capacity : val :=
-    λ: "n",
-      maximum #8 (if: "n" ≤ #512 then #2 * "n" else "n" + "n" `quot` #2).
-  Definition safe_dynarray_reserve : val :=
-    λ: "t" "n",
-      assume (#0 ≤ "n") ;;
-      let: "data" := safe_dynarray_data "t" in
-      let: "cap" := array_size "data" in
-      if: "n" ≤ "cap" then (
-        #()
-      ) else (
-        let: "new_cap" := maximum "n" (safe_dynarray_next_capacity "cap") in
-        let: "new_data" := array_make "new_cap" &&None in
-        array_blit "data" #0 "new_data" #0 (safe_dynarray_size "t") ;;
-        safe_dynarray_set_data "t" "new_data"
-      ).
-  Definition safe_dynarray_reserve_extra : val :=
-    λ: "t" "n",
-      assume (#0 ≤ "n") ;;
-      safe_dynarray_reserve "t" (safe_dynarray_size "t" + "n").
-
-  #[local] Definition safe_dynarray_try_push : val :=
-    λ: "t" "slot",
-      let: "sz" := safe_dynarray_size "t" in
-      let: "data" := safe_dynarray_data "t" in
-      if: array_size "data" ≤ "sz" then (
-        #false
-      ) else (
-        safe_dynarray_set_size "t" (#1 + "sz") ;;
-        array_unsafe_set "data" "sz" "slot" ;;
-        #true
-      ).
-  #[local] Definition safe_dynarray_push_aux : val :=
-    rec: "safe_dynarray_push_aux" "t" "slot" :=
-      safe_dynarray_reserve_extra "t" #1 ;;
-      if: safe_dynarray_try_push "t" "slot" then (
-        #()
-      ) else (
-        "safe_dynarray_push_aux" "t" "slot"
-      ).
-  Definition safe_dynarray_push : val :=
-    λ: "t" "v",
-      let: "slot" := &Some (ref "v") in
-      if: safe_dynarray_try_push "t" "slot" then (
-        #()
-      ) else (
-        safe_dynarray_push_aux "t" "slot"
-      ).
-
-  Definition safe_dynarray_pop : val :=
-    λ: "t",
-      let: "sz" := safe_dynarray_size "t" in
-      let: "data" := safe_dynarray_data "t" in
-      assume ("sz" ≤ array_size "data") ;;
-      assume (#0 < "sz") ;;
-      let: "sz" := "sz" - #1 in
-      match: array_unsafe_get "data" "sz" with
-      | None =>
-          diverge #()
-      | Some "ref" =>
-          array_unsafe_set "data" "sz" &&None ;;
-          safe_dynarray_set_size "t" "sz" ;;
-          !"ref"
-      end.
-
-  Definition safe_dynarray_fit_capacity : val :=
-    λ: "t",
-      let: "sz" := safe_dynarray_size "t" in
-      let: "data" := safe_dynarray_data "t" in
-      if: array_size "data" = "sz" then (
-        #()
-      ) else (
-        safe_dynarray_set_data "t" (array_shrink "data" "sz")
-      ).
-
-  Definition safe_dynarray_reset : val :=
-    λ: "t",
-      safe_dynarray_set_size "t" #0 ;;
-      safe_dynarray_set_data "t" (array_create #()).
 
   Section safe_dynarray_model.
     #[local] Definition slot_model slot v : iProp Σ :=

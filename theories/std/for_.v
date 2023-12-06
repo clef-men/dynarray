@@ -6,20 +6,27 @@ From heap_lang.language Require Import
 From heap_lang.std Require Export
   base.
 
+Implicit Types δ : nat.
+Implicit Types fn : val.
+
+Definition for_ : val :=
+  rec: "for" "beg" "end" "fn" :=
+    if: "end" ≤ "beg" then (
+      #()
+    ) else (
+      "fn" "beg" ;;
+      "for" (#1 + "beg") "end" "fn"
+    ).
+
+Notation "'for:' i = beg 'to' _end 'begin' e 'end'" :=
+  (for_ beg _end (λ: i, e))%E
+( i at level 1,
+  beg, _end, e at level 200,
+  format "'[hv' for:  i  =  beg  to  _end  begin  '/  ' '[' e ']'  '/' end ']'"
+) : expr_scope.
+
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
-
-  Implicit Types δ : nat.
-  Implicit Types fn : val.
-
-  Definition for_ : val :=
-    rec: "for" "beg" "end" "fn" :=
-      if: "end" ≤ "beg" then (
-        #()
-      ) else (
-        "fn" "beg" ;;
-        "for" (#1 + "beg") "end" "fn"
-      ).
 
   #[local] Lemma for_spec_stronger beg i δ Ψ _end fn :
     i = (beg + δ)%Z →
@@ -385,12 +392,5 @@ Section heap_GS.
     wp_apply (for_spec_disentangled (λ _ _, True%I)); iSmash.
   Qed.
 End heap_GS.
-
-Notation "'for:' i = beg 'to' _end 'begin' e 'end'" :=
-  (for_ beg _end (λ: i, e))%E
-( i at level 1,
-  beg, _end, e at level 200,
-  format "'[hv' for:  i  =  beg  to  _end  begin  '/  ' '[' e ']'  '/' end ']'"
-) : expr_scope.
 
 #[global] Opaque for_.

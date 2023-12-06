@@ -9,29 +9,29 @@ From heap_lang.std Require Import
 From heap_lang.persistent Require Export
   base.
 
+Implicit Types v t lst : val.
+
+Definition pstack_empty :=
+  &&Nil.
+
+Definition pstack_is_empty :=
+  lst_is_empty.
+
+Definition pstack_push : val :=
+  λ: "t" "v",
+    &Cons "v" "t".
+
+Definition pstack_pop : val :=
+  λ: "t",
+    match: "t" with
+    | Nil =>
+        &&None
+    | Cons "v" "t'" =>
+        &Some ("v", "t'")
+    end.
+
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
-
-  Implicit Types v t lst : val.
-
-  Definition pstack_empty :=
-    &&Nil.
-
-  Definition pstack_is_empty :=
-    lst_is_empty.
-
-  Definition pstack_push : val :=
-    λ: "t" "v",
-      &Cons "v" "t".
-
-  Definition pstack_pop : val :=
-    λ: "t",
-      match: "t" with
-      | Nil =>
-          &&None
-      | Cons "v" "t'" =>
-          &Some ("v", "t'")
-      end.
 
   Definition pstack_model t vs : iProp Σ :=
     lst_model t vs.

@@ -8,22 +8,22 @@ From heap_lang.std Require Export
 From heap_lang.std Require Import
   dynarray.
 
+Implicit Types v t : val.
+
+Definition stack_create :=
+  dynarray_create.
+
+Definition stack_is_empty :=
+  dynarray_is_empty.
+
+Definition stack_push :=
+  dynarray_push.
+
+Definition stack_pop :=
+  dynarray_pop.
+
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
-
-  Implicit Types v t : val.
-
-  Definition stack_create :=
-    dynarray_create.
-
-  Definition stack_is_empty :=
-    dynarray_is_empty.
-
-  Definition stack_push :=
-    dynarray_push.
-
-  Definition stack_pop :=
-    dynarray_pop.
 
   Definition stack_model t vs :=
     dynarray_model t (reverse vs).

@@ -10,105 +10,105 @@ From heap_lang.std Require Export
 From heap_lang.std Require Import
   for_.
 
+Implicit Types i j n : nat.
+Implicit Types l : loc.
+Implicit Types v t fn acc : val.
+Implicit Types vs vs_left vs_right ws : list val.
+
+Definition chunk_make : val :=
+  λ: "sz" "v",
+    if: #0 < "sz" then (
+      AllocN "sz" "v"
+    ) else (
+      #(inhabitant : loc)
+    ).
+
+#[local] Definition chunk_foldli_aux : val :=
+  rec: "chunk_foldli_aux" "t" "sz" "acc" "fn" "i" :=
+    if: "sz" ≤ "i" then (
+      "acc"
+    ) else (
+      "chunk_foldli_aux" "t" "sz" ("fn" "acc" "i" !"t".["i"]) "fn" (#1 + "i")
+    ).
+Definition chunk_foldli : val :=
+  λ: "t" "sz" "acc" "fn",
+    chunk_foldli_aux "t" "sz" "acc" "fn" #0.
+Definition chunk_foldl : val :=
+  λ: "t" "sz" "acc" "fn",
+    chunk_foldli "t" "sz" "acc" (λ: "acc" <> "v", "fn" "acc" "v").
+
+#[local] Definition chunk_foldri_aux : val :=
+  rec: "chunk_foldri_aux" "t" "fn" "acc" "i" :=
+    if: "i" ≤ #0 then (
+      "acc"
+    ) else (
+      let: "i" := "i" - #1 in
+      "chunk_foldri_aux" "t" "fn" ("fn" "i" !"t".["i"] "acc") "i"
+    ).
+Definition chunk_foldri : val :=
+  λ: "t" "sz" "fn" "acc",
+    chunk_foldri_aux "t" "fn" "acc" "sz".
+Definition chunk_foldr : val :=
+  λ: "t" "sz" "fn" "acc",
+    chunk_foldri "t" "sz" (λ: <> "v" "acc", "fn" "v" "acc") "acc".
+
+Definition chunk_iteri : val :=
+  λ: "t" "sz" "fn",
+    chunk_foldli "t" "sz" #() (λ: <>, "fn").
+Definition chunk_iter : val :=
+  λ: "t" "sz" "fn",
+    chunk_iteri "t" "sz" (λ: <>, "fn").
+
+Definition chunk_applyi : val :=
+  λ: "t" "sz" "fn",
+    chunk_iteri "t" "sz" (λ: "i" "v", "t".["i"] <- "fn" "i" "v").
+Definition chunk_apply : val :=
+  λ: "t" "sz" "fn",
+    chunk_applyi "t" "sz" (λ: <>, "fn").
+
+Definition chunk_initi : val :=
+  λ: "sz" "fn",
+    let: "t" := chunk_make "sz" #() in
+    chunk_applyi "t" "sz" (λ: "i" <>, "fn" "i") ;;
+    "t".
+Definition chunk_init : val :=
+  λ: "sz" "fn",
+    chunk_initi "sz" (λ: <>, "fn" #()).
+
+Definition chunk_mapi : val :=
+  λ: "t" "sz" "fn",
+    chunk_initi "sz" (λ: "i", "fn" "i" !"t".["i"]).
+Definition chunk_map : val :=
+  λ: "t" "sz" "fn",
+    chunk_mapi "t" "sz" (λ: <>, "fn").
+
+Definition chunk_copy : val :=
+  λ: "t" "sz" "t'",
+    chunk_iteri "t" "sz" (λ: "i" "v", "t'".["i"] <- "v").
+
+Definition chunk_resize : val :=
+  λ: "t" "sz" "sz'" "n" "v'",
+    let: "t'" := chunk_make "sz'" "v'" in
+    chunk_copy "t" "n" "t'" ;;
+    "t'".
+Definition chunk_grow : val :=
+  λ: "t" "sz" "sz'" "v'",
+    chunk_resize "t" "sz" "sz'" "sz" "v'".
+Definition chunk_shrink : val :=
+  λ: "t" "sz" "sz'",
+    chunk_resize "t" "sz" "sz'" "sz'" (inhabitant : val).
+Definition chunk_clone : val :=
+  λ: "t" "sz",
+    chunk_shrink "t" "sz" "sz".
+
+Definition chunk_fill : val :=
+  λ: "t" "sz" "v",
+    for: "i" = #0 to "sz" begin
+      "t".["i"] <- "v"
+    end.
+
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
-
-  Implicit Types i j n : nat.
-  Implicit Types l : loc.
-  Implicit Types v t fn acc : val.
-  Implicit Types vs vs_left vs_right ws : list val.
-
-  Definition chunk_make : val :=
-    λ: "sz" "v",
-      if: #0 < "sz" then (
-        AllocN "sz" "v"
-      ) else (
-        #(inhabitant : loc)
-      ).
-
-  #[local] Definition chunk_foldli_aux : val :=
-    rec: "chunk_foldli_aux" "t" "sz" "acc" "fn" "i" :=
-      if: "sz" ≤ "i" then (
-        "acc"
-      ) else (
-        "chunk_foldli_aux" "t" "sz" ("fn" "acc" "i" !"t".["i"]) "fn" (#1 + "i")
-      ).
-  Definition chunk_foldli : val :=
-    λ: "t" "sz" "acc" "fn",
-      chunk_foldli_aux "t" "sz" "acc" "fn" #0.
-  Definition chunk_foldl : val :=
-    λ: "t" "sz" "acc" "fn",
-      chunk_foldli "t" "sz" "acc" (λ: "acc" <> "v", "fn" "acc" "v").
-
-  #[local] Definition chunk_foldri_aux : val :=
-    rec: "chunk_foldri_aux" "t" "fn" "acc" "i" :=
-      if: "i" ≤ #0 then (
-        "acc"
-      ) else (
-        let: "i" := "i" - #1 in
-        "chunk_foldri_aux" "t" "fn" ("fn" "i" !"t".["i"] "acc") "i"
-      ).
-  Definition chunk_foldri : val :=
-    λ: "t" "sz" "fn" "acc",
-      chunk_foldri_aux "t" "fn" "acc" "sz".
-  Definition chunk_foldr : val :=
-    λ: "t" "sz" "fn" "acc",
-      chunk_foldri "t" "sz" (λ: <> "v" "acc", "fn" "v" "acc") "acc".
-
-  Definition chunk_iteri : val :=
-    λ: "t" "sz" "fn",
-      chunk_foldli "t" "sz" #() (λ: <>, "fn").
-  Definition chunk_iter : val :=
-    λ: "t" "sz" "fn",
-      chunk_iteri "t" "sz" (λ: <>, "fn").
-
-  Definition chunk_applyi : val :=
-    λ: "t" "sz" "fn",
-      chunk_iteri "t" "sz" (λ: "i" "v", "t".["i"] <- "fn" "i" "v").
-  Definition chunk_apply : val :=
-    λ: "t" "sz" "fn",
-      chunk_applyi "t" "sz" (λ: <>, "fn").
-
-  Definition chunk_initi : val :=
-    λ: "sz" "fn",
-      let: "t" := chunk_make "sz" #() in
-      chunk_applyi "t" "sz" (λ: "i" <>, "fn" "i") ;;
-      "t".
-  Definition chunk_init : val :=
-    λ: "sz" "fn",
-      chunk_initi "sz" (λ: <>, "fn" #()).
-
-  Definition chunk_mapi : val :=
-    λ: "t" "sz" "fn",
-      chunk_initi "sz" (λ: "i", "fn" "i" !"t".["i"]).
-  Definition chunk_map : val :=
-    λ: "t" "sz" "fn",
-      chunk_mapi "t" "sz" (λ: <>, "fn").
-
-  Definition chunk_copy : val :=
-    λ: "t" "sz" "t'",
-      chunk_iteri "t" "sz" (λ: "i" "v", "t'".["i"] <- "v").
-
-  Definition chunk_resize : val :=
-    λ: "t" "sz" "sz'" "n" "v'",
-      let: "t'" := chunk_make "sz'" "v'" in
-      chunk_copy "t" "n" "t'" ;;
-      "t'".
-  Definition chunk_grow : val :=
-    λ: "t" "sz" "sz'" "v'",
-      chunk_resize "t" "sz" "sz'" "sz" "v'".
-  Definition chunk_shrink : val :=
-    λ: "t" "sz" "sz'",
-      chunk_resize "t" "sz" "sz'" "sz'" (inhabitant : val).
-  Definition chunk_clone : val :=
-    λ: "t" "sz",
-      chunk_shrink "t" "sz" "sz".
-
-  Definition chunk_fill : val :=
-    λ: "t" "sz" "v",
-      for: "i" = #0 to "sz" begin
-        "t".["i"] <- "v"
-      end.
 
   Section chunk_model.
     Definition chunk_model l dq vs : iProp Σ :=

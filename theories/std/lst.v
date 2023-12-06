@@ -84,130 +84,130 @@ Qed.
 #[global] Opaque lst_Cons.
 #[global] Opaque ConsV.
 
+Definition lst_singleton : val :=
+  λ: "v",
+    &Cons "v" &&Nil.
+
+Definition lst_head : val :=
+  λ: "t",
+    match: "t" with
+    | Nil =>
+        Fail
+    | Cons "v" <> =>
+        "v"
+    end.
+Definition lst_tail : val :=
+  λ: "t",
+    match: "t" with
+    | Nil =>
+        Fail
+    | Cons <> "t" =>
+        "t"
+    end.
+
+Definition lst_is_empty : val :=
+  λ: "t",
+    match: "t" with
+    | Nil =>
+        #true
+    | Cons <> <> =>
+        #false
+    end.
+
+Definition lst_get : val :=
+  rec: "lst_get" "t" "i" :=
+    if: "i" ≤ #0 then (
+      lst_head "t"
+    ) else (
+      "lst_get" (lst_tail "t") ("i" - #1)
+    ).
+
+#[local] Definition lst_initi_aux : val :=
+  rec: "lst_initi_aux" "sz" "fn" "i" :=
+    if: "sz" ≤ "i" then (
+      &&Nil
+    ) else (
+      let: "v" := "fn" "i" in
+      &Cons "v" ("lst_initi_aux" "sz" "fn" (#1 + "i"))
+    ).
+Definition lst_initi : val :=
+  λ: "sz" "fn",
+    lst_initi_aux "sz" "fn" #0.
+Definition lst_init : val :=
+  λ: "sz" "fn",
+    lst_initi "sz" (λ: <>, "fn" #()).
+
+#[local] Definition lst_foldli_aux : val :=
+  rec: "lst_foldli_aux" "t" "acc" "fn" "i" :=
+    match: "t" with
+    | Nil =>
+        "acc"
+    | Cons "v" "t" =>
+        "lst_foldli_aux" "t" ("fn" "acc" "i" "v") "fn" (#1 + "i")
+    end.
+Definition lst_foldli : val :=
+  λ: "t" "acc" "fn",
+    lst_foldli_aux "t" "acc" "fn" #0.
+Definition lst_foldl : val :=
+  λ: "t" "acc" "fn",
+    lst_foldli "t" "acc" (λ: "acc" <>, "fn" "acc").
+
+#[local] Definition lst_foldri_aux : val :=
+  rec: "lst_foldri_aux" "t" "fn" "acc" "i" :=
+    match: "t" with
+    | Nil =>
+        "acc"
+    | Cons "v" "t" =>
+        "fn" "i" "v" ("lst_foldri_aux" "t" "fn" "acc" (#1 + "i"))
+    end.
+Definition lst_foldri : val :=
+  λ: "t" "fn" "acc",
+    lst_foldri_aux "t" "fn" "acc" #0.
+Definition lst_foldr : val :=
+  λ: "t" "fn" "acc",
+    lst_foldri "t" (λ: <>, "fn") "acc".
+
+Definition lst_size : val :=
+  λ: "t",
+    lst_foldl "t" #0 (λ: "acc" <>, #1 + "acc").
+
+Definition lst_rev : val :=
+  λ: "t",
+    lst_foldl "t" &&Nil (λ: "acc" "v", &Cons "v" "acc").
+
+Definition lst_app : val :=
+  λ: "t1" "t2",
+    lst_foldr "t1" &Cons "t2".
+Definition lst_snoc : val :=
+  λ: "t" "v",
+    lst_app "t" (lst_singleton "v").
+
+Definition lst_iteri : val :=
+  λ: "t" "fn",
+    lst_foldli "t" #() (λ: <>, "fn").
+Definition lst_iter : val :=
+  λ: "t" "fn",
+    lst_iteri "t" (λ: <>, "fn").
+
+#[local] Definition lst_mapi_aux : val :=
+  rec: "lst_mapi_aux" "t" "fn" "i" :=
+    match: "t" with
+    | Nil =>
+        &&Nil
+    | Cons "v" "t" =>
+        let: "v" := "fn" "i" "v" in
+        let: "t" := "lst_mapi_aux" "t" "fn" (#1 + "i") in
+        &Cons "v" "t"
+    end.
+Definition lst_mapi : val :=
+  λ: "t" "fn",
+    lst_mapi_aux "t" "fn" #0.
+Definition lst_map : val :=
+  λ: "t" "fn",
+    lst_mapi "t" (λ: <>, "fn").
+
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
-
-  Definition lst_singleton : val :=
-    λ: "v",
-      &Cons "v" &&Nil.
-
-  Definition lst_head : val :=
-    λ: "t",
-      match: "t" with
-      | Nil =>
-          Fail
-      | Cons "v" <> =>
-          "v"
-      end.
-  Definition lst_tail : val :=
-    λ: "t",
-      match: "t" with
-      | Nil =>
-          Fail
-      | Cons <> "t" =>
-          "t"
-      end.
-
-  Definition lst_is_empty : val :=
-    λ: "t",
-      match: "t" with
-      | Nil =>
-          #true
-      | Cons <> <> =>
-          #false
-      end.
-
-  Definition lst_get : val :=
-    rec: "lst_get" "t" "i" :=
-      if: "i" ≤ #0 then (
-        lst_head "t"
-      ) else (
-        "lst_get" (lst_tail "t") ("i" - #1)
-      ).
-
-  #[local] Definition lst_initi_aux : val :=
-    rec: "lst_initi_aux" "sz" "fn" "i" :=
-      if: "sz" ≤ "i" then (
-        &&Nil
-      ) else (
-        let: "v" := "fn" "i" in
-        &Cons "v" ("lst_initi_aux" "sz" "fn" (#1 + "i"))
-      ).
-  Definition lst_initi : val :=
-    λ: "sz" "fn",
-      lst_initi_aux "sz" "fn" #0.
-  Definition lst_init : val :=
-    λ: "sz" "fn",
-      lst_initi "sz" (λ: <>, "fn" #()).
-
-  #[local] Definition lst_foldli_aux : val :=
-    rec: "lst_foldli_aux" "t" "acc" "fn" "i" :=
-      match: "t" with
-      | Nil =>
-          "acc"
-      | Cons "v" "t" =>
-          "lst_foldli_aux" "t" ("fn" "acc" "i" "v") "fn" (#1 + "i")
-      end.
-  Definition lst_foldli : val :=
-    λ: "t" "acc" "fn",
-      lst_foldli_aux "t" "acc" "fn" #0.
-  Definition lst_foldl : val :=
-    λ: "t" "acc" "fn",
-      lst_foldli "t" "acc" (λ: "acc" <>, "fn" "acc").
-
-  #[local] Definition lst_foldri_aux : val :=
-    rec: "lst_foldri_aux" "t" "fn" "acc" "i" :=
-      match: "t" with
-      | Nil =>
-          "acc"
-      | Cons "v" "t" =>
-          "fn" "i" "v" ("lst_foldri_aux" "t" "fn" "acc" (#1 + "i"))
-      end.
-  Definition lst_foldri : val :=
-    λ: "t" "fn" "acc",
-      lst_foldri_aux "t" "fn" "acc" #0.
-  Definition lst_foldr : val :=
-    λ: "t" "fn" "acc",
-      lst_foldri "t" (λ: <>, "fn") "acc".
-
-  Definition lst_size : val :=
-    λ: "t",
-      lst_foldl "t" #0 (λ: "acc" <>, #1 + "acc").
-
-  Definition lst_rev : val :=
-    λ: "t",
-      lst_foldl "t" &&Nil (λ: "acc" "v", &Cons "v" "acc").
-
-  Definition lst_app : val :=
-    λ: "t1" "t2",
-      lst_foldr "t1" &Cons "t2".
-  Definition lst_snoc : val :=
-    λ: "t" "v",
-      lst_app "t" (lst_singleton "v").
-
-  Definition lst_iteri : val :=
-    λ: "t" "fn",
-      lst_foldli "t" #() (λ: <>, "fn").
-  Definition lst_iter : val :=
-    λ: "t" "fn",
-      lst_iteri "t" (λ: <>, "fn").
-
-  #[local] Definition lst_mapi_aux : val :=
-    rec: "lst_mapi_aux" "t" "fn" "i" :=
-      match: "t" with
-      | Nil =>
-          &&Nil
-      | Cons "v" "t" =>
-          let: "v" := "fn" "i" "v" in
-          let: "t" := "lst_mapi_aux" "t" "fn" (#1 + "i") in
-          &Cons "v" "t"
-      end.
-  Definition lst_mapi : val :=
-    λ: "t" "fn",
-      lst_mapi_aux "t" "fn" #0.
-  Definition lst_map : val :=
-    λ: "t" "fn",
-      lst_mapi "t" (λ: <>, "fn").
 
   Inductive lst_model_inner : val → list val → Prop :=
     | lst_model_nil :

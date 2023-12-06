@@ -102,47 +102,47 @@ Qed.
 #[global] Opaque descr_Diff.
 #[global] Opaque DiffV.
 
+Definition parray_make : val :=
+  λ: "sz" "v",
+    ref (&Root (array_make "sz" "v")).
+
+#[local] Definition parray_reroot : val :=
+  rec: "parray_reroot" "t" :=
+    match: !"t" with
+    | Root "arr" =>
+        "arr"
+    | Diff "i" "v" "t'" =>
+        let: "arr" := "parray_reroot" "t'" in
+        let: "v'" := array_unsafe_get "arr" "i" in
+        array_unsafe_set "arr" "i" "v" ;;
+        "t'" <- &Diff "i" "v'" "t" ;;
+        "t" <- &Root "arr" ;;
+        "arr"
+    end.
+
+Definition parray_get : val :=
+  λ: "t" "i",
+    array_unsafe_get (parray_reroot "t") "i".
+
+Definition parray_set : val :=
+  λ: "t" "eq" "i" "v",
+    let: "arr" := parray_reroot "t" in
+    let: "v'" := array_unsafe_get "arr" "i" in
+    if: "eq" "v" "v'" then (
+      "t"
+    ) else (
+      array_unsafe_set "arr" "i" "v" ;;
+      let: "t'" := ref !"t" in
+      "t" <- &Diff "i" "v'" "t'" ;;
+      "t'"
+    ).
+
 Class ParrayG Σ `{heap_GS : !heapGS Σ} := {
   parray_G_map_G : ghost_mapG Σ loc (list val) ;
 }.
 
 Section parray_G.
   Context `{parray_G : ParrayG Σ}.
-
-  Definition parray_make : val :=
-    λ: "sz" "v",
-      ref (&Root (array_make "sz" "v")).
-
-  #[local] Definition parray_reroot : val :=
-    rec: "parray_reroot" "t" :=
-      match: !"t" with
-      | Root "arr" =>
-          "arr"
-      | Diff "i" "v" "t'" =>
-          let: "arr" := "parray_reroot" "t'" in
-          let: "v'" := array_unsafe_get "arr" "i" in
-          array_unsafe_set "arr" "i" "v" ;;
-          "t'" <- &Diff "i" "v'" "t" ;;
-          "t" <- &Root "arr" ;;
-          "arr"
-      end.
-
-  Definition parray_get : val :=
-    λ: "t" "i",
-      array_unsafe_get (parray_reroot "t") "i".
-
-  Definition parray_set : val :=
-    λ: "t" "eq" "i" "v",
-      let: "arr" := parray_reroot "t" in
-      let: "v'" := array_unsafe_get "arr" "i" in
-      if: "eq" "v" "v'" then (
-        "t"
-      ) else (
-        array_unsafe_set "arr" "i" "v" ;;
-        let: "t'" := ref !"t" in
-        "t" <- &Diff "i" "v'" "t'" ;;
-        "t'"
-      ).
 
   Record parray_name := {
     parray_name_map : gname ;
