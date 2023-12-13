@@ -141,6 +141,16 @@ Class ParrayG Σ `{heap_GS : !heapGS Σ} := {
   parray_G_map_G : ghost_mapG Σ loc (list val) ;
 }.
 
+Definition parray_Σ := #[
+  ghost_mapΣ loc (list val)
+].
+#[global] Instance subG_parray_Σ Σ `{heap_GS : !heapGS Σ} :
+  subG parray_Σ Σ →
+  ParrayG Σ.
+Proof.
+  solve_inG.
+Qed.
+
 Section parray_G.
   Context `{parray_G : ParrayG Σ}.
 
@@ -190,11 +200,11 @@ Section parray_G.
     (∀ v, Timeless (τ v)) →
     Timeless (parray_inv_inner τ γ map root).
   Proof.
-    rewrite /Timeless. iIntros (Hτ) "(Hmap_auth & Hmap)".
+    rewrite /Timeless. iIntros "%Hτ (Hmap_auth & Hmap)".
     iSplitL "Hmap_auth".
     - iApply (timeless with "Hmap_auth").
     - unshelve iApply (timeless _ (Timeless := big_sepM_timeless _ _ _) with "Hmap").
-      rewrite /Timeless. iIntros (l vs Hlookup) "(%descr & >%Hvs_len & Hl & Hdescr)".
+      rewrite /Timeless. iIntros "%l %vs _ (%descr & >%Hvs_len & Hl & Hdescr)".
       iExists descr.
       iSplit; first iSmash.
       iSplitL "Hl"; first iApply (timeless with "Hl").
@@ -203,13 +213,14 @@ Section parray_G.
         iSplit; first iSmash.
         iSplitL "Harr"; first iApply (timeless with "Harr").
         unshelve iApply (timeless _ (Timeless := big_sepL_timeless _ _ _) with "Hvs").
-        rewrite /Timeless. iSteps. iApply Hτ. iSmash.
-      + iDestruct "Hdescr" as "(%i & %v & %l' & %vs' & >(%Hi & %Hvs) & >-> & Hmap_elem' & Hτ)".
+        rewrite /Timeless. iIntros "%i %v _ Hv".
+        iApply (Hτ with "Hv").
+      + iDestruct "Hdescr" as "(%i & %v & %l' & %vs' & >(%Hi & %Hvs) & >-> & Hmap_elem' & Hv)".
         iExists i, v, l', vs'.
         iSplit; first iSmash.
         iSplit; first iSmash.
         iSplit; first iApply (timeless with "Hmap_elem'").
-        iApply (Hτ with "Hτ").
+        iApply (Hτ with "Hv").
   Qed.
   #[global] Instance parray_inv_timeless τ `{!iType _ τ} γ :
     (∀ v, Timeless (τ v)) →
@@ -323,9 +334,8 @@ Section parray_G.
       iDestruct (big_sepM_delete with "[$Hmap Hl' Harr Hvs']") as "Hmap"; first done.
       { iExists _. rewrite decide_True //. clear Hvs. iSmash. }
       iSmash.
-    - iDestruct (big_sepM_delete _ _ l with "Hmap") as "((%descr & _ & Hl & Hdescr) & Hmap)".
-      { rewrite lookup_delete_ne //. }
-      rewrite decide_False //. iDestruct "Hdescr" as "(%i' & %v' & %l'' & %vs'' & _ & -> & _ & _)".
+    - iDestruct (big_sepM_delete _ _ l with "Hmap") as "((%descr & _ & Hl & Hdescr) & Hmap)"; first rewrite lookup_delete_ne //.
+      rewrite decide_False //. iDestruct "Hdescr" as "(%i'' & %w & %l'' & %vs'' & _ & -> & _ & _)".
       wp_store.
       iApply "HΦ". iFrame.
       iDestruct (big_sepL_insert_acc with "Hvs'") as "(Hvs'!!!i & Hvs')"; first done.
@@ -410,9 +420,9 @@ Section parray_G.
         iDestruct (mapsto_ne with "Hroot Hroot_") as %[]. done.
       }
       set vs_root := <[i := v]> vs.
-      iMod (parray_map_insert root vs_root with "Hmap_auth") as "(Hmap_auth & #Hmap_elem_root)"; first done.
+      iMod (parray_map_insert with "Hmap_auth") as "(Hmap_auth & #Hmap_elem_root)"; first done.
       iSplitR "Hmap_elem_root"; last iSmash. iExists (<[root := vs_root]> map), root. iFrame.
-      iApply (big_sepM_insert _ _ root); first done. iSplitL "Hroot Harr Hvs".
+      iApply big_sepM_insert; first done. iSplitL "Hroot Harr Hvs".
       { iExists _. rewrite decide_True //. iSteps. rewrite insert_length //. }
       iApply (big_sepM_delete _ _ l); first done. iSplitL "Hl".
       { iExists _. rewrite decide_False; first congruence. iStep 2. iExists i, (vs !!! i), root, vs_root. iSteps.
