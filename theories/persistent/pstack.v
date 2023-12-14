@@ -78,8 +78,7 @@ Section heap_GS.
     iIntros "%Φ #Hlst HΦ".
     wp_rec. wp_pures.
     iApply "HΦ".
-    iApply lst_model_Cons.
-    iSmash.
+    iApply (lst_model_Cons with "Hlst").
   Qed.
 
   Lemma pstack_pop_spec t vs :
@@ -105,7 +104,7 @@ Section heap_GS.
     - iApply (wp_lst_match_Nil with "Hlst").
       iSpecialize ("HΦ" $! None). iSmash.
     - iApply (wp_lst_match_Cons with "Hlst"); first done. iIntros "%lst' #Hlst' /=".
-      iSpecialize ("HΦ" $! (Some (v, lst')%V)). iSmash.
+      iSpecialize ("HΦ" $! (Some (v, lst')%V)). iSteps. iFrame "#∗".
   Qed.
 End heap_GS.
 

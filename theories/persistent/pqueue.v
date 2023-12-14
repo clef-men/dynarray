@@ -147,7 +147,7 @@ Section heap_GS.
       wp_pures.
       iApply ("HΦ" $! (Some (_, _)%V)). iExists (vs_back ++ reverse vs_front), v_front, _. iSplitR.
       { iSteps. list_simplifier. rewrite reverse_cons //. }
-      iSmash.
+      iSteps; iFrame "#∗".
   Qed.
 End heap_GS.
 

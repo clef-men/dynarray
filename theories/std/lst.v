@@ -84,6 +84,53 @@ Qed.
 #[global] Opaque lst_Cons.
 #[global] Opaque ConsV.
 
+Fixpoint lst_model' vs :=
+  match vs with
+  | [] =>
+      &&Nil
+  | v :: vs =>
+      &&Cons v (lst_model' vs)
+  end.
+#[global] Arguments lst_model' !_ / : assert.
+
+Section heap_GS.
+  Context `{heap_GS : !heapGS Σ}.
+
+  Definition lst_model t vs : iProp Σ :=
+    ⌜t = lst_model' vs⌝.
+
+  Lemma lst_model_Nil :
+    ⊢ lst_model &&Nil [].
+  Proof.
+    iSmash.
+  Qed.
+  Lemma wp_lst_match_Nil t e1 x1 x2 e2 Φ :
+    lst_model t [] -∗
+    WP e1 {{ Φ }} -∗
+    WP match:: t with Nil => e1 | Cons x1 x2 => e2 end {{ Φ }}.
+  Proof.
+    iSmash.
+  Qed.
+
+  Lemma lst_model_Cons v t vs :
+    lst_model t vs ⊢
+    lst_model (&&Cons v t) (v :: vs).
+  Proof.
+    iSmash.
+  Qed.
+  Lemma wp_lst_match_Cons {t vs} v vs' e1 x1 x2 e2 Φ :
+    vs = v :: vs' →
+    lst_model t vs -∗
+    ( ∀ t',
+      lst_model t' vs' -∗
+      WP subst x1 v (subst x2 t' e2) {{ Φ }}
+    ) -∗
+    WP match:: t with Nil => e1 | Cons x1 x2 => e2 end {{ Φ }}.
+  Proof.
+    iSmash.
+  Qed.
+End heap_GS.
+
 Definition lst_singleton : val :=
   λ: "v",
     &Cons "v" &&Nil.
@@ -209,61 +256,6 @@ Definition lst_map : val :=
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
 
-  Inductive lst_model_inner : val → list val → Prop :=
-    | lst_model_nil :
-        lst_model_inner &&Nil []
-    | lst_model_cons v t vs :
-        lst_model_inner t vs →
-        lst_model_inner (&&Cons v t) (v :: vs).
-  #[local] Hint Constructors lst_model_inner : core.
-
-  Definition lst_model t vs : iProp Σ :=
-    ⌜lst_model_inner t vs⌝.
-
-  #[global] Instance lst_model_persistent t vs :
-    Persistent (lst_model t vs).
-  Proof.
-    apply _.
-  Qed.
-  #[global] Instance lst_model_timeless t vs :
-    Timeless (lst_model t vs).
-  Proof.
-    apply _.
-  Qed.
-
-  Lemma lst_model_Nil :
-    ⊢ lst_model &&Nil [].
-  Proof.
-    iSmash.
-  Qed.
-  Lemma wp_lst_match_Nil t e1 x1 x2 e2 Φ :
-    lst_model t [] -∗
-    WP e1 {{ Φ }} -∗
-    WP match:: t with Nil => e1 | Cons x1 x2 => e2 end {{ Φ }}.
-  Proof.
-    iIntros "%Ht H". invert Ht.
-    iSmash.
-  Qed.
-
-  Lemma lst_model_Cons v t vs :
-    lst_model t vs ⊢
-    lst_model (&&Cons v t) (v :: vs).
-  Proof.
-    auto.
-  Qed.
-  Lemma wp_lst_match_Cons {t vs} v vs' e1 x1 x2 e2 Φ :
-    vs = v :: vs' →
-    lst_model t vs -∗
-    ( ∀ t',
-      lst_model t' vs' -∗
-      WP subst x1 v (subst x2 t' e2) {{ Φ }}
-    ) -∗
-    WP match:: t with Nil => e1 | Cons x1 x2 => e2 end {{ Φ }}.
-  Proof.
-    iIntros (->) "%Ht H". invert Ht.
-    iSmash.
-  Qed.
-
   Lemma lst_singleton_spec v :
     {{{ True }}}
       lst_singleton v
@@ -272,9 +264,7 @@ Section heap_GS.
       lst_model t [v]
     }}}.
   Proof.
-    iIntros "%Φ _ HΦ".
-    wp_rec. wp_pures.
-    iApply "HΦ". auto.
+    iSmash.
   Qed.
 
   Lemma lst_head_spec {t vs} v vs' :
@@ -287,7 +277,6 @@ Section heap_GS.
       RET v; True
     }}}.
   Proof.
-    iIntros (->) "%Φ %Ht HΦ". invert Ht.
     iSmash.
   Qed.
 
@@ -302,7 +291,6 @@ Section heap_GS.
       lst_model t' vs'
     }}}.
   Proof.
-    iIntros (->) "%Φ %Ht HΦ". invert Ht.
     iSmash.
   Qed.
 
@@ -315,8 +303,8 @@ Section heap_GS.
       RET #(bool_decide (vs = [])); True
     }}}.
   Proof.
-    iIntros "%Φ" ([]) "HΦ".
-    all: iSmash.
+    iIntros "%Φ -> HΦ".
+    destruct vs; iSmash.
   Qed.
 
   Lemma lst_get_spec v t (i : Z) vs :
@@ -380,7 +368,7 @@ Section heap_GS.
       wp_apply ("IH" $! (vs_left ++ [v]) (S i) with "[] [] [] [$HΨ //]"); rewrite ?app_length; [iSmash.. |]. iIntros "%t %vs_right (%Hvs_right & %Ht & HΨ)".
       wp_pures.
       iApply ("HΦ" $! _ (v :: vs_right)).
-      rewrite -assoc. simpl in Hvs_right. iSteps. auto with iFrame.
+      rewrite -assoc. simpl in Hvs_right. iSmash.
   Qed.
   Lemma lst_initi_spec Ψ sz fn :
     {{{
@@ -912,7 +900,7 @@ Section heap_GS.
   Proof.
     iIntros "%Φ Ht HΦ".
     wp_rec.
-    pose Ψ i vs' acc := (
+    pose Ψ i vs' acc : iProp Σ := (
       lst_model acc (reverse vs')
     )%I.
     wp_smart_apply (lst_foldl_spec Ψ with "[$Ht]"); last iSmash.
@@ -932,7 +920,7 @@ Section heap_GS.
   Proof.
     iIntros "%Φ (#Ht1 & #Ht2) HΦ".
     wp_rec.
-    pose Ψ i acc vs := (
+    pose Ψ i acc vs : iProp Σ := (
       lst_model acc (vs ++ vs2)
     )%I.
     wp_smart_apply (lst_foldr_spec Ψ with "[$Ht1]"); last iSmash.
@@ -1212,7 +1200,7 @@ Section heap_GS.
       iIntros "%t' %ws_right (%Hvs & %Ht' & HΨ)".
       wp_pures.
       iApply ("HΦ" $! _ (w :: ws_right)).
-      rewrite -!assoc. rewrite app_length /= in Hvs. iSteps. auto.
+      rewrite -!assoc. rewrite app_length /= in Hvs. iSmash.
   Qed.
   Lemma lst_mapi_spec Ψ t vs fn :
     {{{
@@ -1458,5 +1446,3 @@ End heap_GS.
 #[global] Opaque lst_iter.
 #[global] Opaque lst_mapi.
 #[global] Opaque lst_map.
-
-#[global] Opaque lst_model.
