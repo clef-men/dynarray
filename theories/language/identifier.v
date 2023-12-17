@@ -33,7 +33,7 @@ Section heap_GS.
     identifier_model id -∗
     False.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
 
   Lemma wp_new_id E :
@@ -46,7 +46,7 @@ Section heap_GS.
   Proof.
     iIntros "%Φ _ HΦ".
     wp_apply (wp_new_proph with "[//]").
-    iSmash.
+    iSteps.
   Qed.
 End heap_GS.
 

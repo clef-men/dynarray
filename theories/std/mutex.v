@@ -99,7 +99,7 @@ Section mutex.
     wp_smart_apply (mutex_lock_spec with "Hinv"). iIntros "(Hlocked & HP)".
     wp_smart_apply (wp_wand with "(Hfn Hlocked HP)"). iIntros "%v (Hlocked & HP & HΨ)".
     wp_smart_apply (mutex_unlock_spec with "[$Hinv $Hlocked $HP]").
-    iSmash.
+    iSteps.
   Qed.
 End mutex.
 

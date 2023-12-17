@@ -65,7 +65,7 @@ Section agree_G.
     Proof.
       iIntros "H1 H2".
       iDestruct (agree_on_agree with "H1 H2") as %?.
-      iSmash.
+      iSteps.
     Qed.
     Lemma agree_on_agree_L `{!LeibnizEquiv $ oFunctor_apply F $ iPropO Σ} γ a1 a2 :
       agree_on γ a1 -∗
@@ -74,7 +74,7 @@ Section agree_G.
     Proof.
       iIntros "H1 H2".
       iDestruct (agree_on_agree_discrete with "H1 H2") as %?%leibniz_equiv.
-      iSmash.
+      iSteps.
     Qed.
   End discrete.
 End agree_G.

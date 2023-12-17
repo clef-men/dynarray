@@ -84,10 +84,10 @@ Section heap_GS.
     wp_smart_apply (lst_is_empty_spec with "Hfront"). iIntros "_".
     destruct vs_front as [| v_front vs_front]; wp_pures.
     - wp_apply (lst_is_empty_spec with "Hback"). iIntros "_".
-      destruct vs_back; iSmash.
+      destruct vs_back; iSteps.
     - rewrite bool_decide_eq_false_2; last first.
       { rewrite reverse_cons. intros (_ & (_ & [=])%app_eq_nil)%app_eq_nil. }
-      iSmash.
+      iSteps.
   Qed.
 
   Lemma pqueue_push_spec t vs v :

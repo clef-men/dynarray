@@ -29,14 +29,14 @@ Section bi.
     Proof.
       iIntros "%Hl2 HΦ1 HΦ". remember (length l1) as sz eqn:Hl1.
       iInduction sz as [| sz] "IH" forall (l1 l2 Hl1 Hl2).
-      { apply symmetry, nil_length_inv in Hl2 as ->. iSmash. }
-      destruct (rev_elim l1) as [-> | (x1 & l1' & ->)]; first iSmash.
-      destruct (rev_elim l2) as [-> | (x2 & l2' & ->)]; first iSmash.
+      { apply symmetry, nil_length_inv in Hl2 as ->. iSteps. }
+      destruct (rev_elim l1) as [-> | (x1 & l1' & ->)]; first iSteps.
+      destruct (rev_elim l2) as [-> | (x2 & l2' & ->)]; first iSteps.
       rewrite !app_length !Nat.add_1_r !Nat.succ_inj_wd in Hl1 Hl2.
       rewrite List.seq_S /=. iDestruct (big_sepL_snoc with "HΦ") as "(HΦ & HΦ')".
       iDestruct (big_sepL_snoc with "HΦ1") as "(HΦ1 & HΦ1')".
       iApply big_sepL_snoc. iSplitL "HΦ HΦ1".
-      - iApply ("IH" with "[] [] HΦ1 [HΦ]"); try iSmash.
+      - iApply ("IH" with "[] [] HΦ1 [HΦ]"); [iSteps.. |].
         iApply (big_sepL_mono with "HΦ"). iIntros "%k %_k %H_k HΦ %x1' %x2' % HΦ1". apply lookup_seq in H_k as (-> & ?).
         iApply "HΦ"; naive_solver eauto using lookup_app_l_Some.
       - rewrite -Hl1 -Hl2. iApply ("HΦ'" with "[] HΦ1'"). rewrite !list_lookup_middle //.
@@ -94,7 +94,7 @@ Section bi.
       all: iApply (big_sepL_mono_strong' with "H"); first rewrite !seq_length //.
       all: iIntros "!>" (k ? ? ((-> & _)%lookup_seq & (-> & _)%lookup_seq)).
       all: assert (i + j + k - j = i + k) as -> by lia.
-      all: iSmash.
+      all: iSteps.
     Qed.
     Lemma big_sepL_seq_shift_1 `{!BiAffine PROP} j i sz (Φ : nat → PROP) :
       ([∗ list] k ∈ seq i sz, Φ k) ⊢
@@ -151,7 +151,7 @@ Section bi.
       all: iApply (big_sepL_mono_strong' with "H"); first rewrite replicate_length seq_length //.
       1: iIntros "!>" (? ? ? ((-> & _)%lookup_replicate_1 & (-> & _)%lookup_seq)).
       2: iIntros "!>" (? ? ? ((-> & _)%lookup_seq & (-> & _)%lookup_replicate_1)).
-      all: iSmash.
+      all: iSteps.
     Qed.
     Lemma big_sepL_replicate_1 `{!BiAffine PROP} Φ n x :
       ([∗ list] k ↦ y ∈ replicate n x, Φ k y) ⊢

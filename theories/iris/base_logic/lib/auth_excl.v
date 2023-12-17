@@ -68,7 +68,7 @@ Section auth_excl_G.
   Proof.
     iIntros.
     iMod (own_alloc (●E a ⋅ ◯E b)) as "(% & ? & ?)"; first by apply auth_excl_both_valid.
-    iSmash.
+    iSteps.
   Qed.
   Lemma auth_excl_alloc' a :
     ⊢ |==> ∃ γ,
@@ -248,7 +248,7 @@ Section auth_excl_G.
   Proof.
     iIntros "% H● H◯".
     iMod (own_update_2 with "H● H◯") as "(? & ?)"; first by apply auth_excl_both_update.
-    iSmash.
+    iSteps.
   Qed.
   Lemma auth_excl_update' {γ a b} a' :
     auth_excl_auth γ (DfracOwn 1) a -∗

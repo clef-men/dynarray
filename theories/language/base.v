@@ -17,11 +17,11 @@ Proof.
   iIntros "%Hdq H↦". destruct dq as [q1 | | q1].
   - destruct (decide (q1 < 1)%Qp) as [Hq1 | Hq1].
     + apply Qp.lt_sum in Hq1 as (q2 & ->).
-      iDestruct (fractional_split with "H↦") as "(H↦1 & _)". iSmash.
+      iDestruct (fractional_split with "H↦") as "(H↦1 & _)". iSteps.
     + apply dfrac_valid_own, Qp.le_lteq in Hdq as [| ->]; done.
   - iApply (mapsto_persist with "H↦").
   - apply Qp.lt_sum in Hdq as (q2 & ->).
     iDestruct (fractional_split with "H↦") as "(H↦1 & H↦2)".
     iMod (mapsto_persist with "H↦2") as "H↦2".
-    iDestruct (mapsto_combine with "H↦1 H↦2") as "($ & _)". iSmash.
+    iDestruct (mapsto_combine with "H↦1 H↦2") as "($ & _)". iSteps.
 Qed.

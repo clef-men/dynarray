@@ -40,10 +40,10 @@ Section atomic_acc.
     iApply (atomic_acc_wand with "[HR] H"). iSplit.
     - iIntros "HP2".
       iApply HP.
-      iSmash.
+      iSteps.
     - iIntros "%x %y HΨ2". rewrite !tele_app_bind.
       iApply HΨ.
-      iSmash.
+      iSteps.
   Qed.
   Lemma atomic_acc_frame_l R Eo Ei α P β Ψ :
     R -∗
@@ -100,7 +100,7 @@ Section atomic_update.
     - iIntros "%y Hβ".
       iMod ("H" with "Hβ") as "HΨ1".
       iApply "HΨ".
-      iSmash.
+      iSteps.
   Qed.
   Lemma atomic_update_wand Eo Ei α β Ψ1 Ψ2 :
     atomic_update Eo Ei α β Ψ1 -∗
@@ -118,7 +118,7 @@ Section atomic_update.
     rewrite /Frame. iIntros "%HΨ (HR & H)".
     iApply (atomic_update_wand with "H"). iIntros "%x %y HΨ2". rewrite !tele_app_bind.
     iApply HΨ.
-    iSmash.
+    iSteps.
   Qed.
   Lemma atomic_update_frame_l R Eo Ei α β Ψ :
     R -∗
@@ -189,7 +189,7 @@ Section atomic_wp.
     iApply (atomic_update_wand with "HΦ"). iIntros "%x %y HΨ2". rewrite !tele_app_bind. iIntros "HΨ1".
     iApply "HΨ2".
     iApply "HΨ".
-    iSmash.
+    iSteps.
   Qed.
   Lemma atomic_wp_wand e E α β Ψ1 Ψ2 f :
     atomic_wp e E α β Ψ1 f -∗
@@ -207,7 +207,7 @@ Section atomic_wp.
     rewrite /Frame. iIntros "%HΨ (HR & H)".
     iApply (atomic_wp_wand with "H"). iIntros "%x %y HΨ2". rewrite !tele_app_bind.
     iApply HΨ.
-    iSmash.
+    iSteps.
   Qed.
   Lemma atomic_wp_frame_l R e E α β Ψ f :
     R -∗
@@ -216,7 +216,7 @@ Section atomic_wp.
   Proof.
     iIntros "HR H".
     iApply (atomic_wp_wand with "H").
-    iSmash.
+    iSteps.
   Qed.
   Lemma atomic_wp_frame_r R e E α β Ψ f :
     atomic_wp e E α β Ψ f -∗
@@ -225,7 +225,7 @@ Section atomic_wp.
   Proof.
     iIntros "H HR".
     iApply (atomic_wp_wand with "H").
-    iSmash.
+    iSteps.
   Qed.
 
   Lemma atomic_wp_mask_weaken E1 E2 e α β Ψ f :
@@ -236,7 +236,7 @@ Section atomic_wp.
     intros. rewrite /atomic_wp.
     iIntros "H %Φ HΦ".
     iDestruct (atomic_update_mask_weaken _ (⊤ ∖ E1) with "HΦ") as "HΦ"; first solve_ndisj.
-    iSmash.
+    iSteps.
   Qed.
 
   Lemma atomic_wp_seq e E α β Ψ f :
@@ -446,7 +446,7 @@ Section atomic_triple.
     iApply (atomic_update_wand with "HΦ"). iIntros "%x %y HΨ2". rewrite !tele_app_bind. iIntros "HΨ1".
     iApply "HΨ2".
     iApply "HΨ".
-    iSmash.
+    iSteps.
   Qed.
   Lemma atomic_triple_wand e E P α β Ψ1 Ψ2 f :
     atomic_triple e E P α β Ψ1 f -∗
@@ -464,7 +464,7 @@ Section atomic_triple.
     rewrite /Frame. iIntros "/= %HΨ (#HR & H)".
     iApply (atomic_triple_wand with "H"). iIntros "!> %x %y HΨ2". rewrite !tele_app_bind.
     iApply HΨ.
-    iSmash.
+    iSteps.
   Qed.
   Lemma atomic_triple_frame_l R e E P α β Ψ f :
     atomic_triple e E P α β Ψ f ⊢
@@ -473,7 +473,7 @@ Section atomic_triple.
     iIntros "#H !> %Φ (HR & HP) HΦ".
     iApply ("H" with "HP").
     iApply (atomic_update_wand with "HΦ"). iIntros "%x %y HΦ". rewrite !tele_app_bind.
-    iSmash.
+    iSteps.
   Qed.
   Lemma atomic_triple_frame_r R e E P α β Ψ f :
     atomic_triple e E P α β Ψ f ⊢
@@ -482,7 +482,7 @@ Section atomic_triple.
     iIntros "#H !> %Φ (HP & HR) HΦ".
     iApply ("H" with "HP").
     iApply (atomic_update_wand with "HΦ"). iIntros "%x %y HΦ". rewrite !tele_app_bind.
-    iSmash.
+    iSteps.
   Qed.
 
   Lemma atomic_triple_mask_weaken E1 E2 e P α β Ψ f :
@@ -493,7 +493,7 @@ Section atomic_triple.
     intros. rewrite /atomic_triple.
     iIntros "#H !> %Φ HP HΦ".
     iDestruct (atomic_update_mask_weaken _ (⊤ ∖ E1) with "HΦ") as "HΦ"; first solve_ndisj.
-    iSmash.
+    iSteps.
   Qed.
 
   Lemma atomic_triple_seq e E P α β Ψ f :

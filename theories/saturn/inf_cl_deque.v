@@ -433,7 +433,7 @@ Section inf_cl_deque_G.
   Proof.
     iIntros "Hctl₁ Hctl₂".
     iDestruct (auth_excl_agree with "Hctl₁ Hctl₂") as %(? & ?%functional_extensionality).
-    iSmash.
+    iSteps.
   Qed.
   #[local] Lemma inf_cl_deque_ctl_update {γ back1 priv1 back2 priv2} back priv :
     inf_cl_deque_ctl₁ γ back1 priv1 -∗
@@ -493,7 +493,7 @@ Section inf_cl_deque_G.
     unfold_state. iDestruct "Hstate" as "[Hstate | [Hstate | (Hlock & [Hstate | Hstate])]]";
       iDestruct "Hstate" as "(%Hstate & Hhist_auth & %Hhist & Hstate)";
       [lia.. |].
-    assert (front' = front) as -> by lia. iSmash.
+    assert (front' = front) as -> by lia. iSteps.
   Qed.
 
   #[local] Lemma inf_cl_deque_hist_alloc :
@@ -531,7 +531,7 @@ Section inf_cl_deque_G.
       inf_cl_deque_model₂' γ_model [].
   Proof.
     iMod (auth_excl_alloc' (auth_excl_G := inf_cl_deque_G_model_G) []) as "(%γ_model & Hmodel₁ & Hmodel₂)".
-    iSmash.
+    iSteps.
   Qed.
   #[local] Lemma inf_cl_deque_model_agree γ model1 model2 :
     inf_cl_deque_model₁ γ model1 -∗
@@ -540,7 +540,7 @@ Section inf_cl_deque_G.
   Proof.
     iIntros "Hmodel₁ Hmodel₂".
     iDestruct (auth_excl_agree_L with "Hmodel₂ Hmodel₁") as %->.
-    iSmash.
+    iSteps.
   Qed.
   #[local] Lemma inf_cl_deque_model_update {γ model1 model2} model :
     inf_cl_deque_model₁ γ model1 -∗
@@ -550,7 +550,7 @@ Section inf_cl_deque_G.
   Proof.
     iIntros "Hmodel₁ Hmodel₂".
     iMod (auth_excl_update' with "Hmodel₂ Hmodel₁") as "(Hmodel₂ & Hmodel₁)".
-    iSmash.
+    iSteps.
   Qed.
 
   #[local] Lemma inf_cl_deque_lock_alloc :
@@ -585,7 +585,7 @@ Section inf_cl_deque_G.
       inf_cl_deque_winner' γ_winner.
   Proof.
     iMod (auth_excl_alloc' (auth_excl_G := inf_cl_deque_G_winner_G) (inhabitant, λ _, Next inhabitant)) as "(%γ_winner & Hwinner₁ & Hwinner₂)".
-    iSmash.
+    iSteps.
   Qed.
   #[local] Lemma inf_cl_deque_winner₁_exclusive γ front1 Φ1 front2 Φ2 :
     inf_cl_deque_winner₁ γ front1 Φ1 -∗
@@ -628,9 +628,9 @@ Section inf_cl_deque_G.
     iIntros "Hwinner₁ Hwinner₂".
     iDestruct (auth_excl_agree with "Hwinner₂ Hwinner₁") as "#HΦ".
     rewrite prod_equivI /=. iDestruct "HΦ" as "(% & HΦ)". simplify.
-    iFrame. iSplit; first iSmash.
+    iFrame. iSplit; first iSteps.
     rewrite discrete_fun_equivI. iDestruct ("HΦ" $! v) as "HΦv". rewrite later_equivI.
-    iModIntro. iRewrite "HΦv". iSmash.
+    iModIntro. iRewrite "HΦv". iSteps.
   Qed.
   #[local] Lemma inf_cl_deque_winner_update {γ front1 Φ1 front2 Φ2} front Φ :
     inf_cl_deque_winner₁ γ front1 Φ1 -∗
@@ -640,7 +640,7 @@ Section inf_cl_deque_G.
   Proof.
     iIntros "Hwinner₁ Hwinner₂".
     iMod (auth_excl_update (auth_excl_G := inf_cl_deque_G_winner_G) (front, Next ∘ Φ) with "Hwinner₂ Hwinner₁") as "($ & $)"; first done.
-    iSmash.
+    iSteps.
   Qed.
   #[local] Lemma inf_cl_deque_winner₁_state γ ι front front' back hist model prophs Φ :
     inf_cl_deque_winner₁ γ front Φ -∗
@@ -670,7 +670,7 @@ Section inf_cl_deque_G.
           iDestruct (inf_cl_deque_winner₁_exclusive with "Hwinner₁ Hwinner₁'") as %[].
         * iDestruct "Hstate" as "(%Φ' & Hwinner₂)".
           iDestruct (inf_cl_deque_winner_agree inhabitant with "Hwinner₁ Hwinner₂") as "(<- & _ & Hwinner₁ & Hwinner₂)".
-          iSmash.
+          iSteps.
       + iDestruct (inf_cl_deque_winner₁_exclusive' with "Hwinner₁ Hstate") as %[].
   Qed.
   #[local] Lemma inf_cl_deque_winner₂_state γ ι front front' back hist model prophs Φ :
@@ -707,13 +707,13 @@ Section inf_cl_deque_G.
       + iDestruct "Hstate" as "[Hstate | (Hid & %Φ' & Hwinner₁ & HΦ')]".
         * iDestruct (inf_cl_deque_winner₂_exclusive' with "Hwinner₂ Hstate") as %[].
         * iDestruct (inf_cl_deque_winner_agree inhabitant with "Hwinner₁ Hwinner₂") as "(-> & _ & Hwinner₁ & Hwinner₂)".
-          pose proof Hprophs as (-> & _)%head_Some_elem_of%elem_of_list_filter. iSmash.
+          pose proof Hprophs as (-> & _)%head_Some_elem_of%elem_of_list_filter. iSteps.
       + iDestruct (inf_cl_deque_winner₂_exclusive' with "Hwinner₂ Hstate") as %[].
     - iDestruct "Hstate" as "(Hlock & [(<- & Hhist_auth & -> & Hstate) | (_ & _ & _ & Hstate)])".
       + unfold_state. destruct (head $ filter _ _) as [(_front' & id) |] eqn:Hprophs.
         * iDestruct "Hstate" as "(%Φ' & Hwinner₁ & HΦ')".
           iDestruct (inf_cl_deque_winner_agree inhabitant with "Hwinner₁ Hwinner₂") as "(-> & _ & Hwinner₁ & Hwinner₂)".
-          pose proof Hprophs as (-> & _)%head_Some_elem_of%elem_of_list_filter. iSmash.
+          pose proof Hprophs as (-> & _)%head_Some_elem_of%elem_of_list_filter. iSteps.
         * iDestruct "Hstate" as "(%Φ' & Hwinner₂')".
           iDestruct (inf_cl_deque_winner₂_exclusive with "Hwinner₂ Hwinner₂'") as %[].
       + iDestruct (inf_cl_deque_winner₂_exclusive' with "Hwinner₂ Hstate") as %[].
@@ -734,7 +734,7 @@ Section inf_cl_deque_G.
     iIntros "Hwinner₂ Hstate".
     iDestruct (inf_cl_deque_winner₂_state with "Hwinner₂ Hstate") as "($ & [Hstate | Hstate])".
     - iDestruct "Hstate" as "(%Hstate & _)". lia.
-    - iSmash.
+    - iSteps.
   Qed.
 
   Lemma inf_cl_deque_owner_exclusive t :
@@ -782,10 +782,10 @@ Section inf_cl_deque_G.
       - rewrite (nil_length_inv model); first lia. erewrite lookup_app_l_Some; done.
     }
     iAaccIntro with "Harray_model"; iIntros "Harray_model".
-    { iModIntro. rewrite right_id. repeat iExists _. iFrame. iSmash. }
+    { iModIntro. rewrite right_id. repeat iExists _. iFrame. iSteps. }
     (* close invariant *)
     iModIntro. iSplitL.
-    { repeat iExists _. iFrame. iSmash. }
+    { repeat iExists _. iFrame. iSteps. }
     iIntros "_ HΦ".
     clear- Hlookup.
 

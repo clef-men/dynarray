@@ -102,7 +102,7 @@ Section heap_GS.
     wp_rec.
     destruct vs as [| v vs]; wp_pures.
     - iApply (wp_lst_match_Nil with "Hlst").
-      iSpecialize ("HΦ" $! None). iSmash.
+      iSpecialize ("HΦ" $! None). iSteps.
     - iApply (wp_lst_match_Cons with "Hlst"); first done. iIntros "%lst' #Hlst' /=".
       iSpecialize ("HΦ" $! (Some (v, lst')%V)). iSteps. iFrame "#∗".
   Qed.

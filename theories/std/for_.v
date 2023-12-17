@@ -52,11 +52,11 @@ Section heap_GS.
     remember (Z.to_nat (_end - i)) as ϵ eqn:Hϵ.
     iInduction ϵ as [| ϵ] "IH" forall (i δ Hi Hϵ);
       wp_rec; wp_pure credit:"H£"; wp_pures.
-    - assert (i `max` _end = i)%Z as -> by lia. rewrite Nat.add_0_r. iSmash.
+    - assert (i `max` _end = i)%Z as -> by lia. rewrite Nat.add_0_r. iSteps.
     - rewrite bool_decide_eq_false_2; last lia. wp_pures.
-      wp_apply (wp_wand with "(Hfn [] HΨ)"); first iSmash. iIntros "%res (-> & HΨ)".
+      wp_apply (wp_wand with "(Hfn [] HΨ)"); first iSteps. iIntros "%res (-> & HΨ)".
       iMod (lc_fupd_elim_later with "H£ HΨ") as "HΨ".
-      wp_smart_apply ("IH" with "[] [] HΨ [HΦ]"); [iSmash.. |].
+      wp_smart_apply ("IH" with "[] [] HΨ [HΦ]"); [iSteps.. |].
       assert ((1 + i) `max` _end = i `max` _end)%Z as -> by lia. rewrite -Nat.add_succ_comm //.
   Qed.
   Lemma for_spec_strong Ψ beg _end fn :
@@ -80,7 +80,7 @@ Section heap_GS.
   Proof.
     iIntros "%Φ (HΨ & #Hfn) HΦ".
     wp_apply (for_spec_stronger beg beg 0 with "[$HΨ $Hfn]"); first lia.
-    iSmash.
+    iSteps.
   Qed.
   Lemma for_spec Ψ beg _end fn :
     (beg ≤ _end)%Z →
@@ -131,10 +131,10 @@ Section heap_GS.
       Ψ i δ ∗
       [∗ list] ϵ ∈ seq δ (Z.to_nat (_end - beg) - δ), Ξ ϵ
     )%I).
-    wp_apply (for_spec_strong Ψ' with "[HΨ Hfn]"); last iSmash.
+    wp_apply (for_spec_strong Ψ' with "[HΨ Hfn]"); last iSteps.
     rewrite /Ψ' Nat.sub_0_r. iFrame. iIntros "!> %i %δ %Hi (HΨ & HΞ)".
     assert (Z.to_nat (_end - beg) - δ = S $ Z.to_nat (_end - beg) - S δ) as -> by lia.
-    iSmash.
+    iSteps.
   Qed.
   Lemma for_spec' Ψ beg _end fn :
     (beg ≤ _end)%Z →
@@ -183,9 +183,9 @@ Section heap_GS.
     pose (Ψ' (i : Z) δ := (
       [∗ list] δ' ∈ seq 0 δ, Ψ (beg + δ')%Z δ'
     )%I).
-    wp_apply (for_spec_strong Ψ'); last iSmash. iSplit; first iSmash. iIntros "!> %i %δ (%Hi1 & %Hi2) HΨ'".
+    wp_apply (for_spec_strong Ψ'); last iSteps. iSplit; first iSteps. iIntros "!> %i %δ (%Hi1 & %Hi2) HΨ'".
     wp_apply (wp_wand with "(Hfn [//])"). iIntros "%res (-> & HΨ)". iStep.
-    rewrite /Ψ' seq_S big_sepL_snoc. iSmash.
+    rewrite /Ψ' seq_S big_sepL_snoc. iSteps.
   Qed.
   Lemma for_spec_disentangled' Ψ beg _end fn :
     {{{
@@ -210,10 +210,10 @@ Section heap_GS.
     pose (Ψ' (i : Z) δ := (
       [∗ list] δ' ∈ seq 0 δ, Ψ (beg + δ')%Z δ'
     )%I).
-    wp_apply (for_spec_strong' Ψ' with "[Hfn]"); last iSmash. iSplit; first iSmash.
+    wp_apply (for_spec_strong' Ψ' with "[Hfn]"); last iSteps. iSplit; first iSteps.
     iApply (big_sepL_impl with "Hfn"). iIntros "!>" (δ δ_ (-> & Hδ)%lookup_seq) "Hfn %i -> HΨ' /=".
     wp_apply (wp_wand with "(Hfn [//])"). iIntros "%res (-> & HΨ)". iStep.
-    rewrite /Ψ' seq_S big_sepL_snoc. iSmash.
+    rewrite /Ψ' seq_S big_sepL_snoc. iSteps.
   Qed.
 
   Lemma for_spec_nat_strong Ψ beg _end fn :
@@ -240,7 +240,7 @@ Section heap_GS.
       Ψ (Z.to_nat i) δ.
     wp_apply (for_spec_strong Ψ' with "[HΨ]").
     - rewrite /Ψ' !Nat2Z.id. iFrame. iIntros "!> %i %δ (-> & %Hδ) HΨ".
-      rewrite -Nat2Z.inj_add Z.add_1_l -Nat2Z.inj_succ !Nat2Z.id. iSmash.
+      rewrite -Nat2Z.inj_add Z.add_1_l -Nat2Z.inj_succ !Nat2Z.id. iSteps.
     - rewrite /Ψ' -Nat2Z.inj_max Z2Nat.inj_sub; last lia. rewrite !Nat2Z.id //.
   Qed.
   Lemma for_spec_nat Ψ beg _end fn :
@@ -292,7 +292,7 @@ Section heap_GS.
     wp_apply (for_spec_strong' Ψ' with "[HΨ Hfn]").
     - rewrite /Ψ' !Nat2Z.id Z2Nat.inj_sub; last lia. rewrite !Nat2Z.id. iFrame.
       iApply (big_sepL_impl with "Hfn"). iIntros "!>" (δ δ_ (-> & Hδ)%lookup_seq) "Hfn %i -> HΨ /=".
-      rewrite -Nat2Z.inj_add Nat2Z.id Z.add_1_l -Nat2Z.inj_succ Nat2Z.id. iSmash.
+      rewrite -Nat2Z.inj_add Nat2Z.id Z.add_1_l -Nat2Z.inj_succ Nat2Z.id. iSteps.
     - rewrite /Ψ' -Nat2Z.inj_max Z2Nat.inj_sub; last lia. rewrite !Nat2Z.id //.
   Qed.
   Lemma for_spec_nat' Ψ beg _end fn :
@@ -343,10 +343,10 @@ Section heap_GS.
       Ψ (Z.to_nat i) δ.
     wp_apply (for_spec_disentangled Ψ').
     - iIntros "!> %i %δ (-> & %Hδ)".
-      rewrite -Nat2Z.inj_add /Ψ' Nat2Z.id. iSmash.
+      rewrite -Nat2Z.inj_add /Ψ' Nat2Z.id. iSteps.
     - rewrite /Ψ' Z2Nat.inj_sub; last lia. rewrite !Nat2Z.id.
       setoid_rewrite <- Nat2Z.inj_add. setoid_rewrite Nat2Z.id.
-      iSmash.
+      iSteps.
   Qed.
   Lemma for_spec_disentangled_nat' Ψ beg _end fn :
     {{{
@@ -373,10 +373,10 @@ Section heap_GS.
     wp_apply (for_spec_disentangled' Ψ' with "[Hfn]").
     - rewrite Z2Nat.inj_sub; last lia. rewrite !Nat2Z.id.
       iApply (big_sepL_impl with "Hfn"). iIntros "!>" (δ δ_ (-> & Hδ)%lookup_seq) "Hfn %i -> /=".
-      rewrite -Nat2Z.inj_add /Ψ' Nat2Z.id. iSmash.
+      rewrite -Nat2Z.inj_add /Ψ' Nat2Z.id. iSteps.
     - rewrite /Ψ' Z2Nat.inj_sub; last lia. rewrite !Nat2Z.id.
       setoid_rewrite <- Nat2Z.inj_add. setoid_rewrite Nat2Z.id.
-      iSmash.
+      iSteps.
   Qed.
 
   Lemma for_type τ `{!iType (iProp Σ) τ} beg _end fn :
@@ -389,7 +389,7 @@ Section heap_GS.
     }}}.
   Proof.
     iIntros "%Φ #Hfn HΦ".
-    wp_apply (for_spec_disentangled (λ _ _, True%I)); iSmash.
+    wp_apply (for_spec_disentangled (λ _ _, True%I)); iSteps.
   Qed.
 End heap_GS.
 

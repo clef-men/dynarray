@@ -68,7 +68,7 @@ Section auth_nat_max_G.
       auth_nat_max_auth γ (DfracOwn 1) n.
   Proof.
     iMod (own_alloc (auth_nat_max.auth_nat_max_auth (DfracOwn 1) n)) as "(% & ?)"; first apply auth_nat_max_auth_valid.
-    iSmash.
+    iSteps.
   Qed.
 
   Lemma auth_nat_max_auth_valid γ dq a :
@@ -77,7 +77,7 @@ Section auth_nat_max_G.
   Proof.
     iIntros "Hauth".
     iDestruct (own_valid with "[$]") as %?%auth_nat_max_auth_dfrac_valid.
-    iSmash.
+    iSteps.
   Qed.
   Lemma auth_nat_max_auth_combine γ dq1 n1 dq2 n2 :
     auth_nat_max_auth γ dq1 n1 -∗
@@ -87,7 +87,7 @@ Section auth_nat_max_G.
   Proof.
     iIntros "Hauth1 Hauth2". iCombine "Hauth1 Hauth2" as "Hauth".
     iDestruct (own_valid with "Hauth") as %(? & <-)%auth_nat_max_auth_dfrac_op_valid.
-    rewrite -auth_nat_max_auth_dfrac_op. iSmash.
+    rewrite -auth_nat_max_auth_dfrac_op. iSteps.
   Qed.
   Lemma auth_nat_max_auth_valid_2 γ dq1 n1 dq2 n2 :
     auth_nat_max_auth γ dq1 n1 -∗
@@ -97,7 +97,7 @@ Section auth_nat_max_G.
     iIntros "Hauth1 Hauth2".
     iDestruct (auth_nat_max_auth_combine with "Hauth1 Hauth2") as "(Hauth & %)".
     iDestruct (auth_nat_max_auth_valid with "Hauth") as %?.
-    iSmash.
+    iSteps.
   Qed.
   Lemma auth_nat_max_auth_agree γ dq1 n1 dq2 n2 :
     auth_nat_max_auth γ dq1 n1 -∗
@@ -106,7 +106,7 @@ Section auth_nat_max_G.
   Proof.
     iIntros "Hauth1 Hauth2".
     iDestruct (auth_nat_max_auth_valid_2 with "Hauth1 Hauth2") as %?.
-    iSmash.
+    iSteps.
   Qed.
   Lemma auth_nat_max_auth_dfrac_ne γ1 dq1 n1 γ2 dq2 n2 :
     ¬ ✓ (dq1 ⋅ dq2) →
@@ -169,7 +169,7 @@ Section auth_nat_max_G.
   Proof.
     iIntros "Hauth1 Hauth2".
     iDestruct (own_valid_2 with "Hauth1 Hauth2") as %?%auth_nat_max_both_dfrac_valid.
-    iSmash.
+    iSteps.
   Qed.
 
   Lemma auth_nat_max_update {γ n} n' :
@@ -179,7 +179,7 @@ Section auth_nat_max_G.
   Proof.
     iIntros "% Hauth".
     iMod (own_update with "Hauth"); first by apply auth_nat_max_auth_update.
-    iSmash.
+    iSteps.
   Qed.
 End auth_nat_max_G.
 

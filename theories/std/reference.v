@@ -32,7 +32,7 @@ Section heap_GS.
       RET t; reference_type t
     }}}.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
 
   Lemma reference_get_type t :
@@ -44,7 +44,7 @@ Section heap_GS.
       RET v; τ v
     }}}.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
 
   Lemma reference_set_type t v :
@@ -57,6 +57,6 @@ Section heap_GS.
       RET #(); True
     }}}.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
 End heap_GS.

@@ -87,7 +87,7 @@ Section heap_GS.
     }}}.
   Proof.
     iIntros (->) "%Φ Ht HΦ".
-    wp_apply (dynarray_pop_spec with "Ht"); last iSmash.
+    wp_apply (dynarray_pop_spec with "Ht"); last iSteps.
     rewrite reverse_cons //.
   Qed.
 End heap_GS.

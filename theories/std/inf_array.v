@@ -178,7 +178,7 @@ Section inf_array_G.
     inf_array_model' t (vsₗ ++ [v]) vsᵣ ⊢
     inf_array_model' t vsₗ (λ i, match i with 0 => v | S i => vsᵣ i end).
   Proof.
-    rewrite inf_array_model'_shift. iSmash.
+    rewrite inf_array_model'_shift. iSteps.
   Qed.
   Lemma inf_array_model'_shift_l t vsₗ vsᵣ v vsᵣ' :
     (∀ i, vsᵣ i = match i with 0 => v | S i => vsᵣ' i end) →
@@ -211,7 +211,7 @@ Section inf_array_G.
     iMod (auth_excl_alloc' (auth_excl_G := inf_array_G_model_G) vs) as "(%γ & Hmodel₁ & Hmodel₂)".
     iMod (meta_set _ _ γ nroot with "Hmeta") as "#Hmeta"; first done.
 
-    wp_smart_apply (mutex_create_spec _ (inf_array_inv_inner l γ default) with "[Hdata Hmodel_data Hmodel₂]"); iSmash.
+    wp_smart_apply (mutex_create_spec _ (inf_array_inv_inner l γ default) with "[Hdata Hmodel_data Hmodel₂]"); iSteps.
   Qed.
 
   Lemma inf_array_get_spec t i :
@@ -232,7 +232,7 @@ Section inf_array_G.
 
     wp_rec. wp_load.
 
-    wp_apply (mutex_protect_spec _ Φ with "[$Hinv_mtx HΦ]"); last iSmash. iIntros "Hlocked_mtx (%data & %us & %vs & Hdata & Hmodel_data & Hmodel₂ & %Hvs)".
+    wp_apply (mutex_protect_spec _ Φ with "[$Hinv_mtx HΦ]"); last iSteps. iIntros "Hlocked_mtx (%data & %us & %vs & Hdata & Hmodel_data & Hmodel₂ & %Hvs)".
 
     wp_load.
 
@@ -249,18 +249,18 @@ Section inf_array_G.
       iMod "HΦ" as "(%_vs & (%_l & %_γ & %Heq & #_Hmeta & Hmodel₁) & _ & HΦ)". injection Heq as <-.
       iDestruct (meta_agree with "Hmeta _Hmeta") as %<-. iClear "_Hmeta".
       iDestruct (auth_excl_agree_discrete with "Hmodel₁ Hmodel₂") as %->%functional_extensionality.
-      iMod ("HΦ" with "[Hmodel₁]") as "HΦ"; first iSmash.
+      iMod ("HΦ" with "[Hmodel₁]") as "HΦ"; first iSteps.
 
-      iSteps. rewrite decide_True; last lia. iSmash.
+      iSteps. rewrite decide_True; last lia. iSteps.
 
     - rewrite bool_decide_eq_false_2; last lia. wp_load.
 
       iMod "HΦ" as "(%_vs & (%_l & %_γ & %Heq & #_Hmeta & Hmodel₁) & _ & HΦ)". injection Heq as <-.
       iDestruct (meta_agree with "Hmeta _Hmeta") as %<-. iClear "_Hmeta".
       iDestruct (auth_excl_agree_discrete with "Hmodel₁ Hmodel₂") as %->%functional_extensionality.
-      iMod ("HΦ" with "[Hmodel₁]") as "HΦ"; first iSmash.
+      iMod ("HΦ" with "[Hmodel₁]") as "HΦ"; first iSteps.
 
-      iSteps. rewrite decide_False; last lia. iSmash.
+      iSteps. rewrite decide_False; last lia. iSteps.
   Qed.
   Lemma inf_array_get_spec' t i :
     (0 ≤ i)%Z →
@@ -281,7 +281,7 @@ Section inf_array_G.
     iIntros "% !> %Φ Hinv HΦ".
     awp_apply (inf_array_get_spec with "Hinv"); first done.
     iApply (aacc_aupd_commit with "HΦ"); first done. iIntros "%vsₗ %vsᵣ Hmodel".
-    iAaccIntro with "Hmodel"; iSmash.
+    iAaccIntro with "Hmodel"; iSteps.
   Qed.
 
   Lemma inf_array_set_spec t i v :
@@ -302,7 +302,7 @@ Section inf_array_G.
 
     wp_rec. wp_load.
 
-    wp_apply (mutex_protect_spec _ Φ with "[$Hinv_mtx HΦ]"); last iSmash. iIntros "Hlocked_mtx (%data & %us & %vs & Hdata & Hmodel_data & Hmodel₂ & %Hvs)".
+    wp_apply (mutex_protect_spec _ Φ with "[$Hinv_mtx HΦ]"); last iSteps. iIntros "Hlocked_mtx (%data & %us & %vs & Hdata & Hmodel_data & Hmodel₂ & %Hvs)".
 
     wp_load.
 
@@ -321,9 +321,9 @@ Section inf_array_G.
       set us' := <[i := v]> us.
       set vs' := <[i := v]> vs.
       iMod (auth_excl_update' (auth_excl_G := inf_array_G_model_G) vs' with "Hmodel₁ Hmodel₂") as "(Hmodel₁ & Hmodel₂)".
-      iMod ("HΦ" with "[Hmodel₁]") as "HΦ"; first iSmash.
+      iMod ("HΦ" with "[Hmodel₁]") as "HΦ"; first iSteps.
 
-      iIntros "Hmodel_data !>". iFrame. iSplitR "HΦ"; last iSmash.
+      iIntros "Hmodel_data !>". iFrame. iSplitR "HΦ"; last iSteps.
       iExists data, us', vs'. rewrite Nat2Z.id. iFrame. iPureIntro.
       rewrite /us' /vs' insert_length Hvs.
       apply functional_extensionality => j. destruct (decide (j = i)) as [-> |].
@@ -354,9 +354,9 @@ Section inf_array_G.
       set us' := us ++ replicate (i - length us) default ++ [v].
       set vs' := <[i := v]> vs.
       iMod (auth_excl_update' (auth_excl_G := inf_array_G_model_G) vs' with "Hmodel₁ Hmodel₂") as "(Hmodel₁ & Hmodel₂)".
-      iMod ("HΦ" with "[Hmodel₁]") as "HΦ"; first iSmash.
+      iMod ("HΦ" with "[Hmodel₁]") as "HΦ"; first iSteps.
 
-      iModIntro. iFrame. iSplitR "HΦ"; last iSmash.
+      iModIntro. iFrame. iSplitR "HΦ"; last iSteps.
       iExists data', us', vs'. iFrame. iPureIntro.
       rewrite /us' /vs' !app_length replicate_length Hvs /=.
       apply functional_extensionality => j. destruct (Nat.lt_total j i) as [| [-> |]].
@@ -393,8 +393,8 @@ Section inf_array_G.
     iIntros "% !> %Φ Hinv HΦ".
     awp_apply (inf_array_set_spec with "Hinv"); first done.
     iApply (aacc_aupd_commit with "HΦ"); first done. iIntros "%vsₗ %vsᵣ Hmodel".
-    iAaccIntro with "Hmodel"; first iSmash. iIntros "Hmodel !>".
-    iSplitL "Hmodel"; last iSmash.
+    iAaccIntro with "Hmodel"; first iSteps. iIntros "Hmodel !>".
+    iSplitL "Hmodel"; last iSteps.
     Z_to_nat i. rewrite Nat2Z.id. case_decide.
     all: iApply (inf_array_model_proper with "Hmodel"); intros j.
     - rewrite insert_length. case_decide.

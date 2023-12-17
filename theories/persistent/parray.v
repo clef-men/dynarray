@@ -206,19 +206,19 @@ Section parray_G.
     - unshelve iApply (timeless _ (Timeless := big_sepM_timeless _ _ _) with "Hmap").
       rewrite /Timeless. iIntros "%l %vs _ (%descr & >%Hvs_len & Hl & Hdescr)".
       iExists descr.
-      iSplit; first iSmash.
+      iSplit; first iSteps.
       iSplitL "Hl"; first iApply (timeless with "Hl").
       case_decide as Hcase.
       + iDestruct "Hdescr" as "(>-> & Harr & Hvs)".
-        iSplit; first iSmash.
+        iSplit; first iSteps.
         iSplitL "Harr"; first iApply (timeless with "Harr").
         unshelve iApply (timeless _ (Timeless := big_sepL_timeless _ _ _) with "Hvs").
         rewrite /Timeless. iIntros "%i %v _ Hv".
         iApply (Hτ with "Hv").
       + iDestruct "Hdescr" as "(%i & %v & %l' & %vs' & >(%Hi & %Hvs) & >-> & Hmap_elem' & Hv)".
         iExists i, v, l', vs'.
-        iSplit; first iSmash.
-        iSplit; first iSmash.
+        iSplit; first iSteps.
+        iSplit; first iSteps.
         iSplit; first iApply (timeless with "Hmap_elem'").
         iApply (Hτ with "Hv").
   Qed.
@@ -248,7 +248,7 @@ Section parray_G.
     iMod (@ghost_map_alloc _ _ _ _ _ parray_G_map_G {[root := vs]}) as "(%γ_map & Hmap_auth & Hmap_elem)".
     setoid_rewrite big_sepM_singleton.
     iMod (ghost_map_elem_persist with "Hmap_elem") as "Hmap_elem".
-    iSmash.
+    iSteps.
   Qed.
   #[local] Lemma parray_map_lookup γ map l vs :
     parray_map_auth γ map -∗
@@ -266,7 +266,7 @@ Section parray_G.
     iIntros "%Hlookup Hmap_auth".
     iMod (ghost_map_insert with "Hmap_auth") as "(Hmap_auth & Hmap_elem)"; first done.
     iMod (ghost_map_elem_persist with "Hmap_elem") as "Hmap_elem".
-    iSmash.
+    iSteps.
   Qed.
 
   Lemma parray_make_spec τ `{!iType _ τ} (sz : Z) v :
@@ -292,7 +292,7 @@ Section parray_G.
       parray_name_array := arr ;
       parray_name_size := Z.to_nat sz ;
     |}.
-    iApply ("HΦ" $! _ γ). iSplitR "Hmap_elem"; last iSmash. iExists {[root := vs]}, root. iFrame.
+    iApply ("HΦ" $! _ γ). iSplitR "Hmap_elem"; last iSteps. iExists {[root := vs]}, root. iFrame.
     iApply big_sepM_singleton.
     iExists _. rewrite replicate_length decide_True //. iSteps.
     iApply big_sepL_intro. iIntros "!> !>" (i ? (-> & Hi)%lookup_replicate) "//".
@@ -315,11 +315,11 @@ Section parray_G.
     iDestruct (parray_map_lookup with "Hmap_auth Hmap_elem") as %Hmap_lookup.
     iDestruct (big_sepM_lookup_acc with "Hmap") as "((%descr & %Hvs_len & Hl & Hdescr) & Hmap)"; first done.
     destruct (decide (l = root)) as [-> | Hcase1].
-    { iDestruct "Hdescr" as "(-> & Harr & Hvs)". iSmash. }
+    { iDestruct "Hdescr" as "(-> & Harr & Hvs)". iSteps. }
     iDestruct "Hdescr" as "(%i & %v & %l' & %vs' & (%Hi & %Hvs) & -> & #Hmap_elem' & #Hv)".
     wp_load.
-    iDestruct ("Hmap" with "[Hl Hv]") as "Hmap"; first iSmash.
-    wp_smart_apply ("HLöb" with "[Hmap_auth Hmap]"); first iSmash. iIntros "(Hmap_auth & Hmap)".
+    iDestruct ("Hmap" with "[Hl Hv]") as "Hmap"; first iSteps.
+    wp_smart_apply ("HLöb" with "[Hmap_auth Hmap]"); first iSteps. iIntros "(Hmap_auth & Hmap)".
     wp_pures.
     iDestruct (parray_map_lookup with "Hmap_auth Hmap_elem'") as %Hmap_lookup'.
     iDestruct (big_sepM_delete with "Hmap") as "((%descr' & %Hvs'_len & Hl' & Hdescr') & Hmap)"; first done.
@@ -332,21 +332,21 @@ Section parray_G.
     destruct (decide (l = l')) as [<- | Hcase2].
     - wp_store.
       iDestruct (big_sepM_delete with "[$Hmap Hl' Harr Hvs']") as "Hmap"; first done.
-      { iExists _. rewrite decide_True //. clear Hvs. iSmash. }
-      iSmash.
+      { iExists _. rewrite decide_True //. clear Hvs. iSteps. }
+      iSteps.
     - iDestruct (big_sepM_delete _ _ l with "Hmap") as "((%descr & _ & Hl & Hdescr) & Hmap)"; first rewrite lookup_delete_ne //.
       rewrite decide_False //. iDestruct "Hdescr" as "(%i'' & %w & %l'' & %vs'' & _ & -> & _ & _)".
       wp_store.
       iApply "HΦ". iFrame.
       iDestruct (big_sepL_insert_acc with "Hvs'") as "(Hvs'!!!i & Hvs')"; first done.
       iApply (big_sepM_delete _ _ l'); first done. iSplitL "Hl' Hvs'!!!i".
-      { iExists _. rewrite decide_False //. iFrame. iSplitR; first iSmash. iExists i, (vs' !!! i), l, vs. iSteps.
+      { iExists _. rewrite decide_False //. iFrame. iSplitR; first iSteps. iExists i, (vs' !!! i), l, vs. iSteps.
         iPureIntro. rewrite list_insert_insert list_insert_id //.
       }
       iApply (big_sepM_delete _ _ l); first rewrite lookup_delete_ne //. iSplitL "Hl Harr Hvs'".
-      { iExists _. rewrite decide_True //. iSmash. }
+      { iExists _. rewrite decide_True //. iSteps. }
       iApply (big_sepM_impl with "Hmap"). clear. iIntros "!> !>" (l'' vs'' (Hl''1 & (Hl''2 & Hmap_lookup'')%lookup_delete_Some)%lookup_delete_Some) "(%descr'' & %Hvs''_len & Hl'' & Hdescr'')".
-      iExists _. rewrite decide_False // decide_False //. iFrame. iSmash.
+      iExists _. rewrite decide_False // decide_False //. iFrame. iSteps.
   Qed.
 
   Lemma parray_get_spec τ `{!iType _ τ} {t γ vs} {i : Z} v :
@@ -369,7 +369,7 @@ Section parray_G.
     iDestruct (big_sepM_lookup_acc with "Hmap") as "((%descr & %Hvs_len & Hl & Hdescr) & Hmap)"; first done.
     rewrite decide_True //. iDestruct "Hdescr" as "(-> & Harr & Hvs)".
     wp_apply (array_unsafe_get_spec with "Harr"); [done.. |].
-    setoid_rewrite decide_True at 1; last done. iSteps. iExists l. iSmash.
+    setoid_rewrite decide_True at 1; last done. iSteps. iExists l. iSteps.
   Qed.
 
   Lemma parray_set_spec τ `{!iType _ τ} t γ vs eq (i : Z) v :
@@ -408,8 +408,8 @@ Section parray_G.
     - iDestruct ("Hvs" with "Hv") as "Hvs".
       rewrite list_insert_id; first congruence.
       iDestruct (big_sepM_delete with "[Hl Harr Hvs $Hmap]") as "Hmap"; first done.
-      { iExists _. rewrite decide_True //. iSmash. }
-      iSmash.
+      { iExists _. rewrite decide_True //. iSteps. }
+      iSteps.
     - wp_apply (array_unsafe_set_spec with "Harr"); first done. iIntros "Harr". rewrite Nat2Z.id.
       wp_load. clear root. wp_alloc root as "Hroot". wp_store.
       iApply "HΦ".
@@ -421,7 +421,7 @@ Section parray_G.
       }
       set vs_root := <[i := v]> vs.
       iMod (parray_map_insert with "Hmap_auth") as "(Hmap_auth & #Hmap_elem_root)"; first done.
-      iSplitR "Hmap_elem_root"; last iSmash. iExists (<[root := vs_root]> map), root. iFrame.
+      iSplitR "Hmap_elem_root"; last iSteps. iExists (<[root := vs_root]> map), root. iFrame.
       iApply big_sepM_insert; first done. iSplitL "Hroot Harr Hvs".
       { iExists _. rewrite decide_True //. iSteps. rewrite insert_length //. }
       iApply (big_sepM_delete _ _ l); first done. iSplitL "Hl".
@@ -429,7 +429,7 @@ Section parray_G.
         iPureIntro. rewrite /vs_root list_insert_insert list_insert_id //.
       }
       iApply (big_sepM_impl with "Hmap"). iIntros "!> !>" (l' vs'' (Hne & Hmap_lookup')%lookup_delete_Some) "(%descr' & %Hvs'_len & Hl' & Hdescr')".
-      iExists _. rewrite decide_False // decide_False; first congruence. iFrame. iSmash.
+      iExists _. rewrite decide_False // decide_False; first congruence. iFrame. iSteps.
   Qed.
 End parray_G.
 

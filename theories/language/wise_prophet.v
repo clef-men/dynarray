@@ -141,7 +141,7 @@ Section make_wise_prophet_G.
     iIntros "* (#Hfull & Hpast_auth & Hmodel) (%past1 & #Hfull' & #Hpast_lb)".
     iDestruct (agree_on_agree_L with "Hfull Hfull'") as %Hfull.
     iDestruct (mono_list_auth_lb_valid with "Hpast_auth Hpast_lb") as %(_ & past2 & ->).
-    rewrite -assoc in Hfull. iSmash.
+    rewrite -assoc in Hfull. iSteps.
   Qed.
   Next Obligation.
     iIntros "* _ HΦ".
@@ -153,7 +153,7 @@ Section make_wise_prophet_G.
       make_wise_strong_prophet_name_past := γ_past ;
     |}.
     iApply ("HΦ" $! p γ).
-    iSmash.
+    iSteps.
   Qed.
   Next Obligation.
     iIntros "* % % (#Hfull & Hpast_auth & Hmodel) HΦ".
@@ -164,7 +164,7 @@ Section make_wise_prophet_G.
     iMod (mono_list_auth_update_app [proph] with "Hpast_auth") as "Hpast_auth".
     iIntros "!> %prophs' -> Hp".
     iApply ("HΦ" with "[//]").
-    list_simplifier. iSmash.
+    list_simplifier. iSteps.
   Qed.
 End make_wise_prophet_G.
 
@@ -301,20 +301,20 @@ Section make_wise_prophet.
   Next Obligation.
     iIntros "* (%spast & %sprophs & -> & -> & Hmodel) (%slb & -> & Hlb)".
     iDestruct (wise_strong_prophet_model_lb_valid with "Hmodel Hlb") as "(%spast1 & %spast2 & -> & ->)".
-    list_simplifier. iSmash.
+    list_simplifier. iSteps.
   Qed.
   Next Obligation.
     iIntros "* _ HΦ".
     wp_apply (make_wise_prophet_strong_prophet.(wise_strong_prophet_wp_new_proph) with "[//]"). iIntros "%p %γ %sprophs Hmodel".
     iApply "HΦ". iExists [], sprophs.
-    iSmash.
+    iSteps.
   Qed.
   Next Obligation.
     iIntros "*" (? ? ->) "(%spast & %sprophs & -> & -> & Hmodel) HΦ".
     wp_apply (wise_strong_prophet_wp_resolve with "Hmodel"); first done.
     wp_apply (wp_wand with "HΦ"). iIntros "%w HΦ".
-    iExists (w, proph). iSplit; first iSmash. iIntros "%sprophs' -> Hmodel".
+    iExists (w, proph). iSplit; first iSteps. iIntros "%sprophs' -> Hmodel".
     iApply ("HΦ" with "[//]"). iExists (spast ++ [(w, proph)]), sprophs'. iFrame.
-    list_simplifier. iSmash.
+    list_simplifier. iSteps.
   Qed.
 End make_wise_prophet.

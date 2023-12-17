@@ -110,6 +110,6 @@ Section heap_GS.
   Proof.
     iIntros "[-> | (%v & -> & #Hv)] H";
       [rewrite bi.and_elim_l | rewrite bi.and_elim_r];
-      iSmash.
+      iSteps.
   Qed.
 End heap_GS.

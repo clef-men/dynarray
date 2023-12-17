@@ -31,7 +31,7 @@ Section heap_GS.
       l.[1] ↦{dq₁} v₁ ∗
       l.[2] ↦{dq₂} v₂.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
   Lemma record3_model_eq_1 l dq₀ v₀ dq₁ v₁ dq₂ v₂ :
     record3_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ ⊢
@@ -39,7 +39,7 @@ Section heap_GS.
       l.[1] ↦{dq₁} v₁ ∗
       l.[2] ↦{dq₂} v₂.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
   Lemma record3_model_eq_2 l dq₀ v₀ dq₁ v₁ dq₂ v₂ :
     l.[0] ↦{dq₀} v₀ -∗
@@ -47,7 +47,7 @@ Section heap_GS.
     l.[2] ↦{dq₂} v₂ -∗
     record3_model l dq₀ v₀ dq₁ v₁ dq₂ v₂.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
 
   #[global] Instance record3_model_timeless l dq₀ v₀ dq₁ v₁ dq₂ v₂ :
@@ -110,7 +110,7 @@ Section heap_GS.
     iDestruct (mapsto_valid with "Hv₀") as %Hdq₀.
     iDestruct (mapsto_valid with "Hv₁") as %Hdq₁.
     iDestruct (mapsto_valid with "Hv₂") as %Hdq₂.
-    iSmash.
+    iSteps.
   Qed.
   Lemma record3_model_combine l dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 :
     record3_model l dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 -∗
@@ -122,7 +122,7 @@ Section heap_GS.
     iDestruct (mapsto_combine with "Hv₀1 Hv₀2") as "(Hv₀ & <-)".
     iDestruct (mapsto_combine with "Hv₁1 Hv₁2") as "(Hv₁ & <-)".
     iDestruct (mapsto_combine with "Hv₂1 Hv₂2") as "(Hv₂ & <-)".
-    iSmash.
+    iSteps.
   Qed.
   Lemma record3_model_valid_2 l dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 :
     record3_model l dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 -∗
@@ -139,7 +139,7 @@ Section heap_GS.
     record3_model l dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 -∗
     ⌜v₀1 = v₀2 ∧ v₁1 = v₁2 ∧ v₂1 = v₂2⌝.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
   Lemma record3_model_dfrac_ne l1 dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 l2 dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 :
     ¬ ✓ (dq₀1 ⋅ dq₀2) ∨ ¬ ✓ (dq₁1 ⋅ dq₁2) ∨ ¬ ✓ (dq₂1 ⋅ dq₂2) →
@@ -157,7 +157,7 @@ Section heap_GS.
     record3_model l2 dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 -∗
     ⌜l1 ≠ l2⌝.
   Proof.
-    intros [| []]; iSmash.
+    intros [| []]; iSteps.
   Qed.
   Lemma record3_model_exclusive l dq₀1 v₀1 dq₁1 v₁1 dq₂1 v₂1 dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 :
     dq₀1 = DfracOwn 1 ∨ dq₁1 = DfracOwn 1 ∨ dq₂1 = DfracOwn 1 →
@@ -165,31 +165,31 @@ Section heap_GS.
     record3_model l dq₀2 v₀2 dq₁2 v₁2 dq₂2 v₂2 -∗
     False.
   Proof.
-    intros [| []]; iSmash.
+    intros [| []]; iSteps.
   Qed.
   Lemma record3_model_persist₀ l dq₀ v₀ dq₁ v₁ dq₂ v₂ :
     record3_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ ⊢ |==>
     record3_model l DfracDiscarded v₀ dq₁ v₁ dq₂ v₂.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
   Lemma record3_model_persist₁ l dq₀ v₀ dq₁ v₁ dq₂ v₂ :
     record3_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ ⊢ |==>
     record3_model l dq₀ v₀ DfracDiscarded v₁ dq₂ v₂.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
   Lemma record3_model_persist₂ l dq₀ v₀ dq₁ v₁ dq₂ v₂ :
     record3_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ ⊢ |==>
     record3_model l dq₀ v₀ dq₁ v₁ DfracDiscarded v₂.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
   Lemma record3_model_persist l dq₀ v₀ dq₁ v₁ dq₂ v₂ :
     record3_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ ⊢ |==>
     record3_model l DfracDiscarded v₀ DfracDiscarded v₁ DfracDiscarded v₂.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
 
   Lemma record3_dfrac_relax₀ dq₀ l v₀ dq₁ v₁ dq₂ v₂ :
@@ -199,7 +199,7 @@ Section heap_GS.
   Proof.
     iIntros "% (Hv₀ & Hv₁ & Hv₂)".
     iMod (mapsto_dfrac_relax with "Hv₀") as "Hv₀"; first done.
-    iSmash.
+    iSteps.
   Qed.
   Lemma record3_dfrac_relax₁ dq₁ l dq₀ v₀ v₁ dq₂ v₂ :
     ✓ dq₁ →
@@ -208,7 +208,7 @@ Section heap_GS.
   Proof.
     iIntros "% (Hv₀ & Hv₁ & Hv₂)".
     iMod (mapsto_dfrac_relax with "Hv₁") as "Hv₁"; first done.
-    iSmash.
+    iSteps.
   Qed.
   Lemma record3_dfrac_relax₂ dq₂ l dq₀ v₀ dq₁ v₁ v₂ :
     ✓ dq₂ →
@@ -217,7 +217,7 @@ Section heap_GS.
   Proof.
     iIntros "% (Hv₀ & Hv₁ & Hv₂)".
     iMod (mapsto_dfrac_relax with "Hv₂") as "Hv₂"; first done.
-    iSmash.
+    iSteps.
   Qed.
   Lemma record3_dfrac_relax dq l v₀ v₁ v₂ :
     ✓ dq →
@@ -228,7 +228,7 @@ Section heap_GS.
     iMod (record3_dfrac_relax₀ with "Hl") as "Hl"; first done.
     iMod (record3_dfrac_relax₁ with "Hl") as "Hl"; first done.
     iMod (record3_dfrac_relax₂ with "Hl") as "Hl"; first done.
-    iSmash.
+    iSteps.
   Qed.
 
   Lemma record3_make_spec v₀ v₁ v₂ :
@@ -246,7 +246,7 @@ Section heap_GS.
     wp_pures.
     iDestruct (array_cons with "Hl") as "(Hv₀ & Hl)".
     iEval (setoid_rewrite <- Loc.add_0) in "Hv₀".
-    iSmash.
+    iSteps.
   Qed.
 
   Lemma record3_get_spec₀ l dq₀ v₀ dq₁ v₁ dq₂ v₂ :
@@ -259,7 +259,7 @@ Section heap_GS.
       record3_model l dq₀ v₀ dq₁ v₁ dq₂ v₂
     }}}.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
   Lemma record3_get_spec₁ l dq₀ v₀ dq₁ v₁ dq₂ v₂ :
     {{{
@@ -271,7 +271,7 @@ Section heap_GS.
       record3_model l dq₀ v₀ dq₁ v₁ dq₂ v₂
     }}}.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
   Lemma record3_get_spec₂ l dq₀ v₀ dq₁ v₁ dq₂ v₂ :
     {{{
@@ -283,7 +283,7 @@ Section heap_GS.
       record3_model l dq₀ v₀ dq₁ v₁ dq₂ v₂
     }}}.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
 
   Lemma record3_set_spec₀ l v₀ dq₁ v₁ dq₂ v₂ v :
@@ -296,7 +296,7 @@ Section heap_GS.
       record3_model l (DfracOwn 1) v dq₁ v₁ dq₂ v₂
     }}}.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
   Lemma record3_set_spec₁ l dq₀ v₀ v₁ dq₂ v₂ v :
     {{{
@@ -308,7 +308,7 @@ Section heap_GS.
       record3_model l dq₀ v₀ (DfracOwn 1) v dq₂ v₂
     }}}.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
   Lemma record3_set_spec₂ l dq₀ v₀ dq₁ v₁ v₂ v :
     {{{
@@ -320,7 +320,7 @@ Section heap_GS.
       record3_model l dq₀ v₀ dq₁ v₁ (DfracOwn 1) v
     }}}.
   Proof.
-    iSmash.
+    iSteps.
   Qed.
 End heap_GS.
 

@@ -20,7 +20,7 @@ Section heap_GS.
     WP assume #b {{ Φ }}.
   Proof.
     iIntros "HΦ".
-    wp_rec. destruct b; first iSmash.
+    wp_rec. destruct b; first iSteps.
     wp_smart_apply wp_diverge.
   Qed.
   Lemma assume_spec' ϕ `{!Decision ϕ} Φ :
@@ -29,7 +29,7 @@ Section heap_GS.
   Proof.
     iIntros "HΦ".
     wp_apply assume_spec. iIntros (Hϕ%bool_decide_eq_true_1).
-    iSmash.
+    iSteps.
   Qed.
 End heap_GS.
 
