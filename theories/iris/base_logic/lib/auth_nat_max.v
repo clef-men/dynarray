@@ -138,15 +138,14 @@ Section auth_nat_max_G.
     auth_nat_max_auth γ dq n ⊢ |==>
     auth_nat_max_auth γ DfracDiscarded n.
   Proof.
-    iApply own_update.
-    apply auth_nat_max_auth_persist.
+    apply own_update, auth_nat_max_auth_persist.
   Qed.
 
   Lemma auth_nat_max_lb_0 γ :
     ⊢ |==>
       auth_nat_max_lb γ 0.
   Proof.
-    iApply own_unit.
+    apply own_unit.
   Qed.
   Lemma auth_nat_max_lb_get γ q n :
     auth_nat_max_auth γ q n ⊢

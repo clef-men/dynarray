@@ -138,8 +138,7 @@ Section auth_nat_min_G.
     auth_nat_min_auth γ dq n ⊢ |==>
     auth_nat_min_auth γ DfracDiscarded n.
   Proof.
-    iApply own_update.
-    apply auth_nat_min_auth_persist.
+    apply own_update, auth_nat_min_auth_persist.
   Qed.
 
   Lemma auth_nat_min_ub_get γ q n :

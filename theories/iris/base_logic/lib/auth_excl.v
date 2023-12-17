@@ -145,8 +145,7 @@ Section auth_excl_G.
     auth_excl_auth γ dq a ⊢ |==>
     auth_excl_auth γ DfracDiscarded a.
   Proof.
-    iApply own_update.
-    apply auth_excl_auth_persist.
+    apply own_update, auth_excl_auth_persist.
   Qed.
 
   Lemma auth_excl_frag_exclusive γ a1 a2 :
