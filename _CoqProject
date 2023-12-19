@@ -12,12 +12,16 @@ theories/prelude/prelude.v
 theories/common/list.v
 
 theories/iris/algebra/base.v
+theories/iris/algebra/view.v
+theories/iris/algebra/auth.v
 theories/iris/algebra/nat_max.v
 theories/iris/algebra/nat_min.v
+theories/iris/algebra/monotone.v
 theories/iris/algebra/lib/auth_option.v
 theories/iris/algebra/lib/auth_excl.v
 theories/iris/algebra/lib/auth_nat_max.v
 theories/iris/algebra/lib/auth_nat_min.v
+theories/iris/algebra/lib/mono_state.v
 
 theories/iris/bi/big_op.v
 
@@ -28,6 +32,8 @@ theories/iris/base_logic/lib/excl.v
 theories/iris/base_logic/lib/auth_excl.v
 theories/iris/base_logic/lib/auth_nat_max.v
 theories/iris/base_logic/lib/auth_nat_min.v
+theories/iris/base_logic/lib/auth_dgset.v
+theories/iris/base_logic/lib/mono_state.v
 theories/iris/base_logic/lib/mono_list.v
 
 theories/iris/program_logic/atomic.v
@@ -63,6 +69,7 @@ theories/std/safe_dynarray.v
 theories/std/inf_array.v
 theories/std/stack.v
 theories/std/mutex.v
+theories/std/unix.v
 
 theories/persistent/base.v
 theories/persistent/pstack.v
@@ -71,3 +78,6 @@ theories/persistent/parray.v
 
 theories/saturn/base.v
 theories/saturn/inf_cl_deque.v
+
+theories/eio/base.v
+theories/eio/rcfd.v
