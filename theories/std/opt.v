@@ -62,6 +62,11 @@ Notation "'&Some'" :=
   opt_Some.
 Notation "'&&Some'" :=
   SomeV.
+#[global] Instance opt_Some_inj :
+  Inj (=) (=) &&Some.
+Proof.
+  rewrite /Inj. naive_solver.
+Qed.
 #[global] Instance pure_opt_Some v :
   PureExec True 2
     (&Some v)

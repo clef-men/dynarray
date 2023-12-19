@@ -58,6 +58,11 @@ Implicit Types vs : list val.
   descr_Root.
 #[local] Notation "'&&Root'" :=
   RootV.
+#[local] Instance descr_Root_inj :
+  Inj (=) (=) &&Root.
+Proof.
+  rewrite /Inj. naive_solver.
+Qed.
 #[local] Instance pure_descr_Root v :
   PureExec True 2
     (&Root v)
@@ -81,6 +86,12 @@ Qed.
   descr_Diff.
 #[local] Notation "'&&Diff'" :=
   DiffV.
+#[local] Lemma descr_Diff_inj v1 v2 v3 w1 w2 w3 :
+  &&Diff v1 v2 v3 = &&Diff w1 w2 w3 →
+  v1 = w1 ∧ v2 = w2 ∧ v3 = w3.
+Proof.
+  naive_solver.
+Qed.
 #[local] Instance pure_descr_Diff v1 v2 v3 :
   PureExec True 8
     (&Diff v1 v2 v3)

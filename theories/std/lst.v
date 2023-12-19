@@ -64,6 +64,11 @@ Notation "'&Cons'" :=
   lst_Cons.
 Notation "'&&Cons'" :=
   ConsV.
+#[global] Instance lst_Cons_inj :
+  Inj2 (=) (=) (=) &&Cons.
+Proof.
+  rewrite /Inj2. naive_solver.
+Qed.
 #[global] Instance pure_lst_Cons v1 v2 :
   PureExec True 5
     (&Cons v1 v2)
