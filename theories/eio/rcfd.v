@@ -187,7 +187,7 @@ Definition rcfd_make : val :=
       #()
     ).
 
-Definition rcfd_get : val :=
+#[local] Definition rcfd_get : val :=
   λ: "t",
     FAA "t".[ops] #1 ;;
     match: ! !"t".[fd] with
@@ -618,7 +618,7 @@ Section rcfd_G.
     iSteps.
   Qed.
 
-  Lemma rcfd_get_spec t fd chars :
+  #[local] Lemma rcfd_get_spec t fd chars :
     {{{
       rcfd_inv t fd chars
     }}}
