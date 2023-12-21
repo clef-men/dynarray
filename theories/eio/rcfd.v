@@ -862,7 +862,6 @@ Section rcfd_G.
 End rcfd_G.
 
 #[global] Opaque rcfd_make.
-#[global] Opaque rcfd_get.
 #[global] Opaque rcfd_close.
 #[global] Opaque rcfd_use.
 #[global] Opaque rcfd_is_open.
