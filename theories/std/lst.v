@@ -89,20 +89,22 @@ Qed.
 #[global] Opaque lst_Cons.
 #[global] Opaque ConsV.
 
-Fixpoint lst_model' vs :=
+Fixpoint lst_to_val vs :=
   match vs with
   | [] =>
       &&Nil
   | v :: vs =>
-      &&Cons v (lst_model' vs)
+      &&Cons v (lst_to_val vs)
   end.
-#[global] Arguments lst_model' !_ / : assert.
+#[global] Arguments lst_to_val !_ / : assert.
+Definition lst_model' t vs :=
+  t = lst_to_val vs.
 
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
 
   Definition lst_model t vs : iProp Σ :=
-    ⌜t = lst_model' vs⌝.
+    ⌜lst_model' t vs⌝.
 
   Lemma lst_model_Nil :
     ⊢ lst_model &&Nil [].
@@ -114,14 +116,14 @@ Section heap_GS.
     WP e1 {{ Φ }} -∗
     WP match:: t with Nil => e1 | Cons x1 x2 => e2 end {{ Φ }}.
   Proof.
-    iSteps.
+    rewrite /lst_model /lst_model'. iSteps.
   Qed.
 
   Lemma lst_model_Cons v t vs :
     lst_model t vs ⊢
     lst_model (&&Cons v t) (v :: vs).
   Proof.
-    iSteps.
+    rewrite /lst_model /lst_model'. iSteps.
   Qed.
   Lemma wp_lst_match_Cons {t vs} v vs' e1 x1 x2 e2 Φ :
     vs = v :: vs' →
@@ -132,7 +134,7 @@ Section heap_GS.
     ) -∗
     WP match:: t with Nil => e1 | Cons x1 x2 => e2 end {{ Φ }}.
   Proof.
-    iSteps.
+    rewrite /lst_model /lst_model'. iSteps.
   Qed.
 End heap_GS.
 
@@ -282,7 +284,7 @@ Section heap_GS.
       RET v; True
     }}}.
   Proof.
-    iSteps.
+    rewrite /lst_model /lst_model'. iSteps.
   Qed.
 
   Lemma lst_tail_spec {t vs} v vs' :
@@ -296,7 +298,7 @@ Section heap_GS.
       lst_model t' vs'
     }}}.
   Proof.
-    iSteps.
+    rewrite /lst_model /lst_model'. iSteps.
   Qed.
 
   Lemma lst_is_empty_spec t vs :
@@ -373,7 +375,7 @@ Section heap_GS.
       wp_apply ("IH" $! (vs_left ++ [v]) (S i) with "[] [] [] [$HΨ //]"); rewrite ?app_length; [iSteps.. |]. iIntros "%t %vs_right (%Hvs_right & %Ht & HΨ)".
       wp_pures.
       iApply ("HΦ" $! _ (v :: vs_right)).
-      rewrite -assoc. simpl in Hvs_right. iSteps.
+      rewrite -assoc. simpl in Hvs_right. rewrite /lst_model' in Ht. iSteps.
   Qed.
   Lemma lst_initi_spec Ψ sz fn :
     {{{
@@ -909,7 +911,7 @@ Section heap_GS.
       lst_model acc (reverse vs')
     )%I.
     wp_smart_apply (lst_foldl_spec Ψ with "[$Ht]"); last iSteps.
-    iSteps. rewrite reverse_app /=. auto.
+    iSteps. rewrite reverse_app /lst_model'. iSteps.
   Qed.
 
   Lemma lst_app_spec t1 vs1 t2 vs2 :
@@ -929,7 +931,7 @@ Section heap_GS.
       lst_model acc (vs ++ vs2)
     )%I.
     wp_smart_apply (lst_foldr_spec Ψ with "[$Ht1]"); last iSteps.
-    iSteps; auto.
+    iSteps; unfold lst_model' in *; iSteps; done.
   Qed.
 
   Lemma lst_snoc_spec t vs v :
@@ -1205,7 +1207,7 @@ Section heap_GS.
       iIntros "%t' %ws_right (%Hvs & %Ht' & HΨ)".
       wp_pures.
       iApply ("HΦ" $! _ (w :: ws_right)).
-      rewrite -!assoc. rewrite app_length /= in Hvs. iSteps.
+      rewrite -!assoc. rewrite app_length /= in Hvs. rewrite /lst_model' in Ht'. iSteps.
   Qed.
   Lemma lst_mapi_spec Ψ t vs fn :
     {{{

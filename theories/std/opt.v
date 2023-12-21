@@ -87,10 +87,12 @@ Qed.
 #[global] Opaque opt_Some.
 #[global] Opaque SomeV.
 
-Coercion val_of_option opt :=
-  match opt with
-  | None => &&None
-  | Some v => &&Some v
+Coercion opt_to_val o :=
+  match o with
+  | None =>
+      &&None
+  | Some v =>
+      &&Some v
   end.
 
 Section heap_GS.
