@@ -10,6 +10,7 @@ theories/prelude/tactics.v
 theories/prelude/prelude.v
 
 theories/common/list.v
+theories/common/gmultiset.v
 
 theories/iris/algebra/base.v
 theories/iris/algebra/view.v
@@ -33,6 +34,7 @@ theories/iris/base_logic/lib/auth_excl.v
 theories/iris/base_logic/lib/auth_nat_max.v
 theories/iris/base_logic/lib/auth_nat_min.v
 theories/iris/base_logic/lib/auth_dgset.v
+theories/iris/base_logic/lib/auth_gmultiset.v
 theories/iris/base_logic/lib/mono_state.v
 theories/iris/base_logic/lib/mono_list.v
 

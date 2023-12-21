@@ -27,6 +27,8 @@ Qed.
 Section auth_dgset_G.
   Context `{auth_dgset_G : AuthDgsetG Σ A}.
 
+  Implicit Types x y : gset A.
+
   Definition auth_dgset_auth γ dq x :=
     own γ (●{dq} GSet x).
   Definition auth_dgset_frag γ y :=
@@ -169,6 +171,16 @@ Section auth_dgset_G.
     False.
   Proof.
     apply auth_dgset_frag_exclusive. done.
+  Qed.
+
+  Lemma auth_dgset_frag_combine γ y1 y2 :
+    auth_dgset_frag γ y1 -∗
+    auth_dgset_frag γ y2 -∗
+    auth_dgset_frag γ (y1 ∪ y2).
+  Proof.
+    iIntros "H◯1 H◯2".
+    iDestruct (auth_dgset_frag_disjoint with "H◯1 H◯2") as %Hdisjoint.
+    iCombine "H◯1 H◯2" as "H◯". rewrite gset_disj_union //.
   Qed.
 
   Lemma auth_dgset_subseteq γ dq x y :
