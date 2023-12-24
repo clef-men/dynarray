@@ -311,19 +311,15 @@ Section rcfd_G.
     auth_gmultiset_auth γ_tokens (DfracOwn 1) qs.
   #[local] Definition rcfd_tokens_auth γ qs :=
     rcfd_tokens_auth' γ.(rcfd_name_tokens) qs.
-  #[local] Definition rcfd_tokens_frag' γ_tokens q :=
-    auth_gmultiset_frag γ_tokens {[+q+]}.
   #[local] Definition rcfd_tokens_frag γ q :=
-    rcfd_tokens_frag' γ.(rcfd_name_tokens) q.
+    auth_gmultiset_frag γ.(rcfd_name_tokens) {[+q+]}.
 
   #[local] Definition rcfd_lstate_auth' γ_lstate lstate :=
     mono_state_auth rcfd_lstep γ_lstate (DfracOwn 1) lstate.
   #[local] Definition rcfd_lstate_auth γ lstate :=
     rcfd_lstate_auth' γ.(rcfd_name_lstate) lstate.
-  #[local] Definition rcfd_lstate_lb' γ_lstate lstate :=
-    mono_state_lb rcfd_lstep γ_lstate lstate.
   #[local] Definition rcfd_lstate_lb γ lstate :=
-    rcfd_lstate_lb' γ.(rcfd_name_lstate) lstate.
+    mono_state_lb rcfd_lstep γ.(rcfd_name_lstate) lstate.
 
   #[local] Definition rcfd_inv_inner l γ fd chars : iProp Σ :=
     ∃ state lstate ops l_state,
