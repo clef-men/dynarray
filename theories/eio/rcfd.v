@@ -367,7 +367,8 @@ Section rcfd_G.
   Qed.
 
   #[local] Lemma rcfd_tokens_alloc :
-    ⊢ |==> ∃ γ_tokens,
+    ⊢ |==>
+      ∃ γ_tokens,
       rcfd_tokens_auth' γ_tokens ∅.
   Proof.
     apply auth_gmultiset_alloc.
@@ -395,7 +396,8 @@ Section rcfd_G.
   Qed.
 
   #[local] Lemma rcfd_lstate_alloc :
-    ⊢ |==> ∃ γ_lstate,
+    ⊢ |==>
+      ∃ γ_lstate,
       rcfd_lstate_auth' γ_lstate RcfdLstateOpen.
   Proof.
     apply mono_state_alloc.

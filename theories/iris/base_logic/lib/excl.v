@@ -36,7 +36,8 @@ Section excl_G.
   Qed.
 
   Lemma excl_alloc a :
-    ⊢ |==> ∃ γ,
+    ⊢ |==>
+      ∃ γ,
       excl γ a.
   Proof.
     apply own_alloc. done.

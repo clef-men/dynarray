@@ -62,7 +62,8 @@ Section auth_gmultiset_G.
   Qed.
 
   Lemma auth_gmultiset_alloc :
-    ⊢ |==> ∃ γ,
+    ⊢ |==>
+      ∃ γ,
       auth_gmultiset_auth γ (DfracOwn 1) ∅.
   Proof.
     apply own_alloc, auth_auth_valid. done.

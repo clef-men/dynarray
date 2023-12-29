@@ -62,7 +62,8 @@ Section auth_excl_G.
 
   Lemma auth_excl_alloc a b :
     a ≡ b →
-    ⊢ |==> ∃ γ,
+    ⊢ |==>
+      ∃ γ,
       auth_excl_auth γ (DfracOwn 1) a ∗
       auth_excl_frag γ b.
   Proof.
@@ -71,7 +72,8 @@ Section auth_excl_G.
     iSteps.
   Qed.
   Lemma auth_excl_alloc' a :
-    ⊢ |==> ∃ γ,
+    ⊢ |==>
+      ∃ γ,
       auth_excl_auth γ (DfracOwn 1) a ∗ auth_excl_frag γ a.
   Proof.
     iApply auth_excl_alloc. done.

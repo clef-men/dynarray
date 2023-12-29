@@ -64,7 +64,8 @@ Section auth_nat_max_G.
   Qed.
 
   Lemma auth_nat_max_alloc n :
-    ⊢ |==> ∃ γ,
+    ⊢ |==>
+      ∃ γ,
       auth_nat_max_auth γ (DfracOwn 1) n.
   Proof.
     iMod (own_alloc (auth_nat_max.auth_nat_max_auth (DfracOwn 1) n)) as "(% & ?)"; first apply auth_nat_max_auth_valid.

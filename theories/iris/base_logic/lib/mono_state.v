@@ -69,7 +69,8 @@ Section sts.
     Qed.
 
     Lemma mono_state_alloc s :
-      ⊢ |==> ∃ γ,
+      ⊢ |==>
+        ∃ γ,
         mono_state_auth γ (DfracOwn 1) s.
     Proof.
       apply own_alloc, mono_state_auth_valid.

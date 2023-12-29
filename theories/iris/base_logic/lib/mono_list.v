@@ -176,7 +176,8 @@ Section mono_list_G.
   Qed.
 
   Lemma mono_list_alloc l :
-    ⊢ |==> ∃ γ,
+    ⊢ |==>
+      ∃ γ,
       mono_list_auth γ 1 l.
   Proof.
     unseal. by apply own_alloc, mono_list_auth_valid.

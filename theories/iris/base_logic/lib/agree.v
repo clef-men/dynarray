@@ -41,7 +41,8 @@ Section agree_G.
   Qed.
 
   Lemma agree_alloc a :
-    ⊢ |==> ∃ γ,
+    ⊢ |==>
+      ∃ γ,
       agree_on γ a.
   Proof.
     apply own_alloc. done.

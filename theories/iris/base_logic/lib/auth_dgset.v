@@ -62,7 +62,8 @@ Section auth_dgset_G.
   Qed.
 
   Lemma auth_dgset_alloc :
-    ⊢ |==> ∃ γ,
+    ⊢ |==>
+      ∃ γ,
       auth_dgset_auth γ (DfracOwn 1) ∅.
   Proof.
     apply own_alloc, auth_auth_valid. done.
