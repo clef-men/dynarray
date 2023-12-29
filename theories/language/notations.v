@@ -10,12 +10,18 @@ Notation Fail := (
   #() #()
 ).
 
-Notation "e .1" := (
+Notation "e .𝟙" := (
   Fst e
-) : expr_scope.
-Notation "e .2" := (
+)(at level 2,
+  left associativity,
+  format "e .𝟙"
+): expr_scope.
+Notation "e .𝟚" := (
   Snd e
-) : expr_scope.
+)(at level 2,
+  left associativity,
+  format "e .𝟚"
+): expr_scope.
 
 Notation "l .[ i ]" :=
   (l +ₗ i)%stdpp

@@ -17,7 +17,7 @@ Definition lst_match : val :=
       InjL <> =>
         "Nil" #()
     | InjR "x" =>
-        "Cons" "x".1 "x".2
+        "Cons" "x".𝟙 "x".𝟚
     end.
 Notation "'match:' e0 'with' | 'Nil' => e1 | 'Cons' x1 x2 => e2 'end'" :=
   (lst_match e0 (λ: <>, e1) (λ: x1 x2, e2))%E

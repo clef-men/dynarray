@@ -12,11 +12,11 @@ From heap_lang.persistent Require Export
 Implicit Types v t back front : val.
 
 #[local] Notation "t '.[back]'" :=
-  t.1%E
+  t.𝟙%E
 ( at level 5
 ) : expr_scope.
 #[local] Notation "t '.[front]'" :=
-  t.2%E
+  t.𝟚%E
 ( at level 5
 ) : expr_scope.
 

@@ -23,7 +23,7 @@ Implicit Types vs : list val.
       InjL "x" =>
         "Root" "x"
     | InjR "y" =>
-        "Diff" "y".1.1 "y".1.2 "y".2
+        "Diff" "y".𝟙.𝟙 "y".𝟙.𝟚 "y".𝟚
     end.
 #[local] Notation "'match:' e0 'with' | 'Root' x => e1 | 'Diff' y1 y2 y3 => e2 'end'" :=
   (descr_match e0 (λ: x, e1) (λ: y1 y2 y3, e2))%E
