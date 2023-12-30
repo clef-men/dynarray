@@ -8,16 +8,17 @@ From heap_lang.iris Require Import
   proofmode.
 
 Section support.
-  Context (A : Type).
+  Context (A B : Type).
 
   Implicit Types a : A.
+  Implicit Types b : B.
 
   Class OneshotG Σ := {
-    #[local] oneshot_G :: GhostVarG Σ (A + A) ;
+    #[local] oneshot_G :: GhostVarG Σ (A + B) ;
   }.
 
   Definition oneshot_Σ := #[
-    ghost_var_Σ (A + A)
+    ghost_var_Σ (A + B)
   ].
   #[global] Instance subG_oneshot_Σ Σ :
     subG oneshot_Σ Σ →
@@ -31,21 +32,21 @@ Section support.
 
     Definition oneshot_pending γ dq a :=
       ghost_var γ dq (inl a).
-    Definition oneshot_shot γ a :=
-      ghost_var γ DfracDiscarded (inr a).
+    Definition oneshot_shot γ b :=
+      ghost_var γ DfracDiscarded (inr b).
 
     #[global] Instance oneshot_pending_timeless γ dq a :
       Timeless (oneshot_pending γ dq a).
     Proof.
       apply _.
     Qed.
-    #[global] Instance oneshot_shot_timeless γ a :
-      Timeless (oneshot_shot γ a).
+    #[global] Instance oneshot_shot_timeless γ b :
+      Timeless (oneshot_shot γ b).
     Proof.
       apply _.
     Qed.
-    #[global] Instance oneshot_shot_persistent γ a :
-      Persistent (oneshot_shot γ a).
+    #[global] Instance oneshot_shot_persistent γ b :
+      Persistent (oneshot_shot γ b).
     Proof.
       apply _.
     Qed.
@@ -132,9 +133,9 @@ Section support.
       apply ghost_var_persist.
     Qed.
 
-    Lemma oneshot_pending_shot γ dq a1 a2 :
-      oneshot_pending γ dq a1 -∗
-      oneshot_shot γ a2 -∗
+    Lemma oneshot_pending_shot γ dq a b :
+      oneshot_pending γ dq a -∗
+      oneshot_shot γ b -∗
       False.
     Proof.
       iIntros "Hpending Hshot".
@@ -147,9 +148,9 @@ Section support.
     Proof.
       apply ghost_var_update.
     Qed.
-    Lemma oneshot_update_shot γ a a' :
+    Lemma oneshot_update_shot {γ a} b :
       oneshot_pending γ (DfracOwn 1) a ⊢ |==>
-      oneshot_shot γ a'.
+      oneshot_shot γ b.
     Proof.
       iIntros "Hpending".
       iMod (ghost_var_update with "Hpending") as "Hshot".
