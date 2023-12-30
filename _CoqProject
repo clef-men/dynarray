@@ -30,6 +30,8 @@ theories/iris/base_logic/algebra/auth_excl.v
 theories/iris/base_logic/lib/base.v
 theories/iris/base_logic/lib/agree.v
 theories/iris/base_logic/lib/excl.v
+theories/iris/base_logic/lib/ghost_var.v
+theories/iris/base_logic/lib/oneshot.v
 theories/iris/base_logic/lib/auth_excl.v
 theories/iris/base_logic/lib/auth_nat_max.v
 theories/iris/base_logic/lib/auth_nat_min.v
