@@ -285,24 +285,24 @@ Qed.
 Section rcfd_G.
   Context `{rcfd_G : RcfdG Σ}.
 
-  Record rcfd_name := {
-    rcfd_name_tokens : gname ;
-    rcfd_name_lstate : gname ;
+  Record rcfd_meta := {
+    rcfd_meta_tokens : gname ;
+    rcfd_meta_lstate : gname ;
   }.
-  Implicit Types γ : rcfd_name.
+  Implicit Types γ : rcfd_meta.
 
-  #[global] Instance rcfd_name_eq_dec : EqDecision rcfd_name :=
+  #[global] Instance rcfd_meta_eq_dec : EqDecision rcfd_meta :=
     ltac:(solve_decision).
-  #[global] Instance rcfd_name_countable :
-    Countable rcfd_name.
+  #[global] Instance rcfd_meta_countable :
+    Countable rcfd_meta.
   Proof.
     pose encode γ := (
-      γ.(rcfd_name_tokens),
-      γ.(rcfd_name_lstate)
+      γ.(rcfd_meta_tokens),
+      γ.(rcfd_meta_lstate)
     ).
     pose decode := λ '(γ_tokens, γ_lstate), {|
-      rcfd_name_tokens := γ_tokens ;
-      rcfd_name_lstate := γ_lstate ;
+      rcfd_meta_tokens := γ_tokens ;
+      rcfd_meta_lstate := γ_lstate ;
     |}.
     refine (inj_countable' encode decode _). intros []. done.
   Qed.
@@ -310,16 +310,16 @@ Section rcfd_G.
   #[local] Definition rcfd_tokens_auth' γ_tokens qs :=
     auth_gmultiset_auth γ_tokens (DfracOwn 1) qs.
   #[local] Definition rcfd_tokens_auth γ qs :=
-    rcfd_tokens_auth' γ.(rcfd_name_tokens) qs.
+    rcfd_tokens_auth' γ.(rcfd_meta_tokens) qs.
   #[local] Definition rcfd_tokens_frag γ q :=
-    auth_gmultiset_frag γ.(rcfd_name_tokens) {[+q+]}.
+    auth_gmultiset_frag γ.(rcfd_meta_tokens) {[+q+]}.
 
   #[local] Definition rcfd_lstate_auth' γ_lstate lstate :=
     mono_state_auth rcfd_lstep γ_lstate (DfracOwn 1) lstate.
   #[local] Definition rcfd_lstate_auth γ lstate :=
-    rcfd_lstate_auth' γ.(rcfd_name_lstate) lstate.
+    rcfd_lstate_auth' γ.(rcfd_meta_lstate) lstate.
   #[local] Definition rcfd_lstate_lb γ lstate :=
-    mono_state_lb rcfd_lstep γ.(rcfd_name_lstate) lstate.
+    mono_state_lb rcfd_lstep γ.(rcfd_meta_lstate) lstate.
 
   #[local] Definition rcfd_inv_inner l γ fd chars : iProp Σ :=
     ∃ state lstate ops l_state,
@@ -473,8 +473,8 @@ Section rcfd_G.
     iMod rcfd_tokens_alloc as "(%γ_tokens & Htokens_auth)".
     iMod rcfd_lstate_alloc as "(%γ_lstate & Hlstate_auth)".
     pose γ := {|
-      rcfd_name_tokens := γ_tokens ;
-      rcfd_name_lstate := γ_lstate ;
+      rcfd_meta_tokens := γ_tokens ;
+      rcfd_meta_lstate := γ_lstate ;
     |}.
     iMod (meta_set _ _ γ with "Hmeta") as "Hmeta"; first done.
     iApply "HΦ". iExists l, γ. iStep 2.

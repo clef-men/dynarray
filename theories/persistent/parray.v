@@ -165,35 +165,35 @@ Qed.
 Section parray_G.
   Context `{parray_G : ParrayG Σ}.
 
-  Record parray_name := {
-    parray_name_map : gname ;
-    parray_name_array : val ;
-    parray_name_size : nat ;
+  Record parray_meta := {
+    parray_meta_map : gname ;
+    parray_meta_array : val ;
+    parray_meta_size : nat ;
   }.
-  Implicit Types γ : parray_name.
+  Implicit Types γ : parray_meta.
 
   #[local] Definition parray_map_auth' γ_map map :=
     @ghost_map_auth _ _ _ _ _ parray_G_map_G γ_map 1 map.
   #[local] Definition parray_map_auth γ :=
-    parray_map_auth' γ.(parray_name_map).
+    parray_map_auth' γ.(parray_meta_map).
   #[local] Definition parray_map_elem' γ_map l vs :=
     @ghost_map_elem _ _ _ _ _ parray_G_map_G γ_map l DfracDiscarded vs.
   #[local] Definition parray_map_elem γ :=
-    parray_map_elem' γ.(parray_name_map).
+    parray_map_elem' γ.(parray_meta_map).
 
   #[local] Definition parray_inv_inner τ `{!iType _ τ} γ map root : iProp Σ :=
     parray_map_auth γ map ∗
     [∗ map] l ↦ vs ∈ map,
       ∃ descr,
-      ⌜length vs = γ.(parray_name_size)⌝ ∗
+      ⌜length vs = γ.(parray_meta_size)⌝ ∗
       l ↦ descr ∗
       if (decide (l = root)) then (
-        ⌜descr = &&Root γ.(parray_name_array)⌝ ∗
-        array_model γ.(parray_name_array) (DfracOwn 1) vs ∗
+        ⌜descr = &&Root γ.(parray_meta_array)⌝ ∗
+        array_model γ.(parray_meta_array) (DfracOwn 1) vs ∗
         [∗ list] v ∈ vs, τ v
       ) else (
         ∃ i v l' vs',
-        ⌜i < γ.(parray_name_size) ∧ vs = <[i := v]> vs'⌝ ∗
+        ⌜i < γ.(parray_meta_size) ∧ vs = <[i := v]> vs'⌝ ∗
         ⌜descr = &&Diff #i v #l'⌝ ∗
         parray_map_elem γ l' vs' ∗
         τ v
@@ -299,9 +299,9 @@ Section parray_G.
     pose vs := replicate (Z.to_nat sz) v.
     iMod (parray_map_alloc root vs) as "(%γ_map & Hmap_auth & Hmap_elem)".
     pose γ := {|
-      parray_name_map := γ_map ;
-      parray_name_array := arr ;
-      parray_name_size := Z.to_nat sz ;
+      parray_meta_map := γ_map ;
+      parray_meta_array := arr ;
+      parray_meta_size := Z.to_nat sz ;
     |}.
     iApply ("HΦ" $! _ γ). iSplitR "Hmap_elem"; last iSteps. iExists {[root := vs]}, root. iFrame.
     iApply big_sepM_singleton.
@@ -316,7 +316,7 @@ Section parray_G.
     }}}
       parray_reroot #l
     {{{
-      RET γ.(parray_name_array);
+      RET γ.(parray_meta_array);
       parray_inv_inner τ γ map l
     }}}.
   Proof.

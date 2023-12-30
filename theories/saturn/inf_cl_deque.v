@@ -171,42 +171,42 @@ Section inf_cl_deque_G.
     make_wise_prophet inf_cl_deque_prophet_spec.
   Implicit Types past prophs : list inf_cl_deque_prophet.(wise_prophet_type).
 
-  Record inf_cl_deque_name := {
-    inf_cl_deque_name_ctl : gname ;
-    inf_cl_deque_name_front : gname ;
-    inf_cl_deque_name_hist : gname ;
-    inf_cl_deque_name_model : gname ;
-    inf_cl_deque_name_lock : gname ;
-    inf_cl_deque_name_prophet : inf_cl_deque_prophet.(wise_prophet_name) ;
-    inf_cl_deque_name_winner : gname ;
+  Record inf_cl_deque_meta := {
+    inf_cl_deque_meta_ctl : gname ;
+    inf_cl_deque_meta_front : gname ;
+    inf_cl_deque_meta_hist : gname ;
+    inf_cl_deque_meta_model : gname ;
+    inf_cl_deque_meta_lock : gname ;
+    inf_cl_deque_meta_prophet : inf_cl_deque_prophet.(wise_prophet_name) ;
+    inf_cl_deque_meta_winner : gname ;
   }.
-  Implicit Types γ : inf_cl_deque_name.
+  Implicit Types γ : inf_cl_deque_meta.
 
-  #[local] Instance inf_cl_deque_name_eq_dec :
-    EqDecision inf_cl_deque_name.
+  #[local] Instance inf_cl_deque_meta_eq_dec :
+    EqDecision inf_cl_deque_meta.
   Proof.
     solve_decision.
   Qed.
-  #[local] Instance inf_cl_deque_name_countable :
-    Countable inf_cl_deque_name.
+  #[local] Instance inf_cl_deque_meta_countable :
+    Countable inf_cl_deque_meta.
   Proof.
     pose encode γ := (
-      γ.(inf_cl_deque_name_ctl),
-      γ.(inf_cl_deque_name_front),
-      γ.(inf_cl_deque_name_hist),
-      γ.(inf_cl_deque_name_model),
-      γ.(inf_cl_deque_name_lock),
-      γ.(inf_cl_deque_name_prophet),
-      γ.(inf_cl_deque_name_winner)
+      γ.(inf_cl_deque_meta_ctl),
+      γ.(inf_cl_deque_meta_front),
+      γ.(inf_cl_deque_meta_hist),
+      γ.(inf_cl_deque_meta_model),
+      γ.(inf_cl_deque_meta_lock),
+      γ.(inf_cl_deque_meta_prophet),
+      γ.(inf_cl_deque_meta_winner)
     ).
     pose decode := λ '(γ_ctl, γ_front, γ_hist, γ_model, γ_lock, γ_prophet, γ_winner), {|
-      inf_cl_deque_name_ctl := γ_ctl ;
-      inf_cl_deque_name_front := γ_front ;
-      inf_cl_deque_name_hist := γ_hist ;
-      inf_cl_deque_name_model := γ_model ;
-      inf_cl_deque_name_lock := γ_lock ;
-      inf_cl_deque_name_prophet := γ_prophet ;
-      inf_cl_deque_name_winner := γ_winner ;
+      inf_cl_deque_meta_ctl := γ_ctl ;
+      inf_cl_deque_meta_front := γ_front ;
+      inf_cl_deque_meta_hist := γ_hist ;
+      inf_cl_deque_meta_model := γ_model ;
+      inf_cl_deque_meta_lock := γ_lock ;
+      inf_cl_deque_meta_prophet := γ_prophet ;
+      inf_cl_deque_meta_winner := γ_winner ;
     |}.
     refine (inj_countable' encode decode _). intros []. done.
   Qed.
@@ -214,48 +214,48 @@ Section inf_cl_deque_G.
   #[local] Definition inf_cl_deque_ctl₁' γ_ctl back priv :=
     auth_excl_auth (auth_excl_G := inf_cl_deque_G_ctl_G) γ_ctl (DfracOwn 1) (back, priv).
   #[local] Definition inf_cl_deque_ctl₁ γ back priv :=
-    inf_cl_deque_ctl₁' γ.(inf_cl_deque_name_ctl) back priv.
+    inf_cl_deque_ctl₁' γ.(inf_cl_deque_meta_ctl) back priv.
   #[local] Definition inf_cl_deque_ctl₂' γ_ctl back priv :=
     auth_excl_frag (auth_excl_G := inf_cl_deque_G_ctl_G) γ_ctl (back, priv).
   #[local] Definition inf_cl_deque_ctl₂ γ back priv :=
-    inf_cl_deque_ctl₂' γ.(inf_cl_deque_name_ctl) back priv.
+    inf_cl_deque_ctl₂' γ.(inf_cl_deque_meta_ctl) back priv.
 
   #[local] Definition inf_cl_deque_front_auth' γ_front front :=
     auth_nat_max_auth γ_front (DfracOwn 1) front.
   #[local] Definition inf_cl_deque_front_auth γ front :=
-    inf_cl_deque_front_auth' γ.(inf_cl_deque_name_front) front.
+    inf_cl_deque_front_auth' γ.(inf_cl_deque_meta_front) front.
   #[local] Definition inf_cl_deque_front_lb γ front :=
-    auth_nat_max_lb γ.(inf_cl_deque_name_front) front.
+    auth_nat_max_lb γ.(inf_cl_deque_meta_front) front.
 
   #[local] Definition inf_cl_deque_hist_auth' γ_hist hist :=
     mono_list_auth γ_hist 1 hist.
   #[local] Definition inf_cl_deque_hist_auth γ hist :=
-    inf_cl_deque_hist_auth' γ.(inf_cl_deque_name_hist) hist.
+    inf_cl_deque_hist_auth' γ.(inf_cl_deque_meta_hist) hist.
   #[local] Definition inf_cl_deque_hist_mapsto γ i v :=
-    mono_list_mapsto γ.(inf_cl_deque_name_hist) i v.
+    mono_list_mapsto γ.(inf_cl_deque_meta_hist) i v.
 
   #[local] Definition inf_cl_deque_model₁' γ_model model :=
     auth_excl_frag (auth_excl_G := inf_cl_deque_G_model_G) γ_model model.
   #[local] Definition inf_cl_deque_model₁ γ model :=
-    inf_cl_deque_model₁' γ.(inf_cl_deque_name_model) model.
+    inf_cl_deque_model₁' γ.(inf_cl_deque_meta_model) model.
   #[local] Definition inf_cl_deque_model₂' γ_model model :=
     auth_excl_auth (auth_excl_G := inf_cl_deque_G_model_G) γ_model (DfracOwn 1) model.
   #[local] Definition inf_cl_deque_model₂ γ model :=
-    inf_cl_deque_model₂' γ.(inf_cl_deque_name_model) model.
+    inf_cl_deque_model₂' γ.(inf_cl_deque_meta_model) model.
 
   #[local] Definition inf_cl_deque_lock' γ_lock :=
     excl γ_lock ().
   #[local] Definition inf_cl_deque_lock γ :=
-    inf_cl_deque_lock' γ.(inf_cl_deque_name_lock).
+    inf_cl_deque_lock' γ.(inf_cl_deque_meta_lock).
 
   #[local] Definition inf_cl_deque_winner₁' γ_winner front Φ :=
     auth_excl_frag (auth_excl_G := inf_cl_deque_G_winner_G) γ_winner (front, Next ∘ Φ).
   #[local] Definition inf_cl_deque_winner₁ γ front Φ :=
-    inf_cl_deque_winner₁' γ.(inf_cl_deque_name_winner) front Φ.
+    inf_cl_deque_winner₁' γ.(inf_cl_deque_meta_winner) front Φ.
   #[local] Definition inf_cl_deque_winner₂' γ_winner front Φ :=
     auth_excl_auth (auth_excl_G := inf_cl_deque_G_winner_G) γ_winner (DfracOwn 1) (front, Next ∘ Φ).
   #[local] Definition inf_cl_deque_winner₂ γ front Φ :=
-    inf_cl_deque_winner₂' γ.(inf_cl_deque_name_winner) front Φ.
+    inf_cl_deque_winner₂' γ.(inf_cl_deque_meta_winner) front Φ.
   #[local] Definition inf_cl_deque_winner' γ_winner : iProp Σ :=
     ∃ front Φ1 Φ2,
     inf_cl_deque_winner₁' γ_winner front Φ1 ∗
@@ -386,7 +386,7 @@ Section inf_cl_deque_G.
     inf_cl_deque_model₁ γ model ∗
     ⌜length model = Z.to_nat (back - front)⌝ ∗
     (* prophet model *)
-    inf_cl_deque_prophet.(wise_prophet_model) p γ.(inf_cl_deque_name_prophet) past prophs ∗
+    inf_cl_deque_prophet.(wise_prophet_model) p γ.(inf_cl_deque_meta_prophet) past prophs ∗
     ⌜Forall (λ '(front', _), front' < front) past⌝ ∗
     (* state *)
     inf_cl_deque_state γ ι front back hist model prophs.
@@ -859,7 +859,7 @@ Section inf_cl_deque_G.
     {{{
       inf_array_inv mutex data ∗
       inv ι (inf_cl_deque_inv_inner l γ ι data p) ∗
-      inf_cl_deque_prophet.(wise_prophet_lb) γ.(inf_cl_deque_name_prophet) prophs_lb
+      inf_cl_deque_prophet.(wise_prophet_lb) γ.(inf_cl_deque_meta_prophet) prophs_lb
     }}}
       Resolve (CmpXchg #l.[front] v1 v2) #p (#front, #id)%V
     {{{ v,
@@ -887,7 +887,7 @@ Section inf_cl_deque_G.
       inf_array_inv mutex data ∗
       inv ι (inf_cl_deque_inv_inner l γ ι data p) ∗
       inf_cl_deque_front_lb γ front ∗
-      inf_cl_deque_prophet.(wise_prophet_lb) γ.(inf_cl_deque_name_prophet) prophs_lb
+      inf_cl_deque_prophet.(wise_prophet_lb) γ.(inf_cl_deque_meta_prophet) prophs_lb
     }}}
       Resolve (CmpXchg #l.[front] #front v) #p (#front, #id)%V
     {{{ w,
@@ -946,7 +946,7 @@ Section inf_cl_deque_G.
       inv ι (inf_cl_deque_inv_inner l γ ι data p) ∗
       inf_cl_deque_ctl₂ γ front priv ∗
       inf_cl_deque_front_lb γ front ∗
-      inf_cl_deque_prophet.(wise_prophet_lb) γ.(inf_cl_deque_name_prophet) prophs_lb ∗
+      inf_cl_deque_prophet.(wise_prophet_lb) γ.(inf_cl_deque_meta_prophet) prophs_lb ∗
       inf_cl_deque_winner₂ γ front Ψ
     }}}
       Resolve (CmpXchg #l.[front] #front v) #p (#front, #id)%V
@@ -1007,13 +1007,13 @@ Section inf_cl_deque_G.
     iMod inf_cl_deque_winner_alloc as "(%γ_winner & Hwinner)".
 
     set γ := {|
-      inf_cl_deque_name_ctl := γ_ctl ;
-      inf_cl_deque_name_front := γ_front ;
-      inf_cl_deque_name_hist := γ_hist ;
-      inf_cl_deque_name_model := γ_model ;
-      inf_cl_deque_name_lock := γ_lock ;
-      inf_cl_deque_name_prophet := γ_prophet ;
-      inf_cl_deque_name_winner := γ_winner ;
+      inf_cl_deque_meta_ctl := γ_ctl ;
+      inf_cl_deque_meta_front := γ_front ;
+      inf_cl_deque_meta_hist := γ_hist ;
+      inf_cl_deque_meta_model := γ_model ;
+      inf_cl_deque_meta_lock := γ_lock ;
+      inf_cl_deque_meta_prophet := γ_prophet ;
+      inf_cl_deque_meta_winner := γ_winner ;
     |}.
     iMod (meta_set _ _ γ with "Hmeta") as "#Hmeta"; first done.
 
