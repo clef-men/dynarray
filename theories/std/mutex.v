@@ -8,7 +8,7 @@ From heap_lang.std Require Export
 
 Implicit Types t fn : val.
 
-Record mutex `{!heapGS Σ} := {
+Record mutex `{heap_GS : !heapGS Σ} := {
   mutex_create : val ;
   mutex_lock : val ;
   mutex_unlock : val ;
@@ -35,7 +35,8 @@ Record mutex `{!heapGS Σ} := {
     }}}
       mutex_create #()
     {{{ t,
-      RET t; mutex_inv t P
+      RET t;
+      mutex_inv t P
     }}} ;
 
   mutex_lock_spec t P :
@@ -44,13 +45,16 @@ Record mutex `{!heapGS Σ} := {
     }}}
       mutex_lock t
     {{{
-      RET #(); mutex_locked t ∗ P
+      RET #();
+      mutex_locked t ∗
+      P
     }}} ;
 
   mutex_unlock_spec t P :
     {{{
       mutex_inv t P ∗
-      mutex_locked t ∗ P
+      mutex_locked t ∗
+      P
     }}}
       mutex_unlock t
     {{{
@@ -61,7 +65,7 @@ Record mutex `{!heapGS Σ} := {
 #[global] Arguments Build_mutex {_ _ _ _ _ _ _ _ _ _} _ _ _ _ : assert.
 
 Section mutex.
-  Context `{!heapGS Σ} (mutex : mutex Σ).
+  Context `{heap_GS : !heapGS Σ} (mutex : mutex Σ).
 
   #[global] Instance mutex_inv_ne t :
     NonExpansive (mutex.(mutex_inv) t).
@@ -86,12 +90,17 @@ Section mutex.
       mutex.(mutex_inv) t P ∗
       ( mutex.(mutex_locked) t -∗
         P -∗
-        WP fn #() {{ v, mutex.(mutex_locked) t ∗ P ∗ Ψ v }}
+        WP fn #() {{ v,
+          mutex.(mutex_locked) t ∗
+          P ∗
+          Ψ v
+        }}
       )
     }}}
       mutex_protect t fn
     {{{ v,
-      RET v; Ψ v
+      RET v;
+      Ψ v
     }}}.
   Proof.
     iIntros "%Φ (#Hinv & Hfn) HΦ".

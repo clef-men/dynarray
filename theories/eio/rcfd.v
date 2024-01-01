@@ -12,11 +12,12 @@ From heap_lang.language Require Import
 From heap_lang.std Require Import
   record2
   opt
+  channel1
   unix.
 From heap_lang.eio Require Import
   base.
 
-Implicit Types b : bool.
+Implicit Types b closing : bool.
 Implicit Types ops : Z.
 Implicit Types q : Qp.
 Implicit Types qs : gmultiset Qp.
@@ -222,29 +223,23 @@ Definition rcfd_close : val :=
         #false
     end.
 
-(* Definition rcfd_remove : val := *)
-(*   λ: "t", *)
-(*     let: "prev" := !"t".[fd] in *)
-(*     match: !"prev" with *)
-(*     | Open "fd" => *)
-(*         let: "flag" := ref #false in *)
-(*         let: "mtx" := mutex_create #() in *)
-(*         let: "cond" := condition_create #() in *)
-(*         let: "signal" := *)
-(*           λ: <>, *)
-(*             condition_protect "cond" "mtx" (λ: <>, "flag" <- #true) ;; *)
-(*             condition_signal "cond" "mtx" *)
-(*         in *)
-(*         let: "next" := ref (&Closing "signal") in *)
-(*         if: CAS "t".[fd] "prev" "next" then ( *)
-(*           condition_wait "cond" "mtx" (λ: <>, !"flag") ;; *)
-(*           &Some "fd" *)
-(*         ) else ( *)
-(*           &&None *)
-(*         ) *)
-(*     | Closing <> => *)
-(*         &&None *)
-(*     end. *)
+Definition rcfd_remove `{heap_GS : !heapGS Σ} {mutex : mutex Σ} (condition : condition mutex) : val :=
+  λ: "t",
+    let: "prev" := !"t".[fd] in
+    match: !"prev" with
+    | Open "fd" =>
+        let: "flag" := ref #false in
+        let: "chan" := channel1_create condition #() in
+        let: "next" := ref (&Closing (λ: <>, channel1_signal condition "chan")) in
+        if: CAS "t".[fd] "prev" "next" then (
+          channel1_wait condition "chan" ;;
+          &Some "fd"
+        ) else (
+          &&None
+        )
+    | Closing <> =>
+        &&None
+    end.
 
 Definition rcfd_use : val :=
   λ: "t" "closed" "open",
@@ -296,11 +291,13 @@ Inductive rcfd_lstep : relation rcfd_lstate :=
 Class RcfdG Σ `{heap_GS : !heapGS Σ} := {
   #[local] rcfd_G_tokens_G :: AuthGmultisetG Σ Qp ;
   #[local] rcfd_G_lstate_G :: MonoStateG rcfd_lstep Σ ;
+  #[local] rcfd_G_channel1_G :: Channel1G Σ ;
 }.
 
 Definition rcfd_Σ := #[
   auth_gmultiset_Σ Qp ;
-  mono_state_Σ rcfd_lstep
+  mono_state_Σ rcfd_lstep ;
+  channel1_Σ
 ].
 #[global] Instance subG_rcfd_Σ `{heap_GS : !heapGS Σ} :
   subG rcfd_Σ Σ →
@@ -751,7 +748,7 @@ Section rcfd_G.
       iSteps. iApply ("HΦ" $! None). iSteps.
   Qed.
 
-  #[local] Lemma rcfd_close_spec' (closing : bool) t fd chars :
+  #[local] Lemma rcfd_close_spec' closing t fd chars :
     {{{
       rcfd_inv t fd chars ∗
       if closing then
@@ -896,6 +893,139 @@ Section rcfd_G.
     iSteps.
   Qed.
 
+  #[local] Lemma rcfd_remove_spec' closing {mutex : mutex Σ} (condition : condition mutex) t fd chars :
+    {{{
+      rcfd_inv t fd chars ∗
+      if closing then
+        rcfd_closing t
+      else
+        True
+    }}}
+      rcfd_remove condition t
+    {{{ o,
+      RET (o : val);
+      if closing then
+        ⌜o = None⌝
+      else
+        rcfd_closing t ∗
+        match o with
+        | None =>
+            True
+        | Some fd' =>
+            ⌜fd' = fd⌝ ∗
+            unix_fd_model fd (DfracOwn 1) chars
+        end
+    }}}.
+  Proof.
+    iIntros "%Φ ((%l & %γ & -> & #Hmeta & #Hinv) & Hclosing) HΦ".
+
+    wp_rec. wp_pures.
+
+    wp_bind (!_)%E.
+    iInv "Hinv" as "(%state1 & %lstate1 & %ops1 & %l_state1 & Hops1 & Hfd1 & #Hstate1 & Hlstate_auth & Hlstate1)".
+    wp_load.
+    destruct (decide (lstate1 = RcfdLstateOpen)) as [-> | Hlstate1].
+
+    - iDestruct "Hlstate1" as "(%q & %qs & (-> & %Hqs) & (-> & ->) & Htokens_auth & Hmodel)".
+      destruct closing; last iClear "Hclosing".
+      { iDestruct "Hclosing" as "(%_l & %_γ & %Heq & _Hmeta & Hlstate_lb)". injection Heq as <-.
+        iDestruct (meta_agree with "Hmeta _Hmeta") as %<-. iClear "_Hmeta".
+        iDestruct (rcfd_lstate_valid_closing_users with "Hlstate_auth Hlstate_lb") as %[[=] | [=]].
+      }
+      iSplitR "HΦ". { iExists (RcfdStateOpen _). iSteps. }
+      iModIntro. clear.
+
+      wp_load.
+      wp_alloc flag as "Hflag".
+      wp_smart_apply (channel1_create_spec _ (unix_fd_model fd (DfracOwn 1) chars) with "[//]"). iIntros "%chan (#Hchan_inv & Hchan_producer & Hchan_consumer)".
+      wp_alloc l_state as "Hstate". iMod (mapsto_persist with "Hstate") as "#Hstate".
+      wp_pures.
+
+      wp_bind (CmpXchg _ _ _).
+      iInv "Hinv" as "(%state2 & %lstate2 & %ops2 & %l_state2 & Hops2 & Hfd2 & #Hstate2 & Hlstate_auth & Hlstate2)".
+      wp_cmpxchg as [= <-] | Hcmpxchg.
+
+      + iDestruct (mapsto_agree with "Hstate1 Hstate2") as %[= <-]%(inj _).
+        destruct (decide (lstate2 = RcfdLstateOpen)) as [-> | Hlstate2]; last first.
+        { destruct lstate2; iDecompose "Hlstate2"; iSteps. }
+        iDestruct "Hlstate2" as "(%q & %qs & (-> & %Hqs) & _ & Htokens_auth & Hmodel)".
+        iMod (rcfd_lstate_update RcfdLstateClosingUsers with "Hlstate_auth") as "Hlstate_auth"; first done.
+        iDestruct (rcfd_lstate_lb_get with "Hlstate_auth") as "#Hlstate_lb".
+        iSplitR "Hchan_consumer HΦ".
+        { destruct (decide (size qs = 0)) as [Hqs_size | Hqs_size].
+          - apply gmultiset_size_empty_iff in Hqs_size as ->.
+            rewrite gmultiset_set_fold_empty in Hqs. rewrite {}Hqs.
+            iMod (rcfd_lstate_update RcfdLstateClosingNoUsers with "Hlstate_auth") as "Hlstate_auth"; first done.
+            iExists (RcfdStateClosing _). iStep 9. iModIntro.
+            wp_apply (channel1_signal_spec with "[$Hchan_inv $Hchan_producer $Hmodel]").
+            iSteps.
+          - iExists (RcfdStateClosing _). iStep 11 as "Hmodel". iModIntro.
+            wp_apply (channel1_signal_spec with "[$Hchan_inv $Hchan_producer $Hmodel]").
+            iSteps.
+        }
+        iModIntro. clear.
+
+        wp_smart_apply (channel1_wait_spec with "[$Hchan_inv $Hchan_consumer]"). iIntros "Hmodel".
+        iSteps. iApply ("HΦ" $! (Some _)). iSteps.
+
+      + iAssert (⌜∃ fn2, state2 = RcfdStateClosing fn2⌝ ∗ rcfd_lstate_lb γ RcfdLstateClosingUsers)%I as "((%fn2 & ->) & #Hlstate_lb)".
+        { destruct lstate2; iDecompose "Hlstate2".
+          - iDestruct (rcfd_lstate_lb_get with "Hlstate_auth") as "$".
+            iSteps.
+          - iDestruct (rcfd_lstate_lb_get with "Hlstate_auth") as "Hlstate_lb".
+            iDestruct (rcfd_lstate_lb_mono with "Hlstate_lb") as "$"; first done.
+            iSteps.
+        }
+        iSplitR "HΦ". { iExists (RcfdStateClosing _). iSteps. }
+        iSteps. iApply ("HΦ" $! None). iSteps.
+
+    - iAssert (⌜∃ fn1, state1 = RcfdStateClosing fn1⌝ ∗ rcfd_lstate_lb γ RcfdLstateClosingUsers)%I as "((%fn1 & ->) & #Hlstate_lb)".
+      { destruct lstate1; iDecompose "Hlstate1".
+        - iDestruct (rcfd_lstate_lb_get with "Hlstate_auth") as "$".
+          iSteps.
+        - iDestruct (rcfd_lstate_lb_get with "Hlstate_auth") as "Hlstate_lb".
+          iDestruct (rcfd_lstate_lb_mono with "Hlstate_lb") as "$"; first done.
+          iSteps.
+      }
+      iSplitR "HΦ". { iExists (RcfdStateClosing _). iSteps. }
+      iSteps. iApply ("HΦ" $! None). destruct closing; iSteps.
+  Qed.
+  Lemma rcfd_remove_spec {mutex : mutex Σ} (condition : condition mutex) t fd chars :
+    {{{
+      rcfd_inv t fd chars
+    }}}
+      rcfd_remove condition t
+    {{{ o,
+      RET (o : val);
+      rcfd_closing t ∗
+      match o with
+      | None =>
+          True
+      | Some fd' =>
+          ⌜fd' = fd⌝ ∗
+          unix_fd_model fd (DfracOwn 1) chars
+      end
+    }}}.
+  Proof.
+    iIntros "%Φ #Hinv HΦ".
+    wp_apply (rcfd_remove_spec' false with "[$Hinv]").
+    iSteps.
+  Qed.
+  Lemma rcfd_remove_spec_closing closing {mutex : mutex Σ} (condition : condition mutex) t fd chars :
+    {{{
+      rcfd_inv t fd chars ∗
+      rcfd_closing t
+    }}}
+      rcfd_remove condition t
+    {{{
+      RET &&None; True
+    }}}.
+  Proof.
+    iIntros "%Φ (#Hinv & #Hclosing) HΦ".
+    wp_apply (rcfd_remove_spec' true with "[$Hinv $Hclosing]").
+    iSteps.
+  Qed.
+
   Lemma rcfd_use_spec Ψ t fd chars (closed open : val) :
     {{{
       rcfd_inv t fd chars ∗
@@ -929,7 +1059,7 @@ Section rcfd_G.
     iSteps.
   Qed.
 
-  #[local] Lemma rcfd_is_open_spec' (closing : bool) t fd chars :
+  #[local] Lemma rcfd_is_open_spec' closing t fd chars :
     {{{
       rcfd_inv t fd chars ∗
       if closing then
@@ -1013,7 +1143,7 @@ Section rcfd_G.
     iSteps.
   Qed.
 
-  #[local] Lemma rcfd_peek_spec' (closing : bool) t fd chars :
+  #[local] Lemma rcfd_peek_spec' closing t fd chars :
     {{{
       rcfd_inv t fd chars ∗
       if closing then
