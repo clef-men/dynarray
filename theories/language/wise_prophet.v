@@ -7,7 +7,7 @@ From heap_lang.language Require Export
   typed_prophet.
 From heap_lang.language Require Import
   notations
-  proofmode.
+  diaframe.
 
 Record wise_strong_prophet `{heap_GS : !heapGS Σ} := {
   wise_strong_prophet_type : Type ;

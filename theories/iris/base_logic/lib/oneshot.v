@@ -5,7 +5,7 @@ From heap_lang.iris.base_logic Require Export
 From heap_lang.iris.base_logic Require Import
   lib.ghost_var.
 From heap_lang.iris Require Import
-  proofmode.
+  diaframe.
 
 Class OneshotG Σ A B := {
   #[local] oneshot_G :: GhostVarG Σ (A + B) ;

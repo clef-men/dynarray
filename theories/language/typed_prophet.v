@@ -4,7 +4,7 @@ From heap_lang.language Require Export
   language.
 From heap_lang.language Require Import
   notations
-  proofmode.
+  diaframe.
 
 Record typed_strong_prophet_spec := {
   typed_strong_prophet_spec_type : Type ;

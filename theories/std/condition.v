@@ -2,7 +2,7 @@ From heap_lang Require Import
   prelude.
 From heap_lang.language Require Import
   notations
-  proofmode.
+  diaframe.
 From heap_lang.std Require Export
   mutex.
 

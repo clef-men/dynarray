@@ -10,7 +10,7 @@ From iris.program_logic Require Export
 From heap_lang Require Import
   prelude.
 From heap_lang.iris Require Import
-  proofmode.
+  diaframe.
 
 Section atomic_acc.
   Context `{BiFUpd PROP} {TA TB : tele}.

@@ -5,7 +5,7 @@ From heap_lang.iris.algebra Require Import
 From heap_lang.iris.base_logic Require Export
   lib.base.
 From heap_lang.iris Require Import
-  proofmode.
+  diaframe.
 
 Section sts.
   Context `(step : relation state).

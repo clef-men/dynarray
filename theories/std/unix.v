@@ -4,7 +4,7 @@ From Coq.Strings Require Export
 From heap_lang Require Import
   prelude.
 From heap_lang.language Require Import
-  proofmode.
+  diaframe.
 From heap_lang.std Require Export
   base.
 

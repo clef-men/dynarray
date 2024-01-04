@@ -4,13 +4,10 @@ From iris.proofmode Require Import
 From iris.heap_lang Require Export
   proofmode.
 
-From diaframe.heap_lang Require Export
-  proof_automation.
-
+From heap_lang Require Import
+  prelude.
 From heap_lang Require Export
   language.
-From heap_lang.iris Require Export
-  proofmode.
 From heap_lang.iris.program_logic Require Import
   atomic.
 

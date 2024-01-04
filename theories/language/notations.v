@@ -15,13 +15,13 @@ Notation "e .𝟙" := (
 )(at level 2,
   left associativity,
   format "e .𝟙"
-): expr_scope.
+) : expr_scope.
 Notation "e .𝟚" := (
   Snd e
 )(at level 2,
   left associativity,
   format "e .𝟚"
-): expr_scope.
+) : expr_scope.
 
 Notation "l .[ i ]" :=
   (l +ₗ i)%stdpp

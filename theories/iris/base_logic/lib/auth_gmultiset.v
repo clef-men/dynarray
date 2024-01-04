@@ -8,7 +8,7 @@ From heap_lang.iris.algebra Require Import
 From heap_lang.iris.base_logic Require Export
   lib.base.
 From heap_lang.iris Require Import
-  proofmode.
+  diaframe.
 
 Class AuthGmultisetG Σ A `{Countable A} := {
   #[local] auth_gmultiset_G_inG :: inG Σ (authR (gmultisetUR A)) ;

@@ -7,7 +7,7 @@ From heap_lang.iris.base_logic Require Export
 From heap_lang.iris.base_logic Require Import
   algebra.auth_excl.
 From heap_lang.iris Require Import
-  proofmode.
+  diaframe.
 
 Class AuthExclG Σ F := {
   #[local] auth_excl_G_inG :: inG Σ (auth_excl_R $ oFunctor_apply F $ iPropO Σ) ;

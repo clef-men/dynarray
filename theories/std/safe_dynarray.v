@@ -6,7 +6,7 @@ From heap_lang.iris.bi Require Import
   big_op.
 From heap_lang.language Require Import
   notations
-  proofmode.
+  diaframe.
 From heap_lang.std Require Export
   base.
 From heap_lang.std Require Import

@@ -8,7 +8,7 @@ From heap_lang.iris.base_logic Require Import
 From heap_lang.language Require Import
   tactics
   notations
-  proofmode.
+  diaframe.
 From heap_lang.std Require Import
   record2
   opt

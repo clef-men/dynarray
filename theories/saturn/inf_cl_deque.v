@@ -17,7 +17,7 @@ From heap_lang.language Require Import
   identifier
   wise_prophet
   notations
-  proofmode.
+  diaframe.
 From heap_lang.std Require Import
   record4
   inf_array

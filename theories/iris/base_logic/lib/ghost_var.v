@@ -6,7 +6,7 @@ From heap_lang Require Import
 From heap_lang.iris.base_logic Require Export
   lib.base.
 From heap_lang.iris Require Import
-  proofmode.
+  diaframe.
 
 Class GhostVarG Σ A := {
   #[local] ghost_var_G :: inG Σ (dfrac_agreeR $ leibnizO A) ;

@@ -5,7 +5,7 @@ From heap_lang.iris.base_logic Require Import
   lib.excl.
 From heap_lang.language Require Import
   notations
-  proofmode.
+  diaframe.
 From heap_lang.std Require Import
   record3.
 From heap_lang.std Require Export

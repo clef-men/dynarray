@@ -6,7 +6,7 @@ From heap_lang Require Import
 From heap_lang.iris.base_logic Require Export
   lib.base.
 From heap_lang.iris Require Import
-  proofmode.
+  diaframe.
 
 Class AgreeG Σ F := {
   #[local] agree_G_inG :: inG Σ (agreeR $ oFunctor_apply F $ iPropO Σ) ;

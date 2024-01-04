@@ -3,7 +3,7 @@ From heap_lang Require Import
 From heap_lang.language Require Import
   tactics
   notations
-  proofmode.
+  diaframe.
 From heap_lang.std Require Export
   base.
 

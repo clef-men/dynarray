@@ -4,7 +4,7 @@ From heap_lang Require Export
   language.
 From heap_lang.language Require Import
   notations
-  proofmode.
+  diaframe.
 
 Definition identifier :=
   proph_id.

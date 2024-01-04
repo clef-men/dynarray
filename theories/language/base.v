@@ -7,7 +7,7 @@ From iris.heap_lang Require Export
 From heap_lang Require Import
   prelude.
 From heap_lang.iris Require Import
-  proofmode.
+  diaframe.
 
 Lemma mapsto_dfrac_relax `{heap_GS : !heapGS Σ} dq l v :
   ✓ dq →

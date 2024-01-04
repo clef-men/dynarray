@@ -4,7 +4,7 @@ From iris.bi Require Export
 From heap_lang Require Import
   prelude.
 From heap_lang.iris Require Import
-  proofmode.
+  diaframe.
 From heap_lang.common Require Import
   list.
 
