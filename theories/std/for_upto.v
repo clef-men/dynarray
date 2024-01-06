@@ -9,17 +9,17 @@ From heap_lang.std Require Export
 Implicit Types δ : nat.
 Implicit Types fn : val.
 
-Definition for_ : val :=
-  rec: "for" "beg" "end" "fn" :=
+Definition for_upto : val :=
+  rec: "for_upto" "beg" "end" "fn" :=
     if: "end" ≤ "beg" then (
       #()
     ) else (
       "fn" "beg" ;;
-      "for" (#1 + "beg") "end" "fn"
+      "for_upto" (#1 + "beg") "end" "fn"
     ).
 
 Notation "'for:' i = beg 'to' _end 'begin' e 'end'" :=
-  (for_ beg _end (λ: i, e))%E
+  (for_upto beg _end (λ: i, e))%E
 ( i at level 1,
   beg, _end, e at level 200,
   format "'[hv' for:  i  =  beg  to  _end  begin  '/  ' '[' e ']'  '/' end ']'"
@@ -28,7 +28,7 @@ Notation "'for:' i = beg 'to' _end 'begin' e 'end'" :=
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
 
-  #[local] Lemma for_spec_stronger beg i δ Ψ _end fn :
+  #[local] Lemma for_upto_spec_stronger beg i δ Ψ _end fn :
     i = (beg + δ)%Z →
     {{{
       ▷ Ψ i δ ∗
@@ -42,7 +42,7 @@ Section heap_GS.
         }}
       )
     }}}
-      for_ #i #_end fn
+      for_upto #i #_end fn
     {{{
       RET #();
       Ψ (i `max` _end)%Z (δ + Z.to_nat (_end - i))
@@ -59,7 +59,7 @@ Section heap_GS.
       wp_smart_apply ("IH" with "[] [] HΨ [HΦ]"); [iSteps.. |].
       assert ((1 + i) `max` _end = i `max` _end)%Z as -> by lia. rewrite -Nat.add_succ_comm //.
   Qed.
-  Lemma for_spec_strong Ψ beg _end fn :
+  Lemma for_upto_spec_strong Ψ beg _end fn :
     {{{
       ▷ Ψ beg 0 ∗
       □ (
@@ -72,17 +72,17 @@ Section heap_GS.
         }}
       )
     }}}
-      for_ #beg #_end fn
+      for_upto #beg #_end fn
     {{{
       RET #();
       Ψ (beg `max` _end)%Z (Z.to_nat (_end - beg))
     }}}.
   Proof.
     iIntros "%Φ (HΨ & #Hfn) HΦ".
-    wp_apply (for_spec_stronger beg beg 0 with "[$HΨ $Hfn]"); first lia.
+    wp_apply (for_upto_spec_stronger beg beg 0 with "[$HΨ $Hfn]"); first lia.
     iSteps.
   Qed.
-  Lemma for_spec Ψ beg _end fn :
+  Lemma for_upto_spec Ψ beg _end fn :
     (beg ≤ _end)%Z →
     {{{
       ▷ Ψ beg 0 ∗
@@ -96,17 +96,17 @@ Section heap_GS.
         }}
       )
     }}}
-      for_ #beg #_end fn
+      for_upto #beg #_end fn
     {{{
       RET #();
       Ψ _end (Z.to_nat (_end - beg))
     }}}.
   Proof.
     iIntros "% %Φ H HΦ".
-    wp_apply (for_spec_strong Ψ with "H").
+    wp_apply (for_upto_spec_strong Ψ with "H").
     rewrite Z.max_r //.
   Qed.
-  Lemma for_spec_strong' Ψ beg _end fn :
+  Lemma for_upto_spec_strong' Ψ beg _end fn :
     {{{
       ▷ Ψ beg 0 ∗
       ( [∗ list] δ ∈ seq 0 (Z.to_nat (_end - beg)),
@@ -119,7 +119,7 @@ Section heap_GS.
         }}
       )
     }}}
-      for_ #beg #_end fn
+      for_upto #beg #_end fn
     {{{
       RET #();
       Ψ (beg `max` _end)%Z (Z.to_nat (_end - beg))
@@ -131,12 +131,12 @@ Section heap_GS.
       Ψ i δ ∗
       [∗ list] ϵ ∈ seq δ (Z.to_nat (_end - beg) - δ), Ξ ϵ
     )%I).
-    wp_apply (for_spec_strong Ψ' with "[HΨ Hfn]"); last iSteps.
+    wp_apply (for_upto_spec_strong Ψ' with "[HΨ Hfn]"); last iSteps.
     rewrite /Ψ' Nat.sub_0_r. iFrame. iIntros "!> %i %δ %Hi (HΨ & HΞ)".
     assert (Z.to_nat (_end - beg) - δ = S $ Z.to_nat (_end - beg) - S δ) as -> by lia.
     iSteps.
   Qed.
-  Lemma for_spec' Ψ beg _end fn :
+  Lemma for_upto_spec' Ψ beg _end fn :
     (beg ≤ _end)%Z →
     {{{
       ▷ Ψ beg 0 ∗
@@ -150,17 +150,17 @@ Section heap_GS.
         }}
       )
     }}}
-      for_ #beg #_end fn
+      for_upto #beg #_end fn
     {{{
       RET #();
       Ψ _end (Z.to_nat (_end - beg))
     }}}.
   Proof.
     iIntros "% %Φ H HΦ".
-    wp_apply (for_spec_strong' Ψ with "H").
+    wp_apply (for_upto_spec_strong' Ψ with "H").
     rewrite Z.max_r //.
   Qed.
-  Lemma for_spec_disentangled Ψ beg _end fn :
+  Lemma for_upto_spec_disentangled Ψ beg _end fn :
     {{{
       □ (
         ∀ i δ,
@@ -171,7 +171,7 @@ Section heap_GS.
         }}
       )
     }}}
-      for_ #beg #_end fn
+      for_upto #beg #_end fn
     {{{
       RET #();
       ( [∗ list] δ ∈ seq 0 (Z.to_nat (_end - beg)),
@@ -183,11 +183,11 @@ Section heap_GS.
     pose (Ψ' (i : Z) δ := (
       [∗ list] δ' ∈ seq 0 δ, Ψ (beg + δ')%Z δ'
     )%I).
-    wp_apply (for_spec_strong Ψ'); last iSteps. iSplit; first iSteps. iIntros "!> %i %δ (%Hi1 & %Hi2) HΨ'".
+    wp_apply (for_upto_spec_strong Ψ'); last iSteps. iSplit; first iSteps. iIntros "!> %i %δ (%Hi1 & %Hi2) HΨ'".
     wp_apply (wp_wand with "(Hfn [//])"). iIntros "%res (-> & HΨ)". iStep.
     rewrite /Ψ' seq_S big_sepL_snoc. iSteps.
   Qed.
-  Lemma for_spec_disentangled' Ψ beg _end fn :
+  Lemma for_upto_spec_disentangled' Ψ beg _end fn :
     {{{
       ( [∗ list] δ ∈ seq 0 (Z.to_nat (_end - beg)),
         ∀ i,
@@ -198,7 +198,7 @@ Section heap_GS.
         }}
       )
     }}}
-      for_ #beg #_end fn
+      for_upto #beg #_end fn
     {{{
       RET #();
       ( [∗ list] δ ∈ seq 0 (Z.to_nat (_end - beg)),
@@ -210,13 +210,13 @@ Section heap_GS.
     pose (Ψ' (i : Z) δ := (
       [∗ list] δ' ∈ seq 0 δ, Ψ (beg + δ')%Z δ'
     )%I).
-    wp_apply (for_spec_strong' Ψ' with "[Hfn]"); last iSteps. iSplit; first iSteps.
+    wp_apply (for_upto_spec_strong' Ψ' with "[Hfn]"); last iSteps. iSplit; first iSteps.
     iApply (big_sepL_impl with "Hfn"). iIntros "!>" (δ δ_ (-> & Hδ)%lookup_seq) "Hfn %i -> HΨ' /=".
     wp_apply (wp_wand with "(Hfn [//])"). iIntros "%res (-> & HΨ)". iStep.
     rewrite /Ψ' seq_S big_sepL_snoc. iSteps.
   Qed.
 
-  Lemma for_spec_nat_strong Ψ beg _end fn :
+  Lemma for_upto_spec_nat_strong Ψ beg _end fn :
     {{{
       ▷ Ψ beg 0 ∗
       □ (
@@ -229,7 +229,7 @@ Section heap_GS.
         }}
       )
     }}}
-      for_ #beg #_end fn
+      for_upto #beg #_end fn
     {{{
       RET #();
       Ψ (beg `max` _end) (_end - beg)
@@ -238,12 +238,12 @@ Section heap_GS.
     iIntros "%Φ (HΨ & #Hfn) HΦ".
     pose Ψ' i δ :=
       Ψ (Z.to_nat i) δ.
-    wp_apply (for_spec_strong Ψ' with "[HΨ]").
+    wp_apply (for_upto_spec_strong Ψ' with "[HΨ]").
     - rewrite /Ψ' !Nat2Z.id. iFrame. iIntros "!> %i %δ (-> & %Hδ) HΨ".
       rewrite -Nat2Z.inj_add Z.add_1_l -Nat2Z.inj_succ !Nat2Z.id. iSteps.
     - rewrite /Ψ' -Nat2Z.inj_max Z2Nat.inj_sub; last lia. rewrite !Nat2Z.id //.
   Qed.
-  Lemma for_spec_nat Ψ beg _end fn :
+  Lemma for_upto_spec_nat Ψ beg _end fn :
     beg ≤ _end →
     {{{
       ▷ Ψ beg 0 ∗
@@ -257,17 +257,17 @@ Section heap_GS.
         }}
       )
     }}}
-      for_ #beg #_end fn
+      for_upto #beg #_end fn
     {{{
       RET #();
       Ψ _end (_end - beg)
     }}}.
   Proof.
     iIntros "% %Φ H HΦ".
-    wp_apply (for_spec_nat_strong Ψ with "H").
+    wp_apply (for_upto_spec_nat_strong Ψ with "H").
     rewrite Nat.max_r //.
   Qed.
-  Lemma for_spec_nat_strong' Ψ beg _end fn :
+  Lemma for_upto_spec_nat_strong' Ψ beg _end fn :
     {{{
       ▷ Ψ beg 0 ∗
       ( [∗ list] δ ∈ seq 0 (_end - beg),
@@ -280,7 +280,7 @@ Section heap_GS.
         }}
       )
     }}}
-      for_ #beg #_end fn
+      for_upto #beg #_end fn
     {{{
       RET #();
       Ψ (beg `max` _end) (_end - beg)
@@ -289,13 +289,13 @@ Section heap_GS.
     iIntros "%Φ (HΨ & Hfn) HΦ".
     pose Ψ' i δ :=
       Ψ (Z.to_nat i) δ.
-    wp_apply (for_spec_strong' Ψ' with "[HΨ Hfn]").
+    wp_apply (for_upto_spec_strong' Ψ' with "[HΨ Hfn]").
     - rewrite /Ψ' !Nat2Z.id Z2Nat.inj_sub; last lia. rewrite !Nat2Z.id. iFrame.
       iApply (big_sepL_impl with "Hfn"). iIntros "!>" (δ δ_ (-> & Hδ)%lookup_seq) "Hfn %i -> HΨ /=".
       rewrite -Nat2Z.inj_add Nat2Z.id Z.add_1_l -Nat2Z.inj_succ Nat2Z.id. iSteps.
     - rewrite /Ψ' -Nat2Z.inj_max Z2Nat.inj_sub; last lia. rewrite !Nat2Z.id //.
   Qed.
-  Lemma for_spec_nat' Ψ beg _end fn :
+  Lemma for_upto_spec_nat' Ψ beg _end fn :
     beg ≤ _end →
     {{{
       ▷ Ψ beg 0 ∗
@@ -309,17 +309,17 @@ Section heap_GS.
         }}
       )
     }}}
-      for_ #beg #_end fn
+      for_upto #beg #_end fn
     {{{
       RET #();
       Ψ _end (_end - beg)
     }}}.
   Proof.
     iIntros "% %Φ H HΦ".
-    wp_apply (for_spec_nat_strong' Ψ with "H").
+    wp_apply (for_upto_spec_nat_strong' Ψ with "H").
     rewrite Nat.max_r //.
   Qed.
-  Lemma for_spec_disentangled_nat Ψ beg _end fn :
+  Lemma for_upto_spec_disentangled_nat Ψ beg _end fn :
     {{{
       □ (
         ∀ i δ,
@@ -330,7 +330,7 @@ Section heap_GS.
         }}
       )
     }}}
-      for_ #beg #_end fn
+      for_upto #beg #_end fn
     {{{
       RET #();
       ( [∗ list] δ ∈ seq 0 (_end - beg),
@@ -341,14 +341,14 @@ Section heap_GS.
     iIntros "%Φ #Hfn HΦ".
     pose Ψ' i δ :=
       Ψ (Z.to_nat i) δ.
-    wp_apply (for_spec_disentangled Ψ').
+    wp_apply (for_upto_spec_disentangled Ψ').
     - iIntros "!> %i %δ (-> & %Hδ)".
       rewrite -Nat2Z.inj_add /Ψ' Nat2Z.id. iSteps.
     - rewrite /Ψ' Z2Nat.inj_sub; last lia. rewrite !Nat2Z.id.
       setoid_rewrite <- Nat2Z.inj_add. setoid_rewrite Nat2Z.id.
       iSteps.
   Qed.
-  Lemma for_spec_disentangled_nat' Ψ beg _end fn :
+  Lemma for_upto_spec_disentangled_nat' Ψ beg _end fn :
     {{{
       ( [∗ list] δ ∈ seq 0 (_end - beg),
         ∀ i,
@@ -359,7 +359,7 @@ Section heap_GS.
         }}
       )
     }}}
-      for_ #beg #_end fn
+      for_upto #beg #_end fn
     {{{
       RET #();
       ( [∗ list] δ ∈ seq 0 (_end - beg),
@@ -370,7 +370,7 @@ Section heap_GS.
     iIntros "%Φ Hfn HΦ".
     pose Ψ' i δ :=
       Ψ (Z.to_nat i) δ.
-    wp_apply (for_spec_disentangled' Ψ' with "[Hfn]").
+    wp_apply (for_upto_spec_disentangled' Ψ' with "[Hfn]").
     - rewrite Z2Nat.inj_sub; last lia. rewrite !Nat2Z.id.
       iApply (big_sepL_impl with "Hfn"). iIntros "!>" (δ δ_ (-> & Hδ)%lookup_seq) "Hfn %i -> /=".
       rewrite -Nat2Z.inj_add /Ψ' Nat2Z.id. iSteps.
@@ -379,18 +379,18 @@ Section heap_GS.
       iSteps.
   Qed.
 
-  Lemma for_type τ `{!iType (iProp Σ) τ} beg _end fn :
+  Lemma for_upto_type τ `{!iType (iProp Σ) τ} beg _end fn :
     {{{
       (int_range_type beg _end --> unit_type)%T fn
     }}}
-      for_ #beg #_end fn
+      for_upto #beg #_end fn
     {{{
       RET #(); True
     }}}.
   Proof.
     iIntros "%Φ #Hfn HΦ".
-    wp_apply (for_spec_disentangled (λ _ _, True%I)); iSteps.
+    wp_apply (for_upto_spec_disentangled (λ _ _, True%I)); iSteps.
   Qed.
 End heap_GS.
 
-#[global] Opaque for_.
+#[global] Opaque for_upto.

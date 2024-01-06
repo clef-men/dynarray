@@ -8,7 +8,7 @@ From heap_lang.language Require Import
 From heap_lang.std Require Export
   base.
 From heap_lang.std Require Import
-  for_.
+  for_upto.
 
 Implicit Types i j n : nat.
 Implicit Types l : loc.
@@ -2855,7 +2855,7 @@ Section heap_GS.
     wp_rec.
     pose Ψ' (_ : Z) i :=
       Ψ i.
-    wp_smart_apply (for_spec_strong Ψ' with "[$HΨ]"); last rewrite Z.sub_0_r //.
+    wp_smart_apply (for_upto_spec_strong Ψ' with "[$HΨ]"); last rewrite Z.sub_0_r //.
     iIntros "!> %i_ %i (-> & %Hi) HΨ". rewrite Z.add_0_l in Hi |- *.
     wp_pures.
     iMod ("H" with "[] HΨ") as "(%v' & H↦ & _ & H')"; first iSteps.
