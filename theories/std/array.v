@@ -504,7 +504,7 @@ Section heap_GS.
       ⌜length vs = n⌝ ∗
       array_slice t sz i dq vs.
 
-    Lemma array_span_slice t sz i dq n :
+    Lemma array_span_to_slice t sz i dq n :
       array_span t sz i dq n ⊢
         ∃ vs,
         ⌜length vs = n⌝ ∗
@@ -512,21 +512,21 @@ Section heap_GS.
     Proof.
       iSteps.
     Qed.
-    Lemma array_slice_span t sz i dq vs :
+    Lemma array_slice_to_span t sz i dq vs :
       array_slice t sz i dq vs ⊢
       array_span t sz i dq (length vs).
     Proof.
       iSteps.
     Qed.
 
-    Lemma array_span_model t sz i dq n :
+    Lemma array_span_to_model t sz i dq n :
       array_span t sz 0 dq sz -∗
         ∃ vs,
         array_model t dq vs.
     Proof.
       iSteps.
     Qed.
-    Lemma array_model_span t dq vs :
+    Lemma array_model_to_span t dq vs :
       array_model t dq vs ⊢
       array_span t (length vs) 0 dq (length vs).
     Proof.
@@ -744,6 +744,43 @@ Section heap_GS.
       intros. rewrite array_span_lookup_acc //. iSteps.
     Qed.
   End array_span.
+
+  Section array_inv.
+    Definition array_inv t (sz : nat) : iProp Σ :=
+      ∃ l,
+      ⌜t = #l⌝ ∗
+      l.[size] ↦□ #sz.
+
+    #[global] Instance array_inv_timeless t sz :
+      Timeless (array_inv t sz).
+    Proof.
+      apply _.
+    Qed.
+    #[global] Instance array_inv_persistent t sz :
+      Persistent (array_inv t sz).
+    Proof.
+      apply _.
+    Qed.
+
+    Lemma array_slice_to_inv t sz i dq vs :
+      array_slice t sz i dq vs ⊢
+      array_inv t sz.
+    Proof.
+      iSteps.
+    Qed.
+    Lemma array_model_to_inv t dq vs :
+      array_model t dq vs ⊢
+      array_inv t (length vs).
+    Proof.
+      iSteps.
+    Qed.
+    Lemma array_span_to_inv t sz i dq n :
+      array_span t sz i dq n ⊢
+      array_inv t sz.
+    Proof.
+      iSteps.
+    Qed.
+  End array_inv.
 
   Lemma array_create_spec :
     {{{ True }}}
@@ -1023,6 +1060,17 @@ Section heap_GS.
     iSteps.
   Qed.
 
+  Lemma array_size_spec_inv t sz :
+    {{{
+      array_inv t sz
+    }}}
+      array_size t
+    {{{
+      RET #sz; True
+    }}}.
+  Proof.
+    iSteps.
+  Qed.
   Lemma array_size_spec_atomic_slice t :
     <<<
       True
@@ -2135,4 +2183,5 @@ End heap_GS.
 #[global] Opaque array_slice.
 #[global] Opaque array_model.
 #[global] Opaque array_span.
+#[global] Opaque array_inv.
 #[global] Opaque array_type.
