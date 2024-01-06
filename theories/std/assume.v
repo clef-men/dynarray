@@ -28,7 +28,7 @@ Section heap_GS.
     WP assume #(bool_decide ϕ) {{ Φ }}.
   Proof.
     iIntros "HΦ".
-    wp_apply assume_spec. iIntros (Hϕ%bool_decide_eq_true_1).
+    wp_apply assume_spec as (Hϕ%bool_decide_eq_true_1) "".
     iSteps.
   Qed.
 End heap_GS.

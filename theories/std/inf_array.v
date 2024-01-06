@@ -201,9 +201,9 @@ Section inf_array_G.
 
     wp_rec.
 
-    wp_apply (array_create_spec with "[//]"). iIntros "%data Hmodel_data".
+    wp_apply (array_create_spec with "[//]") as "%data Hmodel_data".
 
-    wp_smart_apply (record3_make_spec with "[//]"). iIntros "%l (Hl & Hmeta)".
+    wp_smart_apply (record3_make_spec with "[//]") as "%l (Hl & Hmeta)".
     iDestruct (record3_model_eq_1 with "Hl") as "(Hdata & Hdefault & Hmtx)".
     iMod (mapsto_persist with "Hdefault") as "#Hdefault".
 
@@ -236,7 +236,7 @@ Section inf_array_G.
 
     wp_load.
 
-    wp_smart_apply (array_size_spec with "Hmodel_data"). iIntros "Hmodel_data".
+    wp_smart_apply (array_size_spec with "Hmodel_data") as "Hmodel_data".
 
     wp_pures. case_decide.
 
@@ -306,7 +306,7 @@ Section inf_array_G.
 
     wp_load.
 
-    wp_smart_apply (array_size_spec with "Hmodel_data"). iIntros "Hmodel_data".
+    wp_smart_apply (array_size_spec with "Hmodel_data") as "Hmodel_data".
 
     wp_pures. case_decide.
 
@@ -334,7 +334,7 @@ Section inf_array_G.
 
     - rewrite bool_decide_eq_false_2; last lia. wp_load.
 
-      wp_smart_apply (array_grow_spec with "Hmodel_data"); first lia. iIntros "%data' Hmodel_data'".
+      wp_smart_apply (array_grow_spec with "Hmodel_data") as "%data' Hmodel_data'"; first lia.
       rewrite Z.add_1_l -Nat2Z.inj_succ Nat2Z.id.
 
       wp_store.

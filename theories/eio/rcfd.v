@@ -520,7 +520,7 @@ Section rcfd_G.
     wp_rec.
     wp_alloc l_state as "Hstate". iMod (mapsto_persist with "Hstate") as "Hstate".
     iApply wp_fupd.
-    wp_smart_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & Hmeta)".
+    wp_smart_apply (record2_make_spec with "[//]") as "%l (Hl & Hmeta)".
     iDestruct (record2_model_eq_1 with "Hl") as "(Hops & Hfd)".
     iMod rcfd_tokens_alloc as "(%γ_tokens & Htokens_auth)".
     iMod rcfd_lstate_alloc as "(%γ_lstate & Hlstate_auth)".
@@ -937,7 +937,7 @@ Section rcfd_G.
 
       wp_load.
       wp_alloc flag as "Hflag".
-      wp_smart_apply (channel1_create_spec _ (unix_fd_model fd (DfracOwn 1) chars) with "[//]"). iIntros "%chan (#Hchan_inv & Hchan_producer & Hchan_consumer)".
+      wp_smart_apply (channel1_create_spec _ (unix_fd_model fd (DfracOwn 1) chars) with "[//]") as "%chan (#Hchan_inv & Hchan_producer & Hchan_consumer)".
       wp_alloc l_state as "Hstate". iMod (mapsto_persist with "Hstate") as "#Hstate".
       wp_pures.
 
@@ -965,7 +965,7 @@ Section rcfd_G.
         }
         iModIntro. clear.
 
-        wp_smart_apply (channel1_wait_spec with "[$Hchan_inv $Hchan_consumer]"). iIntros "Hmodel".
+        wp_smart_apply (channel1_wait_spec with "[$Hchan_inv $Hchan_consumer]") as "Hmodel".
         iSteps. iApply ("HΦ" $! (Some _)). iSteps.
 
       + iAssert (⌜∃ fn2, state2 = RcfdStateClosing fn2⌝ ∗ rcfd_lstate_lb γ RcfdLstateClosingUsers)%I as "((%fn2 & ->) & #Hlstate_lb)".
@@ -1052,9 +1052,9 @@ Section rcfd_G.
   Proof.
     iIntros "%Φ (#Hinv & Hclosed & Hopen) HΦ".
     wp_rec.
-    wp_smart_apply (rcfd_get_spec with "Hinv"). iIntros ([]); last iSteps.
+    wp_smart_apply (rcfd_get_spec with "Hinv") as ([]) ""; last iSteps.
     iIntros "(%q & -> & Htoken & Hmodel)".
-    wp_smart_apply (wp_wand with "(Hopen Htoken Hmodel)"). iIntros "%res (-> & Htoken & Hmodel & HΨ)".
+    wp_smart_apply (wp_wand with "(Hopen Htoken Hmodel)") as "%res (-> & Htoken & Hmodel & HΨ)".
     wp_smart_apply (rcfd_put_spec with "[$Hinv $Htoken $Hmodel]").
     iSteps.
   Qed.

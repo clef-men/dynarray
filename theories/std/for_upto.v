@@ -54,7 +54,7 @@ Section heap_GS.
       wp_rec; wp_pure credit:"H£"; wp_pures.
     - assert (i `max` _end = i)%Z as -> by lia. rewrite Nat.add_0_r. iSteps.
     - rewrite bool_decide_eq_false_2; last lia. wp_pures.
-      wp_apply (wp_wand with "(Hfn [] HΨ)"); first iSteps. iIntros "%res (-> & HΨ)".
+      wp_apply (wp_wand with "(Hfn [] HΨ)") as "%res (-> & HΨ)"; first iSteps.
       iMod (lc_fupd_elim_later with "H£ HΨ") as "HΨ".
       wp_smart_apply ("IH" with "[] [] HΨ [HΦ]"); [iSteps.. |].
       assert ((1 + i) `max` _end = i `max` _end)%Z as -> by lia. rewrite -Nat.add_succ_comm //.
@@ -184,7 +184,7 @@ Section heap_GS.
       [∗ list] δ' ∈ seq 0 δ, Ψ (beg + δ')%Z δ'
     )%I).
     wp_apply (for_upto_spec_strong Ψ'); last iSteps. iSplit; first iSteps. iIntros "!> %i %δ (%Hi1 & %Hi2) HΨ'".
-    wp_apply (wp_wand with "(Hfn [//])"). iIntros "%res (-> & HΨ)". iStep.
+    wp_apply (wp_wand with "(Hfn [//])") as "%res (-> & HΨ)". iStep.
     rewrite /Ψ' seq_S big_sepL_snoc. iSteps.
   Qed.
   Lemma for_upto_spec_disentangled' Ψ beg _end fn :
@@ -212,7 +212,7 @@ Section heap_GS.
     )%I).
     wp_apply (for_upto_spec_strong' Ψ' with "[Hfn]"); last iSteps. iSplit; first iSteps.
     iApply (big_sepL_impl with "Hfn"). iIntros "!>" (δ δ_ (-> & Hδ)%lookup_seq) "Hfn %i -> HΨ' /=".
-    wp_apply (wp_wand with "(Hfn [//])"). iIntros "%res (-> & HΨ)". iStep.
+    wp_apply (wp_wand with "(Hfn [//])") as "%res (-> & HΨ)". iStep.
     rewrite /Ψ' seq_S big_sepL_snoc. iSteps.
   Qed.
 

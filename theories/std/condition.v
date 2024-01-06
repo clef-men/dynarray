@@ -111,9 +111,9 @@ Section condition.
     wp_rec. wp_pures.
     iLöb as "HLöb".
     wp_rec.
-    wp_smart_apply ("Hcond" with "[$]"). iIntros "%b (Hlocked & HP & HΨ)".
+    wp_smart_apply ("Hcond" with "[$]") as "%b (Hlocked & HP & HΨ)".
     destruct b; first iSteps.
-    wp_smart_apply (condition_wait_spec _ _ _ P with "[$]"). iIntros "(Hlocked & HP)".
+    wp_smart_apply (condition_wait_spec _ _ _ P with "[$]") as "(Hlocked & HP)".
     wp_smart_apply ("HLöb" with "Hlocked HP HΨ HΦ").
   Qed.
 
@@ -149,7 +149,7 @@ Section condition.
     wp_rec.
     wp_smart_apply (condition_wait_until_spec (λ b, Ψ (negb b)) _ _ _ P with "[$Hlocked $HP $HΨ]"); last iSteps.
     iFrame "#∗". clear. iIntros "%Φ !> (Hlocked & HP & HΨ) HΦ".
-    wp_smart_apply ("Hcond" with "[$]"). iIntros "%b (Hlocked & HP & HΨ)".
+    wp_smart_apply ("Hcond" with "[$]") as "%b (Hlocked & HP & HΨ)".
     destruct b; iSteps.
   Qed.
 End condition.

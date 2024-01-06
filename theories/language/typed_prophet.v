@@ -93,7 +93,7 @@ Section make_typed_strong_prophet.
   Next Obligation.
     iIntros "* % % (%pvs & %Hprophs & Hp) HΦ".
     wp_apply (wp_resolve with "Hp"); first done.
-    wp_apply (wp_wand with "HΦ"). iIntros "%w (%proph & % & HΦ) %pvs' -> Hp".
+    wp_apply (wp_wand with "HΦ") as "%w (%proph & % & HΦ) %pvs' -> Hp".
     rewrite /= (typed_strong_prophet_spec_of_to_val _ proph) // in Hprophs.
     iSteps.
   Qed.
@@ -192,7 +192,7 @@ Section make_typed_prophet.
   Next Obligation.
     iIntros "*" (? ? ->) "(%sprophs & -> & Hmodel) HΦ".
     wp_apply (typed_strong_prophet_wp_resolve with "Hmodel"); first done.
-    wp_apply (wp_wand with "HΦ"). iIntros "%w HΦ".
+    wp_apply (wp_wand with "HΦ") as "%w HΦ".
     iExists (w, proph). iSteps.
   Qed.
 End make_typed_prophet.
@@ -281,7 +281,7 @@ Section make_typed_prophet1.
   Qed.
   Next Obligation.
     iIntros "* _ HΦ".
-    wp_apply (make_typed_prophet1_prophet.(typed_prophet_wp_new_proph) with "[//]"). iIntros "%p %prophs Hmodel".
+    wp_apply (make_typed_prophet1_prophet.(typed_prophet_wp_new_proph) with "[//]") as "%p %prophs Hmodel".
     destruct prophs as [| proph prophs'] eqn:Heq.
     1: iApply ("HΦ" $! p inhabitant).
     2: iApply ("HΦ" $! p proph).

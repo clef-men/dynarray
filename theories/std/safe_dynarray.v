@@ -204,8 +204,8 @@ Section heap_GS.
   Proof.
     iIntros "%Φ _ HΦ".
     wp_rec.
-    wp_apply (array_create_spec with "[//]"). iIntros "%data Hdata_model".
-    wp_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)".
+    wp_apply (array_create_spec with "[//]") as "%data Hdata_model".
+    wp_apply (record2_make_spec with "[//]") as "%l (Hl & _)".
     iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
     iApply "HΦ". iExists l, data, [], 0. iSteps.
   Qed.
@@ -222,9 +222,9 @@ Section heap_GS.
     iIntros "% %Φ _ HΦ".
     Z_to_nat sz. rewrite Nat2Z.id.
     wp_rec.
-    wp_smart_apply assume_spec'. iIntros "_".
-    wp_smart_apply (array_initi_spec_disentangled (λ _ slot, slot_model slot v)); [done | iSteps |]. iIntros "%data %slots (%Hslots & Hdata_model & Hslots)".
-    wp_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)".
+    wp_smart_apply assume_spec' as "_".
+    wp_smart_apply (array_initi_spec_disentangled (λ _ slot, slot_model slot v)) as "%data %slots (%Hslots & Hdata_model & Hslots)"; [done | iSteps |].
+    wp_apply (record2_make_spec with "[//]") as "%l (Hl & _)".
     iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
     iApply "HΦ". iExists l, data, slots, 0. iFrame. iSplit; first iSteps.
     rewrite replicate_length right_id. iFrame.
@@ -254,21 +254,20 @@ Section heap_GS.
   Proof.
     iIntros "%Hsz %Φ (HΨ & #Hfn) HΦ".
     wp_rec.
-    wp_smart_apply assume_spec'. iIntros "_".
+    wp_smart_apply assume_spec' as "_".
     pose Ψ' i slots := (
       ∃ vs,
       Ψ i vs ∗
       [∗ list] slot; v ∈ slots; vs, slot_model slot v
     )%I.
-    wp_smart_apply (array_initi_spec Ψ' with "[HΨ]"); first done.
+    wp_smart_apply (array_initi_spec Ψ' with "[HΨ]") as "%data %slots (%Hslots & Hdata_model & (%vs & HΨ & Hslots))"; first done.
     { iSplitL "HΨ"; first iSteps. iIntros "!> %i %slots (%Hi1 & %Hi2) (%vs & HΨ & Hslots)".
       iDestruct (big_sepL2_length with "Hslots") as %Hslots.
-      wp_smart_apply (wp_wand with "(Hfn [] HΨ)"); first iSteps. iIntros "%v HΨ".
+      wp_smart_apply (wp_wand with "(Hfn [] HΨ)") as "%v HΨ"; first iSteps.
       wp_alloc r as "Hr". wp_pures.
       iExists (vs ++ [v]). iFrame. iSteps.
     }
-    iIntros "%data %slots (%Hslots & Hdata_model & (%vs & HΨ & Hslots))".
-    wp_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)".
+    wp_apply (record2_make_spec with "[//]") as "%l (Hl & _)".
     iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
     iDestruct (big_sepL2_length with "Hslots") as %Hslots'.
     iApply "HΦ". iFrame. iSplit; first iSteps.
@@ -393,7 +392,7 @@ Section heap_GS.
   Proof.
     iIntros "%Φ (%l & %data & %slots & %extra & -> & Hsz & Hdata & Hmodel & Hslots) HΦ".
     wp_rec. rewrite /safe_dynarray_data. wp_load.
-    wp_apply (array_size_spec with "Hmodel"). iIntros "Hmodel".
+    wp_apply (array_size_spec with "Hmodel") as "Hmodel".
     rewrite app_length. iDestruct (big_sepL2_length with "Hslots") as %->.
     iSteps.
   Qed.
@@ -410,7 +409,7 @@ Section heap_GS.
   Proof.
     iIntros "%Φ Hmodel HΦ".
     wp_rec.
-    wp_smart_apply (safe_dynarray_size_spec with "Hmodel"). iIntros "Hmodel".
+    wp_smart_apply (safe_dynarray_size_spec with "Hmodel") as "Hmodel".
     wp_pures.
     destruct vs; iApply ("HΦ" with "Hmodel").
   Qed.
@@ -458,9 +457,8 @@ Section heap_GS.
     destruct (lookup_lt_is_Some_2 slots i) as (slot & Hslots_lookup); first lia.
     iDestruct (big_sepL2_insert_acc with "Hslots") as "((%r & %Hr & Hr) & Hslots)"; [done.. | subst slot].
     wp_rec. rewrite /safe_dynarray_data. wp_load.
-    wp_smart_apply (array_get_spec with "Hdata_model"); [lia | | done |].
+    wp_smart_apply (array_get_spec with "Hdata_model") as "Hdata_model"; [lia | | done |].
     { rewrite Nat2Z.id lookup_app_l //. lia. }
-    iIntros "Hdata_model".
     wp_store.
     iDestruct ("Hslots" with "[Hr]") as "Hslots"; first iSteps.
     rewrite (list_insert_id slots) //.
@@ -492,20 +490,19 @@ Section heap_GS.
   Proof.
     iIntros "%Hn %Φ (%l & %data & %slots & %extra & -> & Hsz & Hdata & Hdata_model & Hslots) HΦ".
     wp_rec. rewrite /safe_dynarray_data.
-    wp_smart_apply assume_spec'. iIntros "_".
+    wp_smart_apply assume_spec' as "_".
     wp_load.
-    wp_smart_apply (array_size_spec with "Hdata_model"). iIntros "Hdata_model".
+    wp_smart_apply (array_size_spec with "Hdata_model") as "Hdata_model".
     wp_pures.
     case_bool_decide; wp_pures; first iSteps.
-    wp_smart_apply (safe_dynarray_next_capacity_spec with "[//]"); first lia. iIntros "%n' %Hn'".
+    wp_smart_apply (safe_dynarray_next_capacity_spec with "[//]") as "%n' %Hn'"; first lia.
     wp_apply maximum_spec.
-    wp_smart_apply (array_make_spec with "[//]"); first lia. iIntros "%data' Hdata_model'".
+    wp_smart_apply (array_make_spec with "[//]") as "%data' Hdata_model'"; first lia.
     rewrite /safe_dynarray_size. wp_load.
     iDestruct (big_sepL2_length with "Hslots") as "%Hslots".
-    wp_smart_apply (array_blit_spec with "[$Hdata_model $Hdata_model']"); try lia.
+    wp_smart_apply (array_blit_spec with "[$Hdata_model $Hdata_model']") as "(Hdata_model & Hdata_model')"; try lia.
     { rewrite app_length. lia. }
     { rewrite replicate_length. rewrite app_length in Hn'. lia. }
-    iIntros "(Hdata_model & Hdata_model')".
     rewrite /safe_dynarray_set_data. wp_store.
     iApply "HΦ". iExists l, data', slots, _. iFrame. iSplitR; first iSteps.
     rewrite !Nat2Z.id drop_replicate take_app_alt //.
@@ -523,8 +520,8 @@ Section heap_GS.
   Proof.
     iIntros "%Hn %Φ Hmodel HΦ".
     wp_rec.
-    wp_smart_apply assume_spec'. iIntros "_".
-    wp_smart_apply (safe_dynarray_size_spec with "Hmodel"). iIntros "Hmodel".
+    wp_smart_apply assume_spec' as "_".
+    wp_smart_apply (safe_dynarray_size_spec with "Hmodel") as "Hmodel".
     wp_smart_apply (safe_dynarray_reserve_spec with "Hmodel"); first lia.
     iSteps.
   Qed.
@@ -547,12 +544,12 @@ Section heap_GS.
     iIntros "%Φ ((%l & %data & %slots & %extra & -> & Hsz & Hdata & Hdata_model & Hslots) & Hslot) HΦ".
     iDestruct (big_sepL2_length with "Hslots") as "%Hslots".
     wp_rec. rewrite /safe_dynarray_size /safe_dynarray_data /safe_dynarray_set_size. do 2 wp_load.
-    wp_smart_apply (array_size_spec with "Hdata_model"). iIntros "Hdata_model".
+    wp_smart_apply (array_size_spec with "Hdata_model") as "Hdata_model".
     wp_pures.
     case_bool_decide as Htest; wp_pures.
     { iApply "HΦ". iFrame. iSteps. }
     wp_store.
-    wp_apply (array_unsafe_set_spec with "Hdata_model"); first lia. iIntros "Hdata_model".
+    wp_apply (array_unsafe_set_spec with "Hdata_model") as "Hdata_model"; first lia.
     wp_pures.
     iApply "HΦ". iExists l, data, (slots ++ [slot]), (extra - 1). iFrame. iSplitR; first iSteps.
     rewrite app_length Z.add_1_l -Nat2Z.inj_succ Nat.add_comm /=. iFrame.
@@ -575,8 +572,8 @@ Section heap_GS.
     iIntros "%Φ (Hmodel & Hslot) HΦ".
     iLöb as "HLöb".
     wp_rec.
-    wp_smart_apply (safe_dynarray_reserve_extra_spec with "Hmodel"); first lia. iIntros "Hmodel".
-    wp_smart_apply (safe_dynarray_try_push_spec with "[$Hmodel $Hslot]"). iIntros ([]); first iSteps. iIntros "(Hmodel & Hslot)".
+    wp_smart_apply (safe_dynarray_reserve_extra_spec with "Hmodel") as "Hmodel"; first lia.
+    wp_smart_apply (safe_dynarray_try_push_spec with "[$Hmodel $Hslot]") as ([]) ""; first iSteps. iIntros "(Hmodel & Hslot)".
     wp_smart_apply ("HLöb" with "Hmodel Hslot HΦ").
   Qed.
   Lemma safe_dynarray_push_spec t vs v :
@@ -591,7 +588,7 @@ Section heap_GS.
   Proof.
     iIntros "%Φ Hmodel HΦ".
     wp_rec. wp_alloc r as "Hr".
-    wp_smart_apply (safe_dynarray_try_push_spec with "[$Hmodel Hr]"); first iSteps. iIntros ([]); first iSteps. iIntros "(Hmodel & Hslot)".
+    wp_smart_apply (safe_dynarray_try_push_spec with "[$Hmodel Hr]") as ([]) ""; [iSteps.. |]. iIntros "(Hmodel & Hslot)".
     wp_smart_apply (safe_dynarray_push_aux_spec with "[$Hmodel $Hslot]").
     iSteps.
   Qed.
@@ -609,22 +606,20 @@ Section heap_GS.
   Proof.
     iIntros (->) "%Φ (%l & %data & %slots & %extra & -> & Hsz & Hdata & Hdata_model & Hslots) HΦ".
     wp_rec. rewrite /safe_dynarray_size /safe_dynarray_data /safe_dynarray_set_size. do 2 wp_load.
-    wp_smart_apply (array_size_spec with "Hdata_model"). iIntros "Hdata_model".
-    do 2 (wp_smart_apply assume_spec'; iIntros "_").
+    wp_smart_apply (array_size_spec with "Hdata_model") as "Hdata_model".
+    do 2 (wp_smart_apply assume_spec' as "_").
     wp_pures.
     rewrite app_length Nat.add_1_r Z.sub_1_r -Nat2Z.inj_pred /=; last lia.
     iDestruct (big_sepL2_length with "Hslots") as %Hslots. rewrite app_length /= in Hslots.
     destruct (rev_elim slots) as [-> | (slots_ & slot & ->)]; first (simpl in Hslots; lia).
     rewrite app_length Nat.add_cancel_r in Hslots. iEval (rewrite -Hslots).
     iDestruct (big_sepL2_snoc with "Hslots") as "(Hslots & (%r & -> & Hr))".
-    wp_apply (array_unsafe_get_spec with "Hdata_model"); [lia | | done |].
+    wp_apply (array_unsafe_get_spec with "Hdata_model") as "Hdata_model"; [lia | | done |].
     { rewrite Nat2Z.id lookup_app_l; last (rewrite app_length /=; lia).
       rewrite lookup_app_r // Nat.sub_diag //.
     }
-    iIntros "Hdata_model".
-    wp_smart_apply (array_unsafe_set_spec with "Hdata_model").
+    wp_smart_apply (array_unsafe_set_spec with "Hdata_model") as "Hdata_model".
     { rewrite !app_length /=. lia. }
-    iIntros "Hdata_model".
     rewrite -assoc Nat2Z.id insert_app_r_alt // Nat.sub_diag /=.
     wp_store. wp_load.
     iApply "HΦ". iExists l, data, slots_, (S extra).
@@ -643,13 +638,12 @@ Section heap_GS.
   Proof.
     iIntros "%Φ (%l & %data & %slots & %extra & -> & Hsz & Hdata & Hdata_model & Hslots) HΦ".
     wp_rec. rewrite /safe_dynarray_size /safe_dynarray_data /safe_dynarray_set_data. do 2 wp_load.
-    wp_smart_apply (array_size_spec with "Hdata_model"). iIntros "Hdata_model".
+    wp_smart_apply (array_size_spec with "Hdata_model") as "Hdata_model".
     iDestruct (big_sepL2_length with "Hslots") as %Hslots.
     wp_pures.
     case_bool_decide; wp_pures; first iSteps.
-    wp_apply (array_shrink_spec with "Hdata_model").
+    wp_apply (array_shrink_spec with "Hdata_model") as "%data' (_ & Hdata_model')".
     { rewrite app_length. lia. }
-    iIntros "%data' (_ & Hdata_model')".
     wp_store.
     iEval (rewrite -Hslots Nat2Z.id take_app) in "Hdata_model'".
     iApply "HΦ". iExists l, data', slots, 0.
@@ -668,7 +662,7 @@ Section heap_GS.
   Proof.
     iIntros "%Φ (%l & %data & %slots & %extra & -> & Hsz & Hdata & _ & _) HΦ".
     wp_rec. rewrite /safe_dynarray_set_size /safe_dynarray_set_data. wp_store.
-    wp_apply (array_create_spec with "[//]"). iIntros "%data' Hdata_model'".
+    wp_apply (array_create_spec with "[//]") as "%data' Hdata_model'".
     wp_store.
     iSteps. iExists [], 0. iSteps.
   Qed.
@@ -701,9 +695,9 @@ Section heap_GS.
   Proof.
     iIntros "%Φ _ HΦ".
     wp_rec.
-    wp_apply (array_create_type slot_type with "[//]"). iIntros "%data Hdata_type".
+    wp_apply (array_create_type slot_type with "[//]") as "%data Hdata_type".
     iApply wp_fupd.
-    wp_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)".
+    wp_apply (record2_make_spec with "[//]") as "%l (Hl & _)".
     iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
     iSteps.
   Qed.
@@ -721,10 +715,10 @@ Section heap_GS.
   Proof.
     iIntros "%Φ #Hv HΦ".
     wp_rec.
-    wp_smart_apply assume_spec'. iIntros "%Hsz".
-    wp_smart_apply (array_initi_type slot_type); first iSteps. iIntros "%data (_ & Hdata_type)".
+    wp_smart_apply assume_spec' as "%Hsz".
+    wp_smart_apply (array_initi_type slot_type) as "%data (_ & Hdata_type)"; first iSteps.
     iApply wp_fupd.
-    wp_smart_apply (record2_make_spec with "[//]"). iIntros "%l (Hl & _)".
+    wp_smart_apply (record2_make_spec with "[//]") as "%l (Hl & _)".
     iDestruct (record2_model_eq_1 with "Hl") as "(Hsz & Hdata)".
     iSteps.
   Qed.
@@ -817,8 +811,8 @@ Section heap_GS.
   Proof.
     iIntros "%Φ #Htype HΦ".
     wp_rec.
-    wp_smart_apply (safe_dynarray_data_type with "Htype"). iIntros "%cap %data #Hdata_type".
-    wp_apply (array_get_type with "Hdata_type"). iIntros "%slot (%Hi & #Hslot)".
+    wp_smart_apply (safe_dynarray_data_type with "Htype") as "%cap %data #Hdata_type".
+    wp_apply (array_get_type with "Hdata_type") as "%slot (%Hi & #Hslot)".
     wp_apply (opt_type_match with "Hslot"). iSplit.
     - wp_apply wp_diverge.
     - iIntros "%r #Hr /=".
@@ -839,8 +833,8 @@ Section heap_GS.
   Proof.
     iIntros "%Φ (#Htype & #Hv) HΦ".
     wp_rec.
-    wp_smart_apply (safe_dynarray_data_type with "Htype"). iIntros "%cap %data #Hdata_type".
-    wp_apply (array_get_type with "Hdata_type"). iIntros "%slot (%Hi & #Hslot)".
+    wp_smart_apply (safe_dynarray_data_type with "Htype") as "%cap %data #Hdata_type".
+    wp_apply (array_get_type with "Hdata_type") as "%slot (%Hi & #Hslot)".
     wp_apply (opt_type_match with "Hslot"). iSplit.
     - wp_apply wp_diverge.
     - iIntros "%r #Hr /=".
@@ -860,17 +854,17 @@ Section heap_GS.
   Proof.
     iIntros "%Φ #Htype HΦ".
     wp_rec.
-    wp_smart_apply assume_spec'. iIntros "%Hn".
-    wp_smart_apply (safe_dynarray_data_type with "Htype"). iIntros "%cap %data #Hdata_type".
-    wp_smart_apply (array_size_type with "Hdata_type"). iIntros "_".
+    wp_smart_apply assume_spec' as "%Hn".
+    wp_smart_apply (safe_dynarray_data_type with "Htype") as "%cap %data #Hdata_type".
+    wp_smart_apply (array_size_type with "Hdata_type") as "_".
     wp_pures.
     case_bool_decide; wp_pures; first iSteps.
-    wp_smart_apply (safe_dynarray_next_capacity_spec with "[//]"); first lia. iIntros "%n' %Hn'".
+    wp_smart_apply (safe_dynarray_next_capacity_spec with "[//]") as "%n' %Hn'"; first lia.
     wp_apply maximum_spec.
-    wp_smart_apply (array_make_type slot_type); first iSteps. iIntros "%data' (_ & #Hdata_type')".
-    wp_smart_apply safe_dynarray_size_type; first iSmash+. iIntros "%sz _".
-    wp_smart_apply (array_blit_type slot_type); first iSteps. iIntros "_".
-    wp_smart_apply (safe_dynarray_set_data_type with "[$Htype $Hdata_type']"). iIntros "_".
+    wp_smart_apply (array_make_type slot_type) as "%data' (_ & #Hdata_type')"; first iSteps.
+    wp_smart_apply safe_dynarray_size_type as "%sz _"; first iSmash+.
+    wp_smart_apply (array_blit_type slot_type) as "_"; first iSteps.
+    wp_smart_apply (safe_dynarray_set_data_type with "[$Htype $Hdata_type']") as "_".
     iSteps.
   Qed.
   Lemma safe_dynarray_reserve_extra_type t n :
@@ -885,8 +879,8 @@ Section heap_GS.
   Proof.
     iIntros "%Φ #Htype HΦ".
     wp_rec.
-    wp_smart_apply assume_spec'. iIntros "%Hn".
-    wp_smart_apply (safe_dynarray_size_type with "Htype"). iIntros "%sz _".
+    wp_smart_apply assume_spec' as "%Hn".
+    wp_smart_apply (safe_dynarray_size_type with "Htype") as "%sz _".
     wp_smart_apply (safe_dynarray_reserve_type with "Htype").
     iSteps.
   Qed.
@@ -903,13 +897,13 @@ Section heap_GS.
   Proof.
     iIntros "%Φ (#Htype & #Hslot) HΦ".
     wp_rec.
-    wp_smart_apply (safe_dynarray_size_type with "Htype"). iIntros "%sz _".
-    wp_smart_apply (safe_dynarray_data_type with "Htype"). iIntros "%cap %data #Hdata_type".
-    wp_smart_apply (array_size_type with "Hdata_type"). iIntros "_".
+    wp_smart_apply (safe_dynarray_size_type with "Htype") as "%sz _".
+    wp_smart_apply (safe_dynarray_data_type with "Htype") as "%cap %data #Hdata_type".
+    wp_smart_apply (array_size_type with "Hdata_type") as "_".
     wp_pures.
     case_bool_decide; wp_pures; first iSteps.
-    wp_apply (safe_dynarray_set_size_type with "Htype"); first lia. iIntros "_".
-    wp_smart_apply (array_unsafe_set_type with "[$Hdata_type $Hslot]"); first lia. iIntros "_".
+    wp_apply (safe_dynarray_set_size_type with "Htype") as "_"; first lia.
+    wp_smart_apply (array_unsafe_set_type with "[$Hdata_type $Hslot]") as "_"; first lia.
     iSteps.
   Qed.
   #[local] Lemma safe_dynarray_push_aux_type t slot :
@@ -925,8 +919,8 @@ Section heap_GS.
     iIntros "%Φ (#Htype & #Hslot) HΦ".
     iLöb as "HLöb".
     wp_rec.
-    wp_smart_apply (safe_dynarray_reserve_extra_type with "Htype"). iIntros "_".
-    wp_smart_apply (safe_dynarray_try_push_type with "[$Htype $Hslot]"). iIntros ([]) "_"; first iSteps.
+    wp_smart_apply (safe_dynarray_reserve_extra_type with "Htype") as "_".
+    wp_smart_apply (safe_dynarray_try_push_type with "[$Htype $Hslot]") as ([]) "_"; first iSteps.
     wp_smart_apply ("HLöb" with "HΦ").
   Qed.
   Lemma safe_dynarray_push_type t v :
@@ -942,8 +936,8 @@ Section heap_GS.
     iIntros "%Φ (#Htype & #Hv) HΦ".
     wp_rec. wp_alloc r as "Hr".
     iAssert (|={⊤}=> slot_type (&&Some #r))%I with "[Hr]" as ">#Hslot"; first iSteps.
-    wp_smart_apply (safe_dynarray_try_push_type with "[$Htype $Hslot]"). iIntros ([]) "_"; first iSteps.
-    wp_smart_apply (safe_dynarray_push_aux_type with "[$Htype $Hslot]"). iIntros "_".
+    wp_smart_apply (safe_dynarray_try_push_type with "[$Htype $Hslot]") as ([]) "_"; first iSteps.
+    wp_smart_apply (safe_dynarray_push_aux_type with "[$Htype $Hslot]") as "_".
     iSteps.
   Qed.
 
@@ -959,17 +953,17 @@ Section heap_GS.
   Proof.
     iIntros "%Φ #Htype HΦ".
     wp_rec.
-    wp_apply (safe_dynarray_size_type with "Htype"). iIntros "%sz _".
-    wp_smart_apply (safe_dynarray_data_type with "Htype"). iIntros "%cap %data #Hdata_type".
-    wp_smart_apply (array_size_type with "Hdata_type"). iIntros "_".
-    wp_smart_apply assume_spec'. iIntros "%Hcap".
-    wp_smart_apply assume_spec'. iIntros "%Hsz".
-    wp_smart_apply (array_unsafe_get_type with "Hdata_type"); first lia. iIntros "%slot #Hslot".
+    wp_apply (safe_dynarray_size_type with "Htype") as "%sz _".
+    wp_smart_apply (safe_dynarray_data_type with "Htype") as "%cap %data #Hdata_type".
+    wp_smart_apply (array_size_type with "Hdata_type") as "_".
+    wp_smart_apply assume_spec' as "%Hcap".
+    wp_smart_apply assume_spec' as "%Hsz".
+    wp_smart_apply (array_unsafe_get_type with "Hdata_type") as "%slot #Hslot"; first lia.
     wp_apply (opt_type_match with "Hslot"). iSplit.
     - wp_apply wp_diverge.
     - iIntros "%r #Hr /=".
-      wp_smart_apply (array_unsafe_set_type with "[$Hdata_type]"); [lia | iSteps |]. iIntros "_".
-      wp_smart_apply (safe_dynarray_set_size_type with "Htype"); first lia. iIntros "_".
+      wp_smart_apply (array_unsafe_set_type with "[$Hdata_type]") as "_"; [lia | iSteps |].
+      wp_smart_apply (safe_dynarray_set_size_type with "Htype") as "_"; first lia.
       wp_smart_apply (reference_get_type with "Hr").
       iSteps.
   Qed.
@@ -985,12 +979,12 @@ Section heap_GS.
   Proof.
     iIntros "%Φ #Htype HΦ".
     wp_rec.
-    wp_apply (safe_dynarray_size_type with "Htype"). iIntros "%sz _".
-    wp_smart_apply (safe_dynarray_data_type with "Htype"). iIntros "%cap %data #Hdata_type".
-    wp_smart_apply (array_size_type with "Hdata_type"). iIntros "_".
+    wp_apply (safe_dynarray_size_type with "Htype") as "%sz _".
+    wp_smart_apply (safe_dynarray_data_type with "Htype") as "%cap %data #Hdata_type".
+    wp_smart_apply (array_size_type with "Hdata_type") as "_".
     wp_pures.
     case_decide; wp_pures; first iSteps.
-    wp_apply (array_shrink_type with "Hdata_type"). iIntros "%t' (_ & #Hdata_type')".
+    wp_apply (array_shrink_type with "Hdata_type") as "%t' (_ & #Hdata_type')".
     wp_apply (safe_dynarray_set_data_type with "[$Htype $Hdata_type']").
     iSteps.
   Qed.
@@ -1006,8 +1000,8 @@ Section heap_GS.
   Proof.
     iIntros "%Φ #Htype HΦ".
     wp_rec.
-    wp_apply (safe_dynarray_set_size_type with "Htype"); first done. iIntros "_".
-    wp_smart_apply (array_create_type with "[//]"). iIntros "%data' #Hdata_type'".
+    wp_apply (safe_dynarray_set_size_type with "Htype") as "_"; first done.
+    wp_smart_apply (array_create_type with "[//]") as "%data' #Hdata_type'".
     wp_apply (safe_dynarray_set_data_type with "[$Htype $Hdata_type']").
     iSteps.
   Qed.

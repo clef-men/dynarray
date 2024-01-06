@@ -145,7 +145,7 @@ Section make_wise_prophet_G.
   Qed.
   Next Obligation.
     iIntros "* _ HΦ".
-    iApply wp_fupd. wp_apply (make_wise_strong_prophet_typed_prophet.(typed_strong_prophet_wp_new_proph) with "[//]"). iIntros "%p %prophs Hp".
+    iApply wp_fupd. wp_apply (make_wise_strong_prophet_typed_prophet.(typed_strong_prophet_wp_new_proph) with "[//]") as "%p %prophs Hp".
     iMod (agree_alloc (agree_G := wise_strong_prophet_G_full_G) prophs) as "(%γ_full & #Hfull)".
     iMod (mono_list_alloc []) as "(%γ_past & Hpast_auth)".
     set γ := {|
@@ -158,7 +158,7 @@ Section make_wise_prophet_G.
   Next Obligation.
     iIntros "* % % (#Hfull & Hpast_auth & Hmodel) HΦ".
     wp_apply (typed_strong_prophet_wp_resolve with "Hmodel"); first done.
-    iApply wp_fupd. wp_apply (wp_wand with "HΦ"). iIntros "%w HΦ".
+    iApply wp_fupd. wp_apply (wp_wand with "HΦ") as "%w HΦ".
     iDestruct "HΦ" as "(%proph & % & HΦ)".
     iExists proph. iSplitR; first done.
     iMod (mono_list_auth_update_app [proph] with "Hpast_auth") as "Hpast_auth".
@@ -305,14 +305,14 @@ Section make_wise_prophet.
   Qed.
   Next Obligation.
     iIntros "* _ HΦ".
-    wp_apply (make_wise_prophet_strong_prophet.(wise_strong_prophet_wp_new_proph) with "[//]"). iIntros "%p %γ %sprophs Hmodel".
+    wp_apply (make_wise_prophet_strong_prophet.(wise_strong_prophet_wp_new_proph) with "[//]") as "%p %γ %sprophs Hmodel".
     iApply "HΦ". iExists [], sprophs.
     iSteps.
   Qed.
   Next Obligation.
     iIntros "*" (? ? ->) "(%spast & %sprophs & -> & -> & Hmodel) HΦ".
     wp_apply (wise_strong_prophet_wp_resolve with "Hmodel"); first done.
-    wp_apply (wp_wand with "HΦ"). iIntros "%w HΦ".
+    wp_apply (wp_wand with "HΦ") as "%w HΦ".
     iExists (w, proph). iSplit; first iSteps. iIntros "%sprophs' -> Hmodel".
     iApply ("HΦ" with "[//]"). iExists (spast ++ [(w, proph)]), sprophs'. iFrame.
     list_simplifier. iSteps.

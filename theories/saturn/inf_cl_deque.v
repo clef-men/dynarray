@@ -985,14 +985,14 @@ Section inf_cl_deque_G.
     wp_rec.
 
     (* → [NewProph] *)
-    wp_apply (wise_prophet_wp_new_proph with "[//]"). iIntros "%p %γ_prophet %prophs Hprophet_model".
+    wp_apply (wise_prophet_wp_new_proph with "[//]") as "%p %γ_prophet %prophs Hprophet_model".
 
     (* → [inf_array_create #()] *)
-    wp_apply (inf_array_create_spec with "[//]"). iIntros "%data (#Harray_inv & Harray_model)".
+    wp_apply (inf_array_create_spec with "[//]") as "%data (#Harray_inv & Harray_model)".
 
     (* → [record4_make #0 #0 data #p] *)
     iApply wp_fupd.
-    wp_apply (record4_make_spec with "[//]"). iIntros "%l (Hl & Hmeta)".
+    wp_apply (record4_make_spec with "[//]") as "%l (Hl & Hmeta)".
     iDestruct (record4_model_eq_1 with "Hl") as "(Hfront & Hback & Hdata & Hp)".
     iMod (mapsto_persist with "Hdata") as "#Hdata".
     iMod (mapsto_persist with "Hp") as "#Hp".
@@ -1181,7 +1181,7 @@ Section inf_cl_deque_G.
     wp_rec. wp_pures.
 
     (* → [NewId] *)
-    wp_apply (wp_new_id with "[//]"). iIntros "%id Hid".
+    wp_apply (wp_new_id with "[//]") as "%id Hid".
 
     wp_pures.
 
@@ -1323,7 +1323,7 @@ Section inf_cl_deque_G.
       wp_pures.
 
       (* inconsistent prophecy resolution *)
-      wp_apply (inf_cl_deque_wp_resolve_inconsistent_1 with "[$Harray_inv $Hinv $Hprophet_lb]"); first done. iIntros "% []".
+      wp_apply (inf_cl_deque_wp_resolve_inconsistent_1 with "[$Harray_inv $Hinv $Hprophet_lb]") as "% []"; first done.
     }
     (* branching 4: enforce [id' = id] *)
     destruct (decide (id' = id)) as [-> | Hbranch4]; first last.
@@ -1349,7 +1349,7 @@ Section inf_cl_deque_G.
       wp_pures.
 
       (* CmpXchg must fail as we are not the winner *)
-      wp_apply (inf_cl_deque_wp_resolve_loser with "[$Harray_inv $Hinv $Hfront_lb $Hprophet_lb]"); [done.. |]. iIntros "% _".
+      wp_apply (inf_cl_deque_wp_resolve_loser with "[$Harray_inv $Hinv $Hfront_lb $Hprophet_lb]") as "% _"; [done.. |].
 
       wp_pures.
 
@@ -1455,7 +1455,7 @@ Section inf_cl_deque_G.
       wp_pures.
 
       (* → [array.(inf_array_get) !#l.[data] #front1] *)
-      wp_apply (inf_cl_deque_wp_get_hist with "[$Harray_inv $Hinv $Hdata $Hhist_mapsto]"). iIntros "_".
+      wp_apply (inf_cl_deque_wp_get_hist with "[$Harray_inv $Hinv $Hdata $Hhist_mapsto]") as "_".
 
       wp_pures.
 
@@ -1491,7 +1491,7 @@ Section inf_cl_deque_G.
       wp_pures.
 
       (* → [array.(inf_array_get) !#l.[data] #front1] *)
-      wp_apply (inf_cl_deque_wp_get_hist with "[$Harray_inv $Hinv $Hdata $Hhist_mapsto]"). iIntros "_".
+      wp_apply (inf_cl_deque_wp_get_hist with "[$Harray_inv $Hinv $Hdata $Hhist_mapsto]") as "_".
 
       wp_pures.
 
@@ -1526,7 +1526,7 @@ Section inf_cl_deque_G.
     wp_rec.
 
     (* → [NewId] *)
-    wp_apply (wp_new_id with "[//]"). iIntros "%id Hid".
+    wp_apply (wp_new_id with "[//]") as "%id Hid".
 
     wp_pures.
 
@@ -1696,7 +1696,7 @@ Section inf_cl_deque_G.
         wp_pures.
 
         (* → [array.(inf_array_get) !#l.[data] #(back - 1)] *)
-        wp_apply (inf_cl_deque_wp_get_priv with "[$Harray_inv $Hinv $Hdata $Hctl₂ $Hlock]"); first done. iIntros "(Hctl₂ & Hlock)".
+        wp_apply (inf_cl_deque_wp_get_priv with "[$Harray_inv $Hinv $Hdata $Hctl₂ $Hlock]") as "(Hctl₂ & Hlock)"; first done.
 
         wp_pures.
 
@@ -1789,7 +1789,7 @@ Section inf_cl_deque_G.
         wp_pures.
 
         (* → [array.(inf_array_get) !#l.[data] #front3] *)
-        wp_apply (inf_cl_deque_wp_get_hist with "[$Harray_inv $Hinv $Hdata $Hhist_mapsto]"). iIntros "_".
+        wp_apply (inf_cl_deque_wp_get_hist with "[$Harray_inv $Hinv $Hdata $Hhist_mapsto]") as "_".
 
         wp_pures.
 
@@ -1871,7 +1871,7 @@ Section inf_cl_deque_G.
         wp_pures.
 
         (* inconsistent prophecy resolution *)
-        wp_apply (inf_cl_deque_wp_resolve_inconsistent_1 with "[$Harray_inv $Hinv $Hprophet_lb]"); first done. iIntros "% []".
+        wp_apply (inf_cl_deque_wp_resolve_inconsistent_1 with "[$Harray_inv $Hinv $Hprophet_lb]") as "% []"; first done.
       }
       (* branching 3 *)
       destruct (decide (id' = id)) as [-> | Hbranch3].
@@ -1995,7 +1995,7 @@ Section inf_cl_deque_G.
         wp_pures.
 
         (* → [array.(inf_array_get) !#l.[data] #front2] *)
-        wp_apply (inf_cl_deque_wp_get_hist with "[$Harray_inv $Hinv $Hdata $Hhist_mapsto]"). iIntros "_".
+        wp_apply (inf_cl_deque_wp_get_hist with "[$Harray_inv $Hinv $Hdata $Hhist_mapsto]") as "_".
 
         wp_pures.
 

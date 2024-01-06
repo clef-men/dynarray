@@ -294,7 +294,7 @@ Section parray_G.
   Proof.
     iIntros "%Hsz %Φ #Hv HΦ".
     wp_rec.
-    wp_smart_apply (array_make_spec with "[//]"); first done. iIntros "%arr Harr".
+    wp_smart_apply (array_make_spec with "[//]") as "%arr Harr"; first done.
     wp_alloc root as "Hroot".
     pose vs := replicate (Z.to_nat sz) v.
     iMod (parray_map_alloc root vs) as "(%γ_map & Hmap_auth & Hmap_elem)".
@@ -330,14 +330,14 @@ Section parray_G.
     iDestruct "Hdescr" as "(%i & %v & %l' & %vs' & (%Hi & %Hvs) & -> & #Hmap_elem' & #Hv)".
     wp_load.
     iDestruct ("Hmap" with "[Hl Hv]") as "Hmap"; first iSteps.
-    wp_smart_apply ("HLöb" with "[Hmap_auth Hmap]"); first iSteps. iIntros "(Hmap_auth & Hmap)".
+    wp_smart_apply ("HLöb" with "[Hmap_auth Hmap]") as "(Hmap_auth & Hmap)"; first iSteps.
     wp_pures.
     iDestruct (parray_map_lookup with "Hmap_auth Hmap_elem'") as %Hmap_lookup'.
     iDestruct (big_sepM_delete with "Hmap") as "((%descr' & %Hvs'_len & Hl' & Hdescr') & Hmap)"; first done.
     rewrite decide_True //. iDestruct "Hdescr'" as "(-> & Harr & Hvs')".
     feed pose proof (list_lookup_lookup_total_lt vs' i) as Hvs'_lookup; first lia.
-    wp_smart_apply (array_unsafe_get_spec i with "Harr"); [lia | | lia |]; first done. iIntros "Harr".
-    wp_smart_apply (array_unsafe_set_spec with "Harr"); first lia. iIntros "Harr".
+    wp_smart_apply (array_unsafe_get_spec i with "Harr") as "Harr"; [lia | | lia |]; first done.
+    wp_smart_apply (array_unsafe_set_spec with "Harr") as "Harr"; first lia.
     rewrite Nat2Z.id -Hvs.
     wp_store.
     destruct (decide (l = l')) as [<- | Hcase2].
@@ -375,7 +375,7 @@ Section parray_G.
   Proof.
     iIntros "%Hi %Hvs_lookup %Φ ((%map & %root & Hinv) & (%l & -> & #Hmap_elem)) HΦ".
     wp_rec.
-    wp_smart_apply (parray_reroot_spec τ with "[$Hinv $Hmap_elem]"). iIntros "(Hmap_auth & Hmap)".
+    wp_smart_apply (parray_reroot_spec τ with "[$Hinv $Hmap_elem]") as "(Hmap_auth & Hmap)".
     iDestruct (parray_map_lookup with "Hmap_auth Hmap_elem") as %Hmap_lookup.
     iDestruct (big_sepM_lookup_acc with "Hmap") as "((%descr & %Hvs_len & Hl & Hdescr) & Hmap)"; first done.
     rewrite decide_True //. iDestruct "Hdescr" as "(-> & Harr & Hvs)".
@@ -407,21 +407,21 @@ Section parray_G.
     iIntros "%Hi %Φ ((%map & %root & Hinv) & (%l & -> & #Hmap_elem) & Heq & #Hv) HΦ".
     Z_to_nat i. rewrite Nat2Z.id.
     wp_rec.
-    wp_smart_apply (parray_reroot_spec with "[$Hinv //]"). iIntros "(Hmap_auth & Hmap)".
+    wp_smart_apply (parray_reroot_spec with "[$Hinv //]") as "(Hmap_auth & Hmap)".
     iDestruct (parray_map_lookup with "Hmap_auth Hmap_elem") as %Hmap_lookup.
     iDestruct (big_sepM_delete _ _ l with "Hmap") as "((%descr & %Hvs_len & Hl & Hdescr) & Hmap)"; first done.
     rewrite decide_True //. iDestruct "Hdescr" as "(-> & Harr & Hvs)".
     feed pose proof (list_lookup_lookup_total_lt vs i); first lia.
-    wp_smart_apply (array_unsafe_get_spec i with "Harr"); [lia | done | lia |]. iIntros "Harr".
+    wp_smart_apply (array_unsafe_get_spec i with "Harr") as "Harr"; [lia | done | lia |].
     iDestruct (big_sepL_insert_acc with "Hvs") as "(#Hvs!!!i & Hvs)"; first done.
-    wp_smart_apply (wp_wand with "(Heq Hv Hvs!!!i)"). iIntros "% ->".
+    wp_smart_apply (wp_wand with "(Heq Hv Hvs!!!i)") as "% ->".
     wp_pures. case_bool_decide as Hcase; wp_pures.
     - iDestruct ("Hvs" with "Hv") as "Hvs".
       rewrite list_insert_id; first congruence.
       iDestruct (big_sepM_delete with "[Hl Harr Hvs $Hmap]") as "Hmap"; first done.
       { iExists _. rewrite decide_True //. iSteps. }
       iSteps.
-    - wp_apply (array_unsafe_set_spec with "Harr"); first done. iIntros "Harr". rewrite Nat2Z.id.
+    - wp_apply (array_unsafe_set_spec with "Harr") as "Harr"; first done. rewrite Nat2Z.id.
       wp_load. clear root. wp_alloc root as "Hroot". wp_store.
       iApply "HΦ".
       iAssert ⌜map !! root = None⌝%I as %Hmap_lookup_root.

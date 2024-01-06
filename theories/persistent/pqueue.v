@@ -81,9 +81,9 @@ Section heap_GS.
   Proof.
     iIntros "%Φ (%back & %vs_back & %front & %vs_front & (-> & ->) & #Hback & #Hfront) HΦ".
     wp_rec.
-    wp_smart_apply (lst_is_empty_spec with "Hfront"). iIntros "_".
+    wp_smart_apply (lst_is_empty_spec with "Hfront") as "_".
     destruct vs_front as [| v_front vs_front]; wp_pures.
-    - wp_apply (lst_is_empty_spec with "Hback"). iIntros "_".
+    - wp_apply (lst_is_empty_spec with "Hback") as "_".
       destruct vs_back; iSteps.
     - rewrite bool_decide_eq_false_2; last first.
       { rewrite reverse_cons. intros (_ & (_ & [=])%app_eq_nil)%app_eq_nil. }
@@ -125,25 +125,25 @@ Section heap_GS.
   Proof.
     iIntros "%Φ (%back & %vs_back & %front & %vs_front & (-> & ->) & #Hback & #Hfront) HΦ".
     wp_rec.
-    wp_smart_apply (lst_is_empty_spec with "Hfront"). iIntros "_".
+    wp_smart_apply (lst_is_empty_spec with "Hfront") as "_".
     destruct vs_front as [| v_front vs_front]; wp_pures.
     - iClear "Hfront". clear.
-      wp_apply (lst_rev_spec with "Hback"). iIntros "%front #Hfront".
-      wp_smart_apply (lst_is_empty_spec with "Hfront"). iIntros "_".
+      wp_apply (lst_rev_spec with "Hback") as "%front #Hfront".
+      wp_smart_apply (lst_is_empty_spec with "Hfront") as "_".
       destruct (reverse vs_back) as [| v vs_front] eqn:Heq;
         apply (f_equal reverse) in Heq; rewrite reverse_involutive in Heq; subst;
         wp_pures.
       + iApply ("HΦ" $! None with "[//]").
-      + wp_apply (lst_tail_spec with "Hfront"); first done. iIntros "%front' #Hfront'".
-        wp_smart_apply (lst_head_spec with "Hfront"); first done. iIntros "_".
+      + wp_apply (lst_tail_spec with "Hfront") as "%front' #Hfront'"; first done.
+        wp_smart_apply (lst_head_spec with "Hfront") as "_"; first done.
         wp_pures.
         iApply ("HΦ" $! (Some (_, _)%V)). iExists (reverse vs_front), v, _. iSplitR.
         { iPureIntro. split; last done.
           rewrite reverse_nil reverse_cons. list_simplifier. done.
         }
         iExists &&Nil, [], front', vs_front. iFrame "#∗". iStep. iApply lst_model_Nil.
-    - wp_apply (lst_tail_spec with "Hfront"); first done. iIntros "%front' Hfront'".
-      wp_smart_apply (lst_head_spec with "Hfront"); first done. iIntros "_".
+    - wp_apply (lst_tail_spec with "Hfront") as "%front' Hfront'"; first done.
+      wp_smart_apply (lst_head_spec with "Hfront") as "_"; first done.
       wp_pures.
       iApply ("HΦ" $! (Some (_, _)%V)). iExists (vs_back ++ reverse vs_front), v_front, _. iSplitR.
       { iSteps. list_simplifier. rewrite reverse_cons //. }

@@ -188,7 +188,7 @@ Section channel1_G.
 
     wp_rec.
 
-    wp_apply (record3_make_spec with "[//]"). iIntros "%l (Hl & Hmeta)".
+    wp_apply (record3_make_spec with "[//]") as "%l (Hl & Hmeta)".
     iDestruct (record3_model_eq_1 with "Hl") as "(Hflag & Hmtx & Hcond)".
 
     iMod (oneshot_alloc ()) as "(%γ_producer & Hpending)".
@@ -203,11 +203,11 @@ Section channel1_G.
     |}.
     iMod (meta_set _ _ γ nroot with "Hmeta") as "#Hmeta"; first done.
 
-    wp_smart_apply (mutex_create_spec _ (channel1_inv_inner l γ P) with "[Hflag Hpending2]"); first iSteps. iIntros "%mtx #Hmtx_inv".
+    wp_smart_apply (mutex_create_spec _ (channel1_inv_inner l γ P) with "[Hflag Hpending2]") as "%mtx #Hmtx_inv"; first iSteps.
     wp_store.
     iMod (mapsto_persist with "Hmtx") as "Hmtx".
 
-    wp_smart_apply (condition_create_spec _ with "[//]"). iIntros "%cond #Hcond_inv".
+    wp_smart_apply (condition_create_spec _ with "[//]") as "%cond #Hcond_inv".
     wp_store.
     iMod (mapsto_persist with "Hcond") as "Hcond".
 
@@ -229,7 +229,7 @@ Section channel1_G.
     iDestruct (meta_agree with "Hmeta _Hmeta") as %<-. iClear "_Hmeta".
     wp_rec.
     wp_load.
-    wp_apply (mutex_protect_spec _ (λ _, True%I) with "[$Hmtx_inv Hpending HP]").
+    wp_apply (mutex_protect_spec _ (λ _, True%I) with "[$Hmtx_inv Hpending HP]") as "% _".
     { iIntros "Hmtx_locked (%b & Hflag & Hb)". destruct b.
       - iDestruct "Hb" as "(Hshot & _)".
         iDestruct (oneshot_pending_shot with "Hpending Hshot") as %[].
@@ -238,7 +238,6 @@ Section channel1_G.
         iMod (oneshot_update_shot with "Hpending") as "Hshot".
         iSteps.
     }
-    iIntros "% _".
     wp_load.
     wp_apply (condition_signal_spec with "Hcond_inv").
     iSteps.

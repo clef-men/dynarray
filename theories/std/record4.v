@@ -226,7 +226,7 @@ Section heap_GS.
   Proof.
     iIntros "%Φ _ HΦ".
     wp_rec. wp_pures.
-    wp_apply (wp_allocN with "[//]"); first done. iIntros "%l (Hl & Hmeta & _)". rewrite Loc.add_0.
+    wp_apply (wp_allocN with "[//]") as "%l (Hl & Hmeta & _)"; first done. rewrite Loc.add_0.
     wp_pures.
     iDestruct (array_cons with "Hl") as "(Hv₀ & Hl)".
     iEval (setoid_rewrite <- Loc.add_0) in "Hv₀".

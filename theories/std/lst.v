@@ -334,7 +334,7 @@ Section heap_GS.
       wp_apply lst_head_spec; [done | iSteps |].
       apply (inj Some) in Hlookup. iSteps.
     - rewrite bool_decide_eq_false_2; last lia. wp_pures.
-      wp_apply lst_tail_spec; [done | iSteps |]. iIntros "%t' %Ht'".
+      wp_apply lst_tail_spec as "%t' %Ht'"; [done | iSteps |].
       wp_apply ("IH" with "[] [//] [//] HΦ").
       iSteps.
   Qed.
@@ -369,13 +369,14 @@ Section heap_GS.
       iApply ("HΦ" $! _ []).
       rewrite !right_id. assert (Z.to_nat sz = i) as <- by lia. iSteps.
     - rewrite bool_decide_eq_false_2; last lia. wp_pures.
-      wp_apply (wp_wand with "(Hfn [] HΨ)"); first iSteps. iIntros "%v HΨ".
+      wp_apply (wp_wand with "(Hfn [] HΨ)") as "%v HΨ"; first iSteps.
       wp_pures.
       rewrite Z.add_1_l -Nat2Z.inj_succ.
-      wp_apply ("IH" $! (vs_left ++ [v]) (S i) with "[] [] [] [$HΨ //]"); rewrite ?app_length; [iSteps.. |]. iIntros "%t %vs_right (%Hvs_right & %Ht & HΨ)".
+      wp_apply ("IH" $! (vs_left ++ [v]) (S i) with "[] [] [] [$HΨ //]"); rewrite ?app_length /=; [iSteps.. |].
+      iIntros "%t %vs_right (%Hvs_right & -> & HΨ)".
       wp_pures.
       iApply ("HΦ" $! _ (v :: vs_right)).
-      rewrite -assoc. simpl in Hvs_right. rewrite /lst_model' in Ht. iSteps.
+      rewrite -assoc. iSteps.
   Qed.
   Lemma lst_initi_spec Ψ sz fn :
     {{{
@@ -946,7 +947,7 @@ Section heap_GS.
   Proof.
     iIntros "%Φ #Ht HΦ".
     wp_rec.
-    wp_smart_apply (lst_singleton_spec with "[//]"). iIntros "%tv #Htv".
+    wp_smart_apply (lst_singleton_spec with "[//]") as "%tv #Htv".
     wp_apply (lst_app_spec _ _ tv with "[$Ht $Htv]").
     iSteps.
   Qed.
@@ -1194,17 +1195,15 @@ Section heap_GS.
     all: wp_rec; wp_pures.
     - iApply ("HΦ" $! _ []).
       rewrite !right_id. iSteps.
-    - wp_apply (wp_wand with "(Hfn [] [HΨ])").
+    - wp_apply (wp_wand with "(Hfn [] [HΨ])") as "%w HΨ".
       { rewrite list_lookup_middle //. }
       { rewrite take_app //. }
-      iIntros "%w HΨ".
       wp_pures.
       rewrite Z.add_1_l -Nat2Z.inj_succ.
-      wp_apply ("IH" with "[] [] [] [$HΨ $Hfn //]").
+      wp_apply ("IH" with "[] [] [] [$HΨ $Hfn //]") as "%t' %ws_right (%Hvs & %Ht' & HΨ)".
       { rewrite take_app -assoc //. }
       { rewrite app_length take_length app_length. iSteps. }
       { rewrite app_length. iSteps. }
-      iIntros "%t' %ws_right (%Hvs & %Ht' & HΨ)".
       wp_pures.
       iApply ("HΦ" $! _ (w :: ws_right)).
       rewrite -!assoc. rewrite app_length /= in Hvs. rewrite /lst_model' in Ht'. iSteps.
@@ -1262,8 +1261,7 @@ Section heap_GS.
       Ψ i vs_left ws ∗
       [∗ list] j ↦ v ∈ drop i vs, Ξ (i + j) v
     )%I).
-    wp_apply (lst_mapi_spec Ψ' with "[$HΨ $Ht $Hfn]"); last iSteps.
-    iIntros "!> %i %v %ws (%Hlookup & %Hi) (HΨ & HΞ)".
+    wp_apply (lst_mapi_spec Ψ' with "[$HΨ $Ht $Hfn]"); last iSteps. iIntros "!> %i %v %ws (%Hlookup & %Hi) (HΨ & HΞ)".
     erewrite drop_S; last done.
     iDestruct "HΞ" as "(Hfn & HΞ)".
     rewrite Nat.add_0_r. setoid_rewrite Nat.add_succ_r. iSteps.
