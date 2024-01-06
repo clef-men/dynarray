@@ -7,9 +7,7 @@ From iris.heap_lang Require Export
 From heap_lang Require Import
   prelude.
 From heap_lang Require Export
-  language.
-From heap_lang.iris.program_logic Require Import
-  atomic.
+  rules.
 
 Tactic Notation "awp_smart_apply" open_constr(lem) :=
   wp_apply_core lem

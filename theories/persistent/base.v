@@ -1,2 +1,4 @@
-From heap_lang Require Export
-  language.
+From heap_lang Require Import
+  prelude.
+From heap_lang.language Require Export
+  rules.

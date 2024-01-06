@@ -1,7 +1,7 @@
 From heap_lang Require Import
   prelude.
 From heap_lang.language Require Export
-  base.
+  rules.
 
 Class iType (PROP : bi) (τ : val → PROP) := {
   #[global] itype_persistent v :: Persistent (τ v) ;

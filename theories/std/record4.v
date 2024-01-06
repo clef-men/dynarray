@@ -215,55 +215,6 @@ Section heap_GS.
     iSteps.
   Qed.
 
-  Lemma record4_dfrac_relax₀ dq₀ l v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ :
-    ✓ dq₀ →
-    record4_model l (DfracOwn 1) v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃ ⊢ |==>
-    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃.
-  Proof.
-    iIntros "% (Hv₀ & Hv₁ & Hv₂ & Hv₃)".
-    iMod (mapsto_dfrac_relax with "Hv₀") as "Hv₀"; first done.
-    iSteps.
-  Qed.
-  Lemma record4_dfrac_relax₁ dq₁ l dq₀ v₀ v₁ dq₂ v₂ dq₃ v₃ :
-    ✓ dq₁ →
-    record4_model l dq₀ v₀ (DfracOwn 1) v₁ dq₂ v₂ dq₃ v₃ ⊢ |==>
-    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃.
-  Proof.
-    iIntros "% (Hv₀ & Hv₁ & Hv₂ & Hv₃)".
-    iMod (mapsto_dfrac_relax with "Hv₁") as "Hv₁"; first done.
-    iSteps.
-  Qed.
-  Lemma record4_dfrac_relax₂ dq₂ l dq₀ v₀ dq₁ v₁ v₂ dq₃ v₃ :
-    ✓ dq₂ →
-    record4_model l dq₀ v₀ dq₁ v₁ (DfracOwn 1) v₂ dq₃ v₃ ⊢ |==>
-    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃.
-  Proof.
-    iIntros "% (Hv₀ & Hv₁ & Hv₂ & Hv₃)".
-    iMod (mapsto_dfrac_relax with "Hv₂") as "Hv₂"; first done.
-    iSteps.
-  Qed.
-  Lemma record4_dfrac_relax₃ dq₃ l dq₀ v₀ dq₁ v₁ dq₂ v₂ v₃ :
-    ✓ dq₃ →
-    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ (DfracOwn 1) v₃ ⊢ |==>
-    record4_model l dq₀ v₀ dq₁ v₁ dq₂ v₂ dq₃ v₃.
-  Proof.
-    iIntros "% (Hv₀ & Hv₁ & Hv₂ & Hv₃)".
-    iMod (mapsto_dfrac_relax with "Hv₃") as "Hv₃"; first done.
-    iSteps.
-  Qed.
-  Lemma record4_dfrac_relax dq l v₀ v₁ v₂ v₃ :
-    ✓ dq →
-    record4_model' l (DfracOwn 1) v₀ v₁ v₂ v₃ ⊢ |==>
-    record4_model' l dq v₀ v₁ v₂ v₃.
-  Proof.
-    iIntros "% Hl".
-    iMod (record4_dfrac_relax₀ with "Hl") as "Hl"; first done.
-    iMod (record4_dfrac_relax₁ with "Hl") as "Hl"; first done.
-    iMod (record4_dfrac_relax₂ with "Hl") as "Hl"; first done.
-    iMod (record4_dfrac_relax₃ with "Hl") as "Hl"; first done.
-    iSteps.
-  Qed.
-
   Lemma record4_make_spec v₀ v₁ v₂ v₃ :
     {{{ True }}}
       record4_make v₀ v₁ v₂ v₃

@@ -1,7 +1,7 @@
 From heap_lang Require Import
   prelude.
 From heap_lang.language Require Export
-  language.
+  rules.
 From heap_lang.language Require Import
   notations
   diaframe.

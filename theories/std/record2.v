@@ -169,35 +169,6 @@ Section heap_GS.
     iSteps.
   Qed.
 
-  Lemma record2_dfrac_relax₀ dq₀ l v₀ dq₁ v₁ :
-    ✓ dq₀ →
-    record2_model l (DfracOwn 1) v₀ dq₁ v₁ ⊢ |==>
-    record2_model l dq₀ v₀ dq₁ v₁.
-  Proof.
-    iIntros "% (Hv₀ & Hv₁)".
-    iMod (mapsto_dfrac_relax with "Hv₀") as "Hv₀"; first done.
-    iSteps.
-  Qed.
-  Lemma record2_dfrac_relax₁ dq₁ l dq₀ v₀ v₁ :
-    ✓ dq₁ →
-    record2_model l dq₀ v₀ (DfracOwn 1) v₁ ⊢ |==>
-    record2_model l dq₀ v₀ dq₁ v₁.
-  Proof.
-    iIntros "% (Hv₀ & Hv₁)".
-    iMod (mapsto_dfrac_relax with "Hv₁") as "Hv₁"; first done.
-    iSteps.
-  Qed.
-  Lemma record2_dfrac_relax dq l v₀ v₁ :
-    ✓ dq →
-    record2_model' l (DfracOwn 1) v₀ v₁ ⊢ |==>
-    record2_model' l dq v₀ v₁.
-  Proof.
-    iIntros "% Hl".
-    iMod (record2_dfrac_relax₀ with "Hl") as "Hl"; first done.
-    iMod (record2_dfrac_relax₁ with "Hl") as "Hl"; first done.
-    iSteps.
-  Qed.
-
   Lemma record2_make_spec v₀ v₁ :
     {{{ True }}}
       record2_make v₀ v₁

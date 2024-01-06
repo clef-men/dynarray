@@ -3,7 +3,8 @@ From iris.bi Require Export
 From iris.base_logic Require Export
   lib.invariants.
 
-From heap_lang.iris.program_logic Require Export
-  atomic.
-From heap_lang Require Export
-  language.
+From heap_lang Require Import
+  prelude.
+From heap_lang.language Require Export
+  rules
+  itype.

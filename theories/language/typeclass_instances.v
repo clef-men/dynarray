@@ -1,5 +1,5 @@
 From iris.heap_lang Require Export
-  metatheory.
+  class_instances.
 
 From heap_lang Require Import
   prelude.
