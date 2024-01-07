@@ -161,39 +161,6 @@ Section heap_GS.
       rewrite chunk_model_singleton //.
     Qed.
 
-    Lemma chunk_model_cons l dq v vs :
-      l ↦{dq} v ∗
-      chunk_model l.[1] dq vs ⊣⊢
-      chunk_model l dq (v :: vs).
-    Proof.
-      setoid_rewrite big_sepL_cons.
-      setoid_rewrite Nat2Z.inj_succ.
-      setoid_rewrite <- Z.add_1_l.
-      setoid_rewrite <- Loc.add_assoc.
-      rewrite Loc.add_0 //.
-    Qed.
-    Lemma chunk_model_cons_1 l dq v vs :
-      l ↦{dq} v -∗
-      chunk_model l.[1] dq vs -∗
-      chunk_model l dq (v :: vs).
-    Proof.
-      rewrite -chunk_model_cons. iSteps.
-    Qed.
-    Lemma chunk_model_cons_2 l dq v vs :
-      chunk_model l dq (v :: vs) ⊢
-        l ↦{dq} v ∗
-        chunk_model l.[1] dq vs.
-    Proof.
-      rewrite chunk_model_cons //.
-    Qed.
-    #[global] Instance chunk_model_cons_frame l dq v vs R Q :
-      Frame false R (l ↦{dq} v ∗ chunk_model l.[1] dq vs) Q →
-      Frame false R (chunk_model l dq (v :: vs)) Q
-      | 2.
-    Proof.
-      rewrite /Frame chunk_model_cons //.
-    Qed.
-
     Lemma chunk_model_app l dq vs1 vs2 :
       chunk_model l dq vs1 ∗
       chunk_model l.[length vs1] dq vs2 ⊣⊢
@@ -209,7 +176,7 @@ Section heap_GS.
       chunk_model l2 dq vs2 -∗
       chunk_model l1 dq (vs1 ++ vs2).
     Proof.
-      intros ->. rewrite -chunk_model_app. iSteps.
+      rewrite -chunk_model_app. iSteps.
     Qed.
     Lemma chunk_model_app_2 {l dq vs} vs1 vs2 :
       vs = vs1 ++ vs2 →
@@ -217,7 +184,7 @@ Section heap_GS.
         chunk_model l dq vs1 ∗
         chunk_model l.[length vs1] dq vs2.
     Proof.
-      intros ->. rewrite chunk_model_app //.
+      rewrite chunk_model_app. iSteps.
     Qed.
 
     Lemma chunk_model_app3 l dq vs1 vs2 vs3 :
@@ -246,6 +213,36 @@ Section heap_GS.
         chunk_model l.[(length vs1 + length vs2)%nat] dq vs3.
     Proof.
       intros ->. rewrite chunk_model_app3 //.
+    Qed.
+
+    Lemma chunk_model_cons l dq v vs :
+      l ↦{dq} v ∗
+      chunk_model l.[1] dq vs ⊣⊢
+      chunk_model l dq (v :: vs).
+    Proof.
+      assert (v :: vs = [v] ++ vs) as -> by done.
+      rewrite -chunk_model_app chunk_model_singleton //.
+    Qed.
+    Lemma chunk_model_cons_1 l dq v vs :
+      l ↦{dq} v -∗
+      chunk_model l.[1] dq vs -∗
+      chunk_model l dq (v :: vs).
+    Proof.
+      rewrite -chunk_model_cons. iSteps.
+    Qed.
+    Lemma chunk_model_cons_2 l dq v vs :
+      chunk_model l dq (v :: vs) ⊢
+        l ↦{dq} v ∗
+        chunk_model l.[1] dq vs.
+    Proof.
+      rewrite chunk_model_cons //.
+    Qed.
+    #[global] Instance chunk_model_cons_frame l dq v vs R Q :
+      Frame false R (l ↦{dq} v ∗ chunk_model l.[1] dq vs) Q →
+      Frame false R (chunk_model l dq (v :: vs)) Q
+    | 2.
+    Proof.
+      rewrite /Frame chunk_model_cons //.
     Qed.
 
     Lemma chunk_model_update {l dq vs} (i : Z) i_ v :
@@ -328,9 +325,8 @@ Section heap_GS.
       chunk_model l dq vs ⊢
       ⌜✓ dq⌝.
     Proof.
-      iIntros "% Hmodel".
-      iDestruct (chunk_model_update 0 with "Hmodel") as "(H↦ & _)"; [lia | | done |].
-      { destruct (nth_lookup_or_length vs 0 inhabitant); [done | lia]. }
+      intros Hvs. destruct vs as [| v vs]; first naive_solver lia.
+      iIntros "(H↦ & _)".
       iApply (mapsto_valid with "H↦").
     Qed.
     Lemma chunk_model_combine l dq1 vs1 dq2 vs2 :
@@ -341,7 +337,7 @@ Section heap_GS.
         chunk_model l (dq1 ⋅ dq2) vs1.
     Proof.
       iInduction vs1 as [| v1 vs1] "IH" forall (l vs2); iIntros "% Hmodel1 Hmodel2".
-      - rewrite (nil_length_inv vs2); last done. naive_solver.
+      - rewrite (nil_length_inv vs2) //. naive_solver.
       - destruct vs2 as [| v2 vs2]; first iSteps.
         iDestruct (chunk_model_cons_2 with "Hmodel1") as "(H↦1 & Hmodel1)".
         iDestruct (chunk_model_cons_2 with "Hmodel2") as "(H↦2 & Hmodel2)".
@@ -407,7 +403,7 @@ Section heap_GS.
       chunk_model l DfracDiscarded vs.
     Proof.
       iIntros "Hmodel".
-      iApply big_sepL_bupd. iApply (big_sepL_impl with "Hmodel"). iIntros "!> %i %v %".
+      iApply big_sepL_bupd. iApply (big_sepL_impl with "Hmodel").
       iSteps.
     Qed.
   End chunk_model.
@@ -503,7 +499,7 @@ Section heap_GS.
     #[global] Instance chunk_span_cons_frame l dq v n R Q :
       Frame false R (l ↦{dq} v ∗ chunk_span l.[1] dq n) Q →
       Frame false R (chunk_span l dq (S n)) Q
-      | 2.
+    | 2.
     Proof.
       rewrite /Frame. setoid_rewrite <- chunk_span_cons. intros H.
       iPoseProof H as "H". iSteps.

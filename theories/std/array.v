@@ -1194,11 +1194,11 @@ Section heap_GS.
   Proof.
     iIntros (Hj Hlookup ->) "%Φ Hslice HΦ".
     iApply wp_fupd.
-    awp_apply (array_unsafe_get_spec_atomic_slice with "[//]").
+    awp_apply (array_unsafe_get_spec_atomic_slice with "[//]") without "HΦ".
     rewrite /atomic_acc /=. iExists sz, dq, vs, i, v.
     iApply fupd_mask_intro; first done. iIntros "Hclose".
     iSplitL "Hslice"; first auto. iSplit; first iSteps.
-    iIntros "Hslice". iMod "Hclose" as "_". iIntros "!> H£".
+    iIntros "Hslice". iMod "Hclose" as "_". iIntros "!> H£ HΦ".
     iMod (lc_fupd_elim_later with "H£ HΦ") as "HΦ".
     iApply ("HΦ" with "Hslice").
   Qed.
@@ -1358,11 +1358,11 @@ Section heap_GS.
   Proof.
     iIntros "%Hj %Φ Hslice HΦ".
     iApply wp_fupd.
-    awp_apply (array_unsafe_set_spec_atomic_slice with "[//]").
+    awp_apply (array_unsafe_set_spec_atomic_slice with "[//]") without "HΦ".
     rewrite /atomic_acc /=. iExists sz, vs, i.
     iApply fupd_mask_intro; first done. iIntros "Hclose".
     iSplitL "Hslice"; first auto. iSplit; first iSteps.
-    iIntros "Hslice". iMod "Hclose" as "_". iIntros "!> H£".
+    iIntros "Hslice". iMod "Hclose" as "_". iIntros "!> H£ HΦ".
     iMod (lc_fupd_elim_later with "H£ HΦ") as "HΦ".
     iApply ("HΦ" with "Hslice").
   Qed.
