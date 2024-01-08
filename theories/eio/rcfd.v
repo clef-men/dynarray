@@ -12,7 +12,7 @@ From heap_lang.language Require Import
 From heap_lang.std Require Import
   record2
   opt
-  channel1
+  latch1
   unix.
 From heap_lang.eio Require Import
   base.
@@ -229,10 +229,10 @@ Definition rcfd_remove `{heap_GS : !heapGS Σ} {mutex : mutex Σ} (condition : c
     match: !"prev" with
     | Open "fd" =>
         let: "flag" := ref #false in
-        let: "chan" := channel1_create condition #() in
-        let: "next" := ref (&Closing (λ: <>, channel1_signal condition "chan")) in
+        let: "chan" := latch1_create condition #() in
+        let: "next" := ref (&Closing (λ: <>, latch1_signal condition "chan")) in
         if: CAS "t".[fd] "prev" "next" then (
-          channel1_wait condition "chan" ;;
+          latch1_wait condition "chan" ;;
           &Some "fd"
         ) else (
           &&None
@@ -291,13 +291,13 @@ Inductive rcfd_lstep : relation rcfd_lstate :=
 Class RcfdG Σ `{heap_GS : !heapGS Σ} := {
   #[local] rcfd_G_tokens_G :: AuthGmultisetG Σ Qp ;
   #[local] rcfd_G_lstate_G :: MonoStateG rcfd_lstep Σ ;
-  #[local] rcfd_G_channel1_G :: Channel1G Σ ;
+  #[local] rcfd_G_latch1_G :: Latch1G Σ ;
 }.
 
 Definition rcfd_Σ := #[
   auth_gmultiset_Σ Qp ;
   mono_state_Σ rcfd_lstep ;
-  channel1_Σ
+  latch1_Σ
 ].
 #[global] Instance subG_rcfd_Σ `{heap_GS : !heapGS Σ} :
   subG rcfd_Σ Σ →
@@ -937,7 +937,7 @@ Section rcfd_G.
 
       wp_load.
       wp_alloc flag as "Hflag".
-      wp_smart_apply (channel1_create_spec _ (unix_fd_model fd (DfracOwn 1) chars) with "[//]") as "%chan (#Hchan_inv & Hchan_producer & Hchan_consumer)".
+      wp_smart_apply (latch1_create_spec _ (unix_fd_model fd (DfracOwn 1) chars) with "[//]") as "%chan (#Hchan_inv & Hchan_producer & Hchan_consumer)".
       wp_alloc l_state as "Hstate". iMod (mapsto_persist with "Hstate") as "#Hstate".
       wp_pures.
 
@@ -957,15 +957,15 @@ Section rcfd_G.
             rewrite gmultiset_set_fold_empty in Hqs. rewrite {}Hqs.
             iMod (rcfd_lstate_update RcfdLstateClosingNoUsers with "Hlstate_auth") as "Hlstate_auth"; first done.
             iExists (RcfdStateClosing _). iStep 9. iModIntro.
-            wp_apply (channel1_signal_spec with "[$Hchan_inv $Hchan_producer $Hmodel]").
+            wp_apply (latch1_signal_spec with "[$Hchan_inv $Hchan_producer $Hmodel]").
             iSteps.
           - iExists (RcfdStateClosing _). iStep 11 as "Hmodel". iModIntro.
-            wp_apply (channel1_signal_spec with "[$Hchan_inv $Hchan_producer $Hmodel]").
+            wp_apply (latch1_signal_spec with "[$Hchan_inv $Hchan_producer $Hmodel]").
             iSteps.
         }
         iModIntro. clear.
 
-        wp_smart_apply (channel1_wait_spec with "[$Hchan_inv $Hchan_consumer]") as "Hmodel".
+        wp_smart_apply (latch1_wait_spec with "[$Hchan_inv $Hchan_consumer]") as "Hmodel".
         iSteps. iApply ("HΦ" $! (Some _)). iSteps.
 
       + iAssert (⌜∃ fn2, state2 = RcfdStateClosing fn2⌝ ∗ rcfd_lstate_lb γ RcfdLstateClosingUsers)%I as "((%fn2 & ->) & #Hlstate_lb)".

@@ -76,7 +76,7 @@ theories/std/inf_array.v
 theories/std/stack.v
 theories/std/mutex.v
 theories/std/condition.v
-theories/std/channel1.v
+theories/std/latch1.v
 theories/std/unix.v
 
 theories/persistent/base.v
