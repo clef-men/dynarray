@@ -9,6 +9,7 @@ theories/prelude/base.v
 theories/prelude/tactics.v
 theories/prelude/prelude.v
 
+theories/common/math.v
 theories/common/list.v
 theories/common/gmultiset.v
 

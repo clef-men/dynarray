@@ -1,5 +1,10 @@
+From Coq Require Import
+  ZifyNat.
+
 From heap_lang Require Import
   prelude.
+From heap_lang.common Require Import
+  math.
 From heap_lang.iris.bi Require Import
   big_op.
 From heap_lang.language Require Import
@@ -106,6 +111,13 @@ Definition chunk_fill : val :=
     for: "i" = #0 to "sz" begin
       "t".["i"] <- "v"
     end.
+
+Definition chunk_cget : val :=
+λ: "t" "sz" "i",
+   !"t".["i" `rem` "sz"].
+Definition chunk_cset : val :=
+  λ: "t" "sz" "i" "v",
+"t".["i" `rem` "sz"] <- "v".
 
 Section heap_GS.
   Context `{heap_GS : !heapGS Σ}.
@@ -708,6 +720,236 @@ Section heap_GS.
       iSteps.
     Qed.
   End chunk_span.
+
+  Section chunk_cslice.
+    Definition chunk_cslice l sz i dq vs : iProp Σ :=
+      [∗ list] k ↦ v ∈ vs, l.[(i + k) `mod` sz] ↦{dq} v.
+
+    (* Lemma chunk_cslice_eq l sz i dq vs : *)
+    (*   chunk_cslice l sz i dq vs ⊣⊢ *)
+    (*     let j := i `mod` sz in *)
+    (*     chunk_model (l +ₗ j) dq (take (sz - j) vs) ∗ *)
+    (*     chunk_model l dq (drop (sz - j) vs). *)
+    (* Proof. *)
+    (* Admitted. *)
+
+    #[global] Instance chunk_cslice_timeless l sz i dq vs :
+      Timeless (chunk_cslice l sz i dq vs).
+    Proof.
+      apply _.
+    Qed.
+    #[global] Instance chunk_cslice_persistent l sz i vs :
+      Persistent (chunk_cslice l sz i DfracDiscarded vs).
+    Proof.
+      apply _.
+    Qed.
+
+    #[global] Instance chunk_cslice_fractional l sz i vs :
+      Fractional (λ q, chunk_cslice l sz i (DfracOwn q) vs).
+    Proof.
+      apply _.
+    Qed.
+    #[global] Instance chunk_cslice_as_fractionak l sz i q vs :
+      AsFractional (chunk_cslice l sz i (DfracOwn q) vs) (λ q, chunk_cslice l sz i (DfracOwn q) vs) q.
+    Proof.
+      split; [done | apply _].
+    Qed.
+
+    Lemma chunk_model_to_cslice l dq vs :
+      chunk_model l dq vs ⊢
+      chunk_cslice l (length vs) 0 dq vs.
+    Proof.
+      iIntros "Hmodel".
+      iApply (big_sepL_impl with "Hmodel"). iIntros (k v Hk%lookup_lt_Some) "!> H↦".
+      rewrite left_id Z.mod_small //; first lia.
+    Qed.
+
+    Lemma chunk_cslice_nil l sz i dq :
+      ⊢ chunk_cslice l sz i dq [].
+    Proof.
+      rewrite /chunk_cslice //.
+    Qed.
+
+    Lemma chunk_cslice_singleton l sz i dq v :
+      l.[i `mod` sz] ↦{dq} v ⊣⊢
+      chunk_cslice l sz i dq [v].
+    Proof.
+      setoid_rewrite big_sepL_singleton. rewrite right_id //.
+    Qed.
+    Lemma chunk_cslice_singleton_1 l sz i dq v :
+      l.[i `mod` sz] ↦{dq} v ⊢
+      chunk_cslice l sz i dq [v].
+    Proof.
+      rewrite chunk_cslice_singleton //.
+    Qed.
+    Lemma chunk_cslice_singleton_2 l sz i dq v :
+      chunk_cslice l sz i dq [v] ⊢
+      l.[i `mod` sz] ↦{dq} v.
+    Proof.
+      rewrite chunk_cslice_singleton //.
+    Qed.
+
+    Lemma chunk_cslice_app l sz i dq vs1 vs2 :
+      chunk_cslice l sz i dq vs1 ∗
+      chunk_cslice l sz (i + length vs1) dq vs2 ⊣⊢
+      chunk_cslice l sz i dq (vs1 ++ vs2).
+    Proof.
+      rewrite /chunk_cslice Nat2Z.inj_add.
+      setoid_rewrite <- (assoc Z.add).
+      setoid_rewrite <- Nat2Z.inj_add at 2.
+      rewrite big_sepL_app //.
+    Qed.
+    Lemma chunk_cslice_app_1 l sz dq i1 vs1 i2 vs2 :
+      i2 = i1 + length vs1 →
+      chunk_cslice l sz i1 dq vs1 -∗
+      chunk_cslice l sz i2 dq vs2 -∗
+      chunk_cslice l sz i1 dq (vs1 ++ vs2).
+    Proof.
+      rewrite -chunk_cslice_app. iSteps.
+    Qed.
+    Lemma chunk_cslice_app_2 {l sz i dq vs} vs1 vs2 :
+      vs = vs1 ++ vs2 →
+      chunk_cslice l sz i dq vs ⊢
+        chunk_cslice l sz i dq vs1 ∗
+        chunk_cslice l sz (i + length vs1) dq vs2.
+    Proof.
+      rewrite chunk_cslice_app. iSteps.
+    Qed.
+
+    Lemma chunk_cslice_cons l sz i dq v vs :
+      l.[i `mod` sz] ↦{dq} v ∗
+      chunk_cslice l sz (S i) dq vs ⊣⊢
+      chunk_cslice l sz i dq (v :: vs).
+    Proof.
+      assert (v :: vs = [v] ++ vs) as -> by done.
+      rewrite -chunk_cslice_app chunk_cslice_singleton Nat.add_1_r //.
+    Qed.
+    Lemma chunk_cslice_cons_1 l sz i dq v vs :
+      l.[i `mod` sz] ↦{dq} v -∗
+      chunk_cslice l sz (S i) dq vs -∗
+      chunk_cslice l sz i dq (v :: vs).
+    Proof.
+      rewrite -chunk_cslice_cons. iSteps.
+    Qed.
+    Lemma chunk_cslice_cons_2 l sz i dq v vs :
+      chunk_cslice l sz i dq (v :: vs) ⊢
+        l.[i `mod` sz] ↦{dq} v ∗
+        chunk_cslice l sz (S i) dq vs.
+    Proof.
+      rewrite chunk_cslice_cons //.
+    Qed.
+
+    Lemma chunk_cslice_update {l sz i dq vs} k v :
+      vs !! k = Some v →
+      chunk_cslice l sz i dq vs ⊢
+        l.[(i + k)%nat `mod` sz] ↦{dq} v ∗
+        (∀ w, l.[(i + k)%nat `mod` sz] ↦{dq} w -∗ chunk_cslice l sz i dq (<[k := w]> vs)).
+    Proof.
+      rewrite Nat2Z.inj_add. apply: big_sepL_insert_acc.
+    Qed.
+    Lemma chunk_cslice_lookup_acc {l sz i dq vs} k v :
+      vs !! k = Some v →
+      chunk_cslice l sz i dq vs ⊢
+        l.[(i + k)%nat `mod` sz] ↦{dq} v ∗
+        (l.[(i + k)%nat `mod` sz] ↦{dq} v -∗ chunk_cslice l sz i dq vs).
+    Proof.
+      rewrite Nat2Z.inj_add. apply: big_sepL_lookup_acc.
+    Qed.
+    Lemma chunk_cslice_lookup {l sz i dq vs} k v :
+      vs !! k = Some v →
+      chunk_cslice l sz i dq vs ⊢
+      l.[(i + k)%nat `mod` sz] ↦{dq} v.
+    Proof.
+      rewrite Nat2Z.inj_add. apply: big_sepL_lookup.
+    Qed.
+
+    Lemma chunk_cslice_valid l sz i dq vs :
+      0 < length vs →
+      chunk_cslice l sz i dq vs ⊢
+      ⌜✓ dq⌝.
+    Proof.
+      intros Hvs. destruct vs as [| v vs]; first naive_solver lia.
+      iIntros "(H↦ & _)".
+      iApply (mapsto_valid with "H↦").
+    Qed.
+    Lemma chunk_cslice_combine l sz i dq1 vs1 dq2 vs2 :
+      length vs1 = length vs2 →
+      chunk_cslice l sz i dq1 vs1 -∗
+      chunk_cslice l sz i dq2 vs2 -∗
+        ⌜vs1 = vs2⌝ ∗
+        chunk_cslice l sz i (dq1 ⋅ dq2) vs1.
+    Proof.
+      iInduction vs1 as [| v1 vs1] "IH" forall (i vs2); iIntros "% Hcslice1 Hcslice2".
+      - rewrite (nil_length_inv vs2) //. naive_solver.
+      - destruct vs2 as [| v2 vs2]; first iSteps.
+        iDestruct (chunk_cslice_cons_2 with "Hcslice1") as "(H↦1 & Hcslice1)".
+        iDestruct (chunk_cslice_cons_2 with "Hcslice2") as "(H↦2 & Hcslice2)".
+        iDestruct (mapsto_combine with "H↦1 H↦2") as "(H↦ & ->)".
+        iDestruct ("IH" with "[] Hcslice1 Hcslice2") as "(-> & Hcslice)"; first iSteps. iSplit; first iSteps.
+        iApply (chunk_cslice_cons_1 with "H↦ Hcslice").
+    Qed.
+    Lemma chunk_cslice_valid_2 l sz i dq1 vs1 dq2 vs2 :
+      0 < length vs1 →
+      length vs1 = length vs2 →
+      chunk_cslice l sz i dq1 vs1 -∗
+      chunk_cslice l sz i dq2 vs2 -∗
+      ⌜✓ (dq1 ⋅ dq2) ∧ vs1 = vs2⌝.
+    Proof.
+      iIntros "% % Hcslice1 Hcslice2".
+      iDestruct (chunk_cslice_combine with "Hcslice1 Hcslice2") as "(-> & Hcslice)"; first done.
+      iDestruct (chunk_cslice_valid with "Hcslice") as %?; first done.
+      iSteps.
+    Qed.
+    Lemma chunk_cslice_agree l sz i dq1 vs1 dq2 vs2 :
+      length vs1 = length vs2 →
+      chunk_cslice l sz i dq1 vs1 -∗
+      chunk_cslice l sz i dq2 vs2 -∗
+      ⌜vs1 = vs2⌝.
+    Proof.
+      iIntros "% Hcslice1 Hcslice2".
+      iDestruct (chunk_cslice_combine with "Hcslice1 Hcslice2") as "(-> & _)"; first done.
+      iSteps.
+    Qed.
+    Lemma chunk_cslice_dfrac_ne l sz i1 dq1 vs1 i2 dq2 vs2 :
+      0 < length vs1 →
+      length vs1 = length vs2 →
+      ¬ ✓ (dq1 ⋅ dq2) →
+      chunk_cslice l sz i1 dq1 vs1 -∗
+      chunk_cslice l sz i2 dq2 vs2 -∗
+      ⌜i1 ≠ i2⌝.
+    Proof.
+      iIntros "% % % Hcslice1 Hcslice2" (->).
+      iDestruct (chunk_cslice_valid_2 with "Hcslice1 Hcslice2") as %?; naive_solver.
+    Qed.
+    Lemma chunk_cslice_ne l sz i1 vs1 i2 dq2 vs2 :
+      0 < length vs1 →
+      length vs1 = length vs2 →
+      chunk_cslice l sz i1 (DfracOwn 1) vs1 -∗
+      chunk_cslice l sz i2 dq2 vs2 -∗
+      ⌜i1 ≠ i2⌝.
+    Proof.
+      intros.
+      iApply chunk_cslice_dfrac_ne; [done.. | intros []%(exclusive_l _)].
+    Qed.
+    Lemma chunk_cslice_exclusive l sz i vs1 vs2 :
+      0 < length vs1 →
+      length vs1 = length vs2 →
+      chunk_cslice l sz i (DfracOwn 1) vs1 -∗
+      chunk_cslice l sz i (DfracOwn 1) vs2 -∗
+      False.
+    Proof.
+      iIntros "% % Hcslice1 Hcslice2".
+      iDestruct (chunk_cslice_valid_2 with "Hcslice1 Hcslice2") as %?; naive_solver.
+    Qed.
+    Lemma chunk_cslice_persist l sz i dq vs :
+      chunk_cslice l sz i dq vs ⊢ |==>
+      chunk_cslice l sz i DfracDiscarded vs.
+    Proof.
+      iIntros "Hcslice".
+      iApply big_sepL_bupd. iApply (big_sepL_impl with "Hcslice").
+      iSteps.
+    Qed.
+  End chunk_cslice.
 
   Notation chunk_au_load l i Φ := (
     AU << ∃∃ dq v,
@@ -2883,6 +3125,94 @@ Section heap_GS.
     erewrite drop_S; done.
   Qed.
 
+  Lemma chunk_cget_spec_atomic l (sz_ i_ : Z) :
+    <<<
+      True
+    | ∀∀ sz i dq v,
+      ⌜sz_ = Z.of_nat sz ∧ i_ = Z.of_nat i⌝ ∗
+      chunk_cslice l sz i dq [v]
+    >>>
+      chunk_cget #l #sz_ #i_
+    <<<
+      chunk_cslice l sz i dq [v]
+    | RET v; £ 1
+    >>>.
+  Proof.
+    iIntros "!> %Φ _ HΦ".
+    wp_rec. wp_pure credit:"H£". wp_pures.
+    iMod "HΦ" as "(%sz & %i & %dq & %v & ((-> & ->) & Hcslice) & _ & HΦ)".
+    rewrite -chunk_cslice_singleton Z_rem_mod; [| lia..].
+    wp_load.
+    iMod ("HΦ" with "Hcslice") as "HΦ".
+    iSteps.
+  Qed.
+  Lemma chunk_cget_spec l sz i dq v (sz_ i_ : Z) :
+    sz_ = Z.of_nat sz →
+    i_ = Z.of_nat i →
+    {{{
+      chunk_cslice l sz i dq [v]
+    }}}
+      chunk_cget #l #sz_ #i_
+    {{{
+      RET v;
+      chunk_cslice l sz i dq [v]
+    }}}.
+  Proof.
+    iIntros (-> ->) "%Φ Hcslice HΦ".
+    iApply wp_fupd.
+    awp_apply (chunk_cget_spec_atomic with "[//]") without "HΦ".
+    rewrite /atomic_acc /=. repeat iExists _.
+    iApply fupd_mask_intro; first done. iIntros "Hclose".
+    iSplitL "Hcslice". { iFrame. iSteps. } iSplit; first iSteps. iIntros "Hslice".
+    iMod "Hclose" as "_". iIntros "!> H£ HΦ".
+    iMod (lc_fupd_elim_later with "H£ HΦ") as "HΦ".
+    iApply ("HΦ" with "Hslice").
+  Qed.
+
+  Lemma chunk_cset_spec_atomic l (sz_ i_ : Z) v :
+    <<<
+      True
+    | ∀∀ sz i w,
+      ⌜sz_ = Z.of_nat sz ∧ i_ = Z.of_nat i⌝ ∗
+      chunk_cslice l sz i (DfracOwn 1) [w]
+    >>>
+      chunk_cset #l #sz_ #i_ v
+    <<<
+      chunk_cslice l sz i (DfracOwn 1) [v]
+    | RET #(); £ 1
+    >>>.
+  Proof.
+    iIntros "!> %Φ _ HΦ".
+    wp_rec. wp_pure credit:"H£". wp_pures.
+    iMod "HΦ" as "(%sz & %i & %w & ((-> & ->) & Hcslice) & _ & HΦ)".
+    rewrite -!chunk_cslice_singleton Z_rem_mod; [| lia..].
+    wp_store.
+    iMod ("HΦ" with "Hcslice") as "HΦ".
+    iSteps.
+  Qed.
+  Lemma chunk_cset_spec l sz i w (sz_ i_ : Z) v :
+    sz_ = Z.of_nat sz →
+    i_ = Z.of_nat i →
+    {{{
+      chunk_cslice l sz i (DfracOwn 1) [w]
+    }}}
+      chunk_cset #l #sz_ #i_ v
+    {{{
+      RET #();
+      chunk_cslice l sz i (DfracOwn 1) [v]
+    }}}.
+  Proof.
+    iIntros (-> ->) "%Φ Hcslice HΦ".
+    iApply wp_fupd.
+    awp_apply (chunk_cset_spec_atomic with "[//]") without "HΦ".
+    rewrite /atomic_acc /=. repeat iExists _.
+    iApply fupd_mask_intro; first done. iIntros "Hclose".
+    iSplitL "Hcslice"; first iSteps. iSplit; first iSteps. iIntros "Hslice".
+    iMod "Hclose" as "_". iIntros "!> H£ HΦ".
+    iMod (lc_fupd_elim_later with "H£ HΦ") as "HΦ".
+    iApply ("HΦ" with "Hslice").
+  Qed.
+
   Definition chunk_type τ `{!iType _ τ} (sz : nat) l : iProp Σ :=
     inv nroot (
       ∃ vs,
@@ -3462,6 +3792,53 @@ Section heap_GS.
       iDestruct (big_sepL_insert_acc with "Hvs") as "(_ & Hvs')"; first done.
       iExists (<[i := v]> vs). iSteps. rewrite insert_length //.
   Qed.
+
+  Lemma chunk_cget_type τ `{!iType _ τ} (sz : nat) l (i : Z) :
+    0 < sz →
+    (0 ≤ i)%Z →
+    {{{
+      chunk_type τ sz l
+    }}}
+      chunk_cget #l #sz #i
+    {{{ v,
+      RET v;
+      τ v
+    }}}.
+  Proof.
+    iIntros "%Hsz %Hi %Φ #Hl HΦ".
+    Z_to_nat i.
+    wp_rec. wp_pures.
+    iInv "Hl" as "(%vs & >%Hvs & Hmodel & #Hvs)".
+    feed pose proof (list_lookup_lookup_total_lt vs (i `mod` sz)); first lia.
+    iDestruct (chunk_model_lookup_acc (i `rem` sz) with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | rewrite Z_rem_mod; lia |].
+    wp_load.
+    iDestruct (big_sepL_lookup with "Hvs") as "Hv"; first done.
+    iSteps.
+  Qed.
+
+  Lemma chunk_cset_type τ `{!iType _ τ} (sz : nat) l (i : Z) v :
+    0 < sz →
+    (0 ≤ i)%Z →
+    {{{
+      chunk_type τ sz l ∗
+      τ v
+    }}}
+      chunk_cset #l #sz #i v
+    {{{
+      RET #(); True
+    }}}.
+  Proof.
+    iIntros "%Hsz %Hi %Φ (#Hl & #Hv) HΦ".
+    Z_to_nat i.
+    wp_rec. wp_pures.
+    iInv "Hl" as "(%vs & >%Hvs & Hmodel & Hvs)".
+    feed pose proof (list_lookup_lookup_total_lt vs (i `mod` sz)); first lia.
+    iDestruct (chunk_model_update (i `rem` sz) with "Hmodel") as "(H↦ & Hmodel)"; [lia | done | rewrite Z_rem_mod; lia |].
+    wp_store.
+    iDestruct (big_sepL_insert_acc with "Hvs") as "(_ & Hvs)"; first done.
+    iModIntro. iSplitR "HΦ"; last iSteps. iExists (<[i `mod` sz := v]> vs).
+    iSteps. rewrite insert_length //.
+  Qed.
 End heap_GS.
 
 #[global] Opaque chunk_make.
@@ -3483,6 +3860,9 @@ End heap_GS.
 #[global] Opaque chunk_shrink.
 #[global] Opaque chunk_clone.
 #[global] Opaque chunk_fill.
+#[global] Opaque chunk_cget.
+#[global] Opaque chunk_cset.
 
 #[global] Opaque chunk_model.
 #[global] Opaque chunk_span.
+#[global] Opaque chunk_cslice.
