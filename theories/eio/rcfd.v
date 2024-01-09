@@ -291,7 +291,7 @@ Inductive rcfd_lstep : relation rcfd_lstate :=
 Class RcfdG Σ `{heap_GS : !heapGS Σ} := {
   #[local] rcfd_G_latch1_G :: Latch1G Σ ;
   #[local] rcfd_G_tokens_G :: AuthGmultisetG Σ Qp ;
-  #[local] rcfd_G_lstate_G :: AuthMonoG rcfd_lstep Σ ;
+  #[local] rcfd_G_lstate_G :: AuthMonoG Σ rcfd_lstep ;
 }.
 
 Definition rcfd_Σ := #[

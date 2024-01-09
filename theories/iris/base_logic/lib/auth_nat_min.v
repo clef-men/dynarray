@@ -10,7 +10,7 @@ From heap_lang.iris Require Import
   diaframe.
 
 Class AuthNatMinG Σ := {
-  #[local] auth_nat_min_G :: AuthMonoG ge Σ ;
+  #[local] auth_nat_min_G :: AuthMonoG Σ ge ;
 }.
 
 Definition auth_nat_min_Σ := #[

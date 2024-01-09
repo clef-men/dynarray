@@ -10,7 +10,7 @@ From heap_lang.iris Require Import
   diaframe.
 
 Class AuthNatMaxG Σ := {
-  #[local] auth_nat_max_G :: AuthMonoG (≤) Σ ;
+  #[local] auth_nat_max_G :: AuthMonoG Σ (≤) ;
 }.
 
 Definition auth_nat_max_Σ := #[
