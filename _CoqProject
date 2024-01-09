@@ -18,7 +18,7 @@ theories/iris/algebra/view.v
 theories/iris/algebra/auth.v
 theories/iris/algebra/nat_max.v
 theories/iris/algebra/nat_min.v
-theories/iris/algebra/monotone.v
+theories/iris/algebra/mono.v
 theories/iris/algebra/lib/auth_option.v
 theories/iris/algebra/lib/auth_excl.v
 theories/iris/algebra/lib/auth_nat_max.v

@@ -7,7 +7,7 @@ From heap_lang.iris.algebra Require Export
   base.
 From heap_lang.iris.algebra Require Import
   auth
-  monotone.
+  mono.
 
 Section sts.
   Context `(step : relation state).
