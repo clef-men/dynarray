@@ -1,35 +1,120 @@
 From heap_lang Require Import
   prelude.
+From heap_lang.iris.base_logic Require Import
+  excl.
 From heap_lang.language Require Import
   notations
   diaframe.
 From heap_lang.std Require Export
   base.
 
+Implicit Types b : bool.
+Implicit Types l : loc.
 Implicit Types t fn : val.
 
-Record mutex `{heap_GS : !heapGS Σ} := {
-  mutex_create : val ;
-  mutex_lock : val ;
-  mutex_unlock : val ;
+Definition mutex_create : val :=
+  λ: <>,
+    ref #false.
 
-  mutex_inv : val → iProp Σ → iProp Σ ;
-  mutex_locked : val → iProp Σ ;
+Definition mutex_lock : val :=
+  rec: "mutex_lock" "t" :=
+    if: CAS "t" #false #true then (
+      #()
+    ) else (
+      "mutex_lock" "t"
+    ).
 
-  #[global] mutex_inv_contractive t ::
-    Contractive (mutex_inv t) ;
+Definition mutex_unlock : val :=
+  λ: "t",
+    "t" <- #false.
 
-  #[global] mutex_inv_persistent t P ::
-    Persistent (mutex_inv t P) ;
-  #[global] mutex_locked_timeless t ::
-    Timeless (mutex_locked t) ;
+Definition mutex_protect : val :=
+  λ: "t" "fn",
+    mutex_lock "t" ;;
+    let: "res" := "fn" #() in
+    mutex_unlock "t" ;;
+    "res".
 
-  mutex_locked_exclusive t :
+Class MutexG Σ `{heap_GS : !heapGS Σ} := {
+  #[local] mutex_G :: ExclG Σ unitO ;
+}.
+
+Definition mutex_Σ := #[
+  excl_Σ unitO
+].
+#[global] Instance subG_mutex_Σ Σ `{heap_GS : !heapGS Σ} :
+  subG mutex_Σ Σ →
+  MutexG Σ.
+Proof.
+  solve_inG.
+Qed.
+
+Section mutex_G.
+  Context `{mutex_G : MutexG Σ}.
+
+  #[local] Definition mutex_locked' γ :=
+    excl γ ().
+
+  #[local] Definition mutex_inv_inner l γ P : iProp Σ :=
+    ∃ b,
+    l ↦ #b ∗
+    match b with
+    | true =>
+        True
+    | false =>
+        mutex_locked' γ ∗
+        P
+    end.
+  Definition mutex_inv t P : iProp Σ :=
+    ∃ l γ,
+    ⌜t = #l⌝ ∗
+    meta l nroot γ ∗
+    inv nroot (mutex_inv_inner l γ P).
+
+  Definition mutex_locked t : iProp Σ :=
+    ∃ l γ,
+    ⌜t = #l⌝ ∗
+    meta l nroot γ ∗
+    mutex_locked' γ.
+
+  #[global] Instance mutex_inv_contractive t :
+    Contractive (mutex_inv t).
+  Proof.
+    rewrite /mutex_inv /mutex_inv_inner. solve_contractive.
+  Qed.
+  #[global] Instance mutex_inv_ne t :
+    NonExpansive (mutex_inv t).
+  Proof.
+    apply _.
+  Qed.
+  #[global] Instance mutex_inv_proper t :
+    Proper ((≡) ==> (≡)) (mutex_inv t).
+  Proof.
+    apply _.
+  Qed.
+
+  #[global] Instance mutex_inv_persistent t P :
+    Persistent (mutex_inv t P).
+  Proof.
+    apply _.
+  Qed.
+  #[global] Instance mutex_locked_timeless t :
+    Timeless (mutex_locked t).
+  Proof.
+    apply _.
+  Qed.
+
+  Lemma mutex_locked_exclusive t :
     mutex_locked t -∗
     mutex_locked t -∗
-    False ;
+    False.
+  Proof.
+    iIntros "(%l & %γ & -> & #Hmeta & Hlocked1) (%_l & %_γ & %Heq & _Hmeta & Hlocked2)". injection Heq as <-.
+    iDestruct (meta_agree with "Hmeta _Hmeta") as %<-. iClear "_Hmeta".
+    iDestruct (excl_exclusive with "Hlocked1 Hlocked2") as %[].
+  Qed.
 
-  mutex_create_spec P :
+  Lemma mutex_create_spec P :
     {{{
       P
     }}}
@@ -37,9 +122,17 @@ Record mutex `{heap_GS : !heapGS Σ} := {
     {{{ t,
       RET t;
       mutex_inv t P
-    }}} ;
+    }}}.
+  Proof.
+    iIntros "%Φ HP HΦ".
+    wp_rec.
+    iApply wp_fupd. wp_apply (wp_alloc with "[//]") as "%l (Hl & Hmeta)".
+    iMod excl_alloc as "(%γ & Hlocked)".
+    iMod (meta_set _ _ γ with "Hmeta") as "#Hmeta"; first done.
+    iSteps.
+  Qed.
 
-  mutex_lock_spec t P :
+  Lemma mutex_lock_spec t P :
     {{{
       mutex_inv t P
     }}}
@@ -48,9 +141,23 @@ Record mutex `{heap_GS : !heapGS Σ} := {
       RET #();
       mutex_locked t ∗
       P
-    }}} ;
+    }}}.
+  Proof.
+    iIntros "%Φ (%l & %γ & -> & #Hmeta & #Hinv) HΦ".
+    iLöb as "HLöb".
+    wp_rec.
+    wp_bind (CmpXchg _ _ _).
+    iInv "Hinv" as "(%b & Hl & Hb)".
+    destruct b.
+    - wp_cmpxchg_fail.
+      iModIntro. iSplitR "HΦ"; first iSteps.
+      wp_pures.
+      iApply ("HLöb" with "HΦ").
+    - wp_cmpxchg_suc.
+      iSteps.
+  Qed.
 
-  mutex_unlock_spec t P :
+  Lemma mutex_unlock_spec t P :
     {{{
       mutex_inv t P ∗
       mutex_locked t ∗
@@ -59,39 +166,20 @@ Record mutex `{heap_GS : !heapGS Σ} := {
       mutex_unlock t
     {{{
       RET #(); True
-    }}} ;
-}.
-#[global] Arguments mutex _ {_} : assert.
-#[global] Arguments Build_mutex {_ _ _ _ _ _ _ _ _ _} _ _ _ _ : assert.
-
-Section mutex.
-  Context `{heap_GS : !heapGS Σ} (mutex : mutex Σ).
-
-  #[global] Instance mutex_inv_ne t :
-    NonExpansive (mutex.(mutex_inv) t).
+    }}}.
   Proof.
-    apply _.
+    iIntros "%Φ ((%l & %γ & -> & #Hmeta & #Hinv) & (%_l & %_γ & %Heq & #_Hmeta & Hlocked) & HP) HΦ". injection Heq as <-.
+    iDestruct (meta_agree with "Hmeta _Hmeta") as %<-. iClear "_Hmeta".
+    iSteps.
   Qed.
-  #[global] Instance mutex_inv_proper t :
-    Proper ((≡) ==> (≡)) (mutex.(mutex_inv) t).
-  Proof.
-    apply _.
-  Qed.
-
-  Definition mutex_protect : val :=
-    λ: "t" "fn",
-      mutex.(mutex_lock) "t" ;;
-      let: "res" := "fn" #() in
-      mutex.(mutex_unlock) "t" ;;
-      "res".
 
   Lemma mutex_protect_spec Ψ t P fn :
     {{{
-      mutex.(mutex_inv) t P ∗
-      ( mutex.(mutex_locked) t -∗
+      mutex_inv t P ∗
+      ( mutex_locked t -∗
         P -∗
         WP fn #() {{ v,
-          mutex.(mutex_locked) t ∗
+          mutex_locked t ∗
           P ∗
           Ψ v
         }}
@@ -110,11 +198,12 @@ Section mutex.
     wp_smart_apply (mutex_unlock_spec with "[$Hinv $Hlocked $HP]").
     iSteps.
   Qed.
-End mutex.
+End mutex_G.
 
+#[global] Opaque mutex_create.
+#[global] Opaque mutex_lock.
+#[global] Opaque mutex_unlock.
 #[global] Opaque mutex_protect.
 
-Notation "mutex .(mutex_protect)" := (
-  mutex_protect mutex
-)(at level 5
-).
+#[global] Opaque mutex_inv.
+#[global] Opaque mutex_locked.

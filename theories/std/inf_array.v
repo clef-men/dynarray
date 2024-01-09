@@ -45,55 +45,57 @@ Implicit Types vs : nat → val.
 ( at level 5
 ) : expr_scope.
 
-Class InfArrayG Σ `{heap_GS : !heapGS Σ} (mutex : mutex Σ) := {
+Definition inf_array_create : val :=
+  λ: "default",
+    let: "data" := array_create #() in
+    let: "t" := record3_make "data" "default" #() in
+    let: "mtx" := mutex_create #() in
+    "t".[mutex] <- "mtx" ;;
+    "t".
+
+Definition inf_array_get : val :=
+  λ: "t" "i",
+    mutex_protect !"t".[mutex] (λ: <>,
+      let: "data" := !"t".[data] in
+      if: "i" < array_size "data" then (
+        array_unsafe_get "data" "i"
+      ) else (
+        !"t".[default]
+      )
+    ).
+
+Definition inf_array_set : val :=
+  λ: "t" "i" "v",
+    mutex_protect !"t".[mutex] (λ: <>,
+      let: "data" := !"t".[data] in
+      let: "sz" := array_size "data" in
+      if: "i" < "sz" then (
+        array_unsafe_set "data" "i" "v"
+      ) else (
+        let: "data" := array_grow "data" (#1 + "i") !"t".[default] in
+        "t".[data] <- "data" ;;
+        array_unsafe_set "data" "i" "v"
+      )
+    ).
+
+Class InfArrayG Σ `{heap_GS : !heapGS Σ} := {
+  #[local] inf_array_G_mutex_G :: MutexG Σ ;
   #[local] inf_array_G_model_G :: AuthExclG Σ (nat -d> valO) ;
 }.
 
 Definition inf_array_Σ := #[
+  mutex_Σ ;
   auth_excl_Σ (nat -d> valO)
 ].
-#[global] Instance subG_inf_array_Σ Σ `{heap_GS : !heapGS Σ} mutex :
+#[global] Instance subG_inf_array_Σ Σ `{heap_GS : !heapGS Σ} :
   subG inf_array_Σ Σ →
-  InfArrayG Σ mutex.
+  InfArrayG Σ .
 Proof.
   solve_inG.
 Qed.
 
 Section inf_array_G.
-  Context `{heap_GS : !heapGS Σ} mutex `{inf_array_G : !InfArrayG Σ mutex}.
-
-  Definition inf_array_create : val :=
-    λ: "default",
-      let: "data" := array_create #() in
-      let: "t" := record3_make "data" "default" #() in
-      let: "mtx" := mutex.(mutex_create) #() in
-      "t".[mutex] <- "mtx" ;;
-      "t".
-
-  Definition inf_array_get : val :=
-    λ: "t" "i",
-      mutex.(mutex_protect) !"t".[mutex] (λ: <>,
-        let: "data" := !"t".[data] in
-        if: "i" < array_size "data" then (
-          array_unsafe_get "data" "i"
-        ) else (
-          !"t".[default]
-        )
-      ).
-
-  Definition inf_array_set : val :=
-    λ: "t" "i" "v",
-      mutex.(mutex_protect) !"t".[mutex] (λ: <>,
-        let: "data" := !"t".[data] in
-        let: "sz" := array_size "data" in
-        if: "i" < "sz" then (
-          array_unsafe_set "data" "i" "v"
-        ) else (
-          let: "data" := array_grow "data" (#1 + "i") !"t".[default] in
-          "t".[data] <- "data" ;;
-          array_unsafe_set "data" "i" "v"
-        )
-      ).
+  Context `{inf_array_G : InfArrayG Σ}.
 
   #[local] Definition inf_array_inv_inner l γ default : iProp Σ :=
     ∃ data us vs,
@@ -107,7 +109,7 @@ Section inf_array_G.
     meta l nroot γ ∗
     l.[mutex] ↦□ mtx ∗
     l.[default] ↦□ default ∗
-    mutex.(mutex_inv) mtx (inf_array_inv_inner l γ default).
+    mutex_inv mtx (inf_array_inv_inner l γ default).
 
   Definition inf_array_model t vs : iProp Σ :=
     ∃ l γ,
@@ -211,7 +213,7 @@ Section inf_array_G.
     iMod (auth_excl_alloc' (auth_excl_G := inf_array_G_model_G) vs) as "(%γ & Hmodel₁ & Hmodel₂)".
     iMod (meta_set _ _ γ nroot with "Hmeta") as "#Hmeta"; first done.
 
-    wp_smart_apply (mutex_create_spec _ (inf_array_inv_inner l γ default) with "[Hdata Hmodel_data Hmodel₂]"); iSteps.
+    wp_smart_apply (mutex_create_spec (inf_array_inv_inner l γ default) with "[Hdata Hmodel_data Hmodel₂]"); iSteps.
   Qed.
 
   Lemma inf_array_get_spec t i :
@@ -232,7 +234,7 @@ Section inf_array_G.
 
     wp_rec. wp_load.
 
-    wp_apply (mutex_protect_spec _ Φ with "[$Hinv_mtx HΦ]"); last iSteps. iIntros "Hlocked_mtx (%data & %us & %vs & Hdata & Hmodel_data & Hmodel₂ & %Hvs)".
+    wp_apply (mutex_protect_spec Φ with "[$Hinv_mtx HΦ]"); last iSteps. iIntros "Hlocked_mtx (%data & %us & %vs & Hdata & Hmodel_data & Hmodel₂ & %Hvs)".
 
     wp_load.
 
@@ -302,7 +304,7 @@ Section inf_array_G.
 
     wp_rec. wp_load.
 
-    wp_apply (mutex_protect_spec _ Φ with "[$Hinv_mtx HΦ]"); last iSteps. iIntros "Hlocked_mtx (%data & %us & %vs & Hdata & Hmodel_data & Hmodel₂ & %Hvs)".
+    wp_apply (mutex_protect_spec Φ with "[$Hinv_mtx HΦ]"); last iSteps. iIntros "Hlocked_mtx (%data & %us & %vs & Hdata & Hmodel_data & Hmodel₂ & %Hvs)".
 
     wp_load.
 

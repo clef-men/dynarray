@@ -6,95 +6,119 @@ From heap_lang.language Require Import
 From heap_lang.std Require Export
   mutex.
 
-Implicit Types cond : val.
+Implicit Types b : bool.
+Implicit Types t cond : val.
 
-Record condition `{heap_GS : !heapGS Σ} {mutex : mutex Σ} := {
-  condition_create : val ;
-  condition_wait : val ;
-  condition_signal : val ;
-  condition_broadcast : val ;
+Definition condition_create : val :=
+  λ: <>,
+    #().
 
-  condition_inv : val → iProp Σ ;
+Definition condition_wait : val :=
+  λ: "t" "mtx",
+    #().
 
-  #[global] condition_inv_persistent t ::
-    Persistent (condition_inv t) ;
+Definition condition_signal : val :=
+  λ: "t",
+    #().
 
-  condition_create_spec :
+Definition condition_broadcast : val :=
+  λ: "t",
+    #().
+
+#[local] Definition condition_wait_until_aux : val :=
+  rec: "condition_wait_until_aux" "t" "mtx" "cond" :=
+    if: "cond" #() then #() else (
+      condition_wait "t" "mtx" ;;
+      "condition_wait_until_aux" "t" "mtx" "cond"
+    ).
+Definition condition_wait_until : val :=
+  λ: "t" "mtx" "cond",
+    condition_wait_until_aux "t" "mtx" "cond".
+
+Definition condition_wait_while : val :=
+  λ: "t" "mtx" "cond",
+    condition_wait_until "t" "mtx" (λ: <>, ~ "cond" #()).
+
+Section mutex_G.
+  Context `{mutex_G : MutexG Σ}.
+
+  Definition condition_inv t : iProp Σ :=
+    True.
+
+  #[global] Instance condition_inv_persistent t :
+    Persistent (condition_inv t).
+  Proof.
+    apply _.
+  Qed.
+
+  Lemma condition_create_spec :
     {{{ True }}}
       condition_create #()
     {{{ t,
       RET t;
       condition_inv t
-    }}} ;
+    }}}.
+  Proof.
+    iSteps.
+  Qed.
 
-  condition_wait_spec t mtx P :
+  Lemma condition_wait_spec t mtx P :
     {{{
       condition_inv t ∗
-      mutex.(mutex_inv) mtx P ∗
-      mutex.(mutex_locked) mtx ∗
+      mutex_inv mtx P ∗
+      mutex_locked mtx ∗
       P
     }}}
       condition_wait t mtx
     {{{
       RET #();
-      mutex.(mutex_locked) mtx ∗
+      mutex_locked mtx ∗
       P
-    }}} ;
+    }}}.
+  Proof.
+    iSteps.
+  Qed.
 
-  condition_signal_spec t :
+  Lemma condition_signal_spec t :
     {{{
       condition_inv t
     }}}
       condition_signal t
     {{{
       RET #(); True
-    }}} ;
+    }}}.
+  Proof.
+    iSteps.
+  Qed.
 
-  condition_broadcast_spec t :
+  Lemma condition_broadcast_spec t :
     {{{
       condition_inv t
     }}}
       condition_broadcast t
     {{{
       RET #(); True
-    }}} ;
-}.
-#[global] Arguments condition {_ _} _ : assert.
-#[global] Arguments Build_condition {_ _ _ _ _ _ _ _ _} _ _ _ _ : assert.
-
-Section condition.
-  Context `{heap_GS : !heapGS Σ} {mutex : mutex Σ} (condition : condition mutex).
-
-  #[local] Definition condition_wait_until_aux : val :=
-    rec: "condition_wait_until_aux" "t" "mtx" "cond" :=
-      if: "cond" #() then #() else (
-        condition.(condition_wait) "t" "mtx" ;;
-        "condition_wait_until_aux" "t" "mtx" "cond"
-      ).
-  Definition condition_wait_until : val :=
-    λ: "t" "mtx" "cond",
-      condition_wait_until_aux "t" "mtx" "cond".
-
-  Definition condition_wait_while : val :=
-    λ: "t" "mtx" "cond",
-      condition_wait_until "t" "mtx" (λ: <>, ~ "cond" #()).
+    }}}.
+  Proof.
+    iSteps.
+  Qed.
 
   Lemma condition_wait_until_spec Ψ t mtx cond P :
     {{{
-      condition.(condition_inv) t ∗
-      mutex.(mutex_inv) mtx P ∗
-      mutex.(mutex_locked) mtx ∗
+      condition_inv t ∗
+      mutex_inv mtx P ∗
+      mutex_locked mtx ∗
       P ∗
       Ψ false ∗
       {{{
-        mutex.(mutex_locked) mtx ∗
+        mutex_locked mtx ∗
         P ∗
         Ψ false
       }}}
         cond #()
-      {{{ (b : bool),
+      {{{ b,
         RET #b;
-        mutex.(mutex_locked) mtx ∗
+        mutex_locked mtx ∗
         P ∗
         Ψ b
       }}}
@@ -102,7 +126,7 @@ Section condition.
       condition_wait_until t mtx cond
     {{{
       RET #();
-      mutex.(mutex_locked) mtx ∗
+      mutex_locked mtx ∗
       P ∗
       Ψ true
     }}}.
@@ -113,26 +137,26 @@ Section condition.
     wp_rec.
     wp_smart_apply ("Hcond" with "[$]") as "%b (Hlocked & HP & HΨ)".
     destruct b; first iSteps.
-    wp_smart_apply (condition_wait_spec _ _ _ P with "[$]") as "(Hlocked & HP)".
+    wp_smart_apply (condition_wait_spec _ _ P with "[$]") as "(Hlocked & HP)".
     wp_smart_apply ("HLöb" with "Hlocked HP HΨ HΦ").
   Qed.
 
   Lemma condition_wait_while_spec Ψ t mtx cond P :
     {{{
-      condition.(condition_inv) t ∗
-      mutex.(mutex_inv) mtx P ∗
-      mutex.(mutex_locked) mtx ∗
+      condition_inv t ∗
+      mutex_inv mtx P ∗
+      mutex_locked mtx ∗
       P ∗
       Ψ true ∗
       {{{
-        mutex.(mutex_locked) mtx ∗
+        mutex_locked mtx ∗
         P ∗
         Ψ true
       }}}
         cond #()
-      {{{ (b : bool),
+      {{{ b,
         RET #b;
-        mutex.(mutex_locked) mtx ∗
+        mutex_locked mtx ∗
         P ∗
         Ψ b
       }}}
@@ -140,7 +164,7 @@ Section condition.
       condition_wait_while t mtx cond
     {{{
       RET #();
-      mutex.(mutex_locked) mtx ∗
+      mutex_locked mtx ∗
       P ∗
       Ψ false
     }}}.
@@ -152,16 +176,13 @@ Section condition.
     wp_smart_apply ("Hcond" with "[$]") as "%b (Hlocked & HP & HΨ)".
     destruct b; iSteps.
   Qed.
-End condition.
+End mutex_G.
 
+#[global] Opaque condition_create.
+#[global] Opaque condition_wait.
+#[global] Opaque condition_signal.
+#[global] Opaque condition_broadcast.
 #[global] Opaque condition_wait_until.
 #[global] Opaque condition_wait_while.
 
-Notation "condition .(condition_wait_until)" := (
-  condition_wait_until condition
-)(at level 5
-).
-Notation "condition .(condition_wait_while)" := (
-  condition_wait_while condition
-)(at level 5
-).
+#[global] Opaque condition_inv.

@@ -86,8 +86,8 @@ Next Obligation.
   intros (front & id) v ->. simplify. rewrite Nat2Z.id //.
 Qed.
 
-Class InfClDequeG Σ `{heap_GS : !heapGS Σ} mutex := {
-  #[local] inf_cl_deque_G_inf_array_G :: InfArrayG Σ mutex ;
+Class InfClDequeG Σ `{heap_GS : !heapGS Σ} := {
+  #[local] inf_cl_deque_G_inf_array_G :: InfArrayG Σ ;
   #[local] inf_cl_deque_G_ctl_G :: AuthExclG Σ (ZO * (nat -d> valO)) ;
   #[local] inf_cl_deque_G_front_G :: AuthNatMaxG Σ ;
   #[local] inf_cl_deque_G_hist_G :: MonoListG Σ val ;
@@ -107,26 +107,26 @@ Definition inf_cl_deque_Σ := #[
   wise_prophet_Σ inf_cl_deque_prophet_spec ;
   auth_excl_Σ (natO * (valO -d> ▶ ∙))
 ].
-#[global] Instance subG_inf_cl_deque_Σ Σ `{heap_GS : !heapGS Σ} mutex :
+#[global] Instance subG_inf_cl_deque_Σ Σ `{heap_GS : !heapGS Σ} :
   subG inf_cl_deque_Σ Σ →
-  InfClDequeG Σ mutex.
+  InfClDequeG Σ .
 Proof.
   solve_inG.
 Qed.
 
 Section inf_cl_deque_G.
-  Context `{heap_GS : !heapGS Σ} mutex `{inf_cl_deque_G : !InfClDequeG Σ mutex}.
+  Context `{inf_cl_deque_G : InfClDequeG Σ}.
 
   Implicit Types Φ : val → iProp Σ.
 
   Definition inf_cl_deque_create : val :=
     λ: <>,
-      record4_make #0 #0 (inf_array_create mutex #()) NewProph.
+      record4_make #0 #0 (inf_array_create #()) NewProph.
 
   Definition inf_cl_deque_push : val :=
     λ: "t" "v",
       let: "back" := !"t".[back] in
-      inf_array_set mutex !"t".[data] "back" "v" ;;
+      inf_array_set !"t".[data] "back" "v" ;;
       "t".[back] <- "back" + #1.
 
   Definition inf_cl_deque_steal : val :=
@@ -136,7 +136,7 @@ Section inf_cl_deque_G.
       let: "back" := !"t".[back] in
       if: "front" < "back" then (
         if: Snd $ Resolve (CmpXchg "t".[front] "front" ("front" + #1)) !"t".[prophecy] ("front", "id") then (
-          &Some (inf_array_get mutex !"t".[data] "front")
+          &Some (inf_array_get !"t".[data] "front")
         ) else (
           "inf_cl_deque_steal" "t"
         )
@@ -155,11 +155,11 @@ Section inf_cl_deque_G.
         &&None
       ) else (
         if: "front" < "back" then (
-          &Some (inf_array_get mutex !"t".[data] "back")
+          &Some (inf_array_get !"t".[data] "back")
         ) else (
           if: Snd $ Resolve (CmpXchg "t".[front] "front" ("front" + #1)) !"t".[prophecy] ("front", "id") then (
             "t".[back] <- "front" + #1 ;;
-            &Some (inf_array_get mutex !"t".[data] "back")
+            &Some (inf_array_get !"t".[data] "back")
           ) else (
             "t".[back] <- "front" + #1 ;;
             &&None
@@ -381,7 +381,7 @@ Section inf_cl_deque_G.
     (* front authority *)
     inf_cl_deque_front_auth γ front ∗
     (* data model *)
-    inf_array_model' mutex data (hist ++ model) priv ∗
+    inf_array_model' data (hist ++ model) priv ∗
     (* model values *)
     inf_cl_deque_model₁ γ model ∗
     ⌜length model = Z.to_nat (back - front)⌝ ∗
@@ -399,7 +399,7 @@ Section inf_cl_deque_G.
     l.[data] ↦□ data ∗
     l.[prophecy] ↦□ #p ∗
     (* invariants *)
-    inf_array_inv mutex data ∗
+    inf_array_inv data ∗
     inv ι (inf_cl_deque_inv_inner l γ ι data p).
 
   #[global] Instance inf_cl_deque_model_timeless t model :
@@ -749,12 +749,12 @@ Section inf_cl_deque_G.
 
   #[local] Lemma inf_cl_deque_wp_get_hist l γ ι data p i v :
     {{{
-      inf_array_inv mutex data ∗
+      inf_array_inv data ∗
       inv ι (inf_cl_deque_inv_inner l γ ι data p) ∗
       l.[data] ↦□ data ∗
       inf_cl_deque_hist_mapsto γ i v
     }}}
-      inf_array_get mutex !#l.[data] #i
+      inf_array_get !#l.[data] #i
     {{{
       RET v; True
     }}}.
@@ -796,13 +796,13 @@ Section inf_cl_deque_G.
   #[local] Lemma inf_cl_deque_wp_get_priv l γ ι data p back priv i :
     (back ≤ i)%Z →
     {{{
-      inf_array_inv mutex data ∗
+      inf_array_inv data ∗
       inv ι (inf_cl_deque_inv_inner l γ ι data p) ∗
       l.[data] ↦□ data ∗
       inf_cl_deque_ctl₂ γ back priv ∗
       inf_cl_deque_lock γ
     }}}
-      inf_array_get mutex !#l.[data] #i
+      inf_array_get !#l.[data] #i
     {{{
       RET priv (Z.to_nat (i - back));
       inf_cl_deque_ctl₂ γ back priv ∗
@@ -857,7 +857,7 @@ Section inf_cl_deque_G.
   #[local] Lemma inf_cl_deque_wp_resolve_inconsistent_1 l γ ι data p front id prophs_lb v1 v2 :
     head $ filter (λ '(front', _), front' = front) prophs_lb = None →
     {{{
-      inf_array_inv mutex data ∗
+      inf_array_inv data ∗
       inv ι (inf_cl_deque_inv_inner l γ ι data p) ∗
       inf_cl_deque_prophet.(wise_prophet_lb) γ.(inf_cl_deque_meta_prophet) prophs_lb
     }}}
@@ -884,7 +884,7 @@ Section inf_cl_deque_G.
     head $ filter (λ '(front', _), front' = front) prophs_lb = Some (_front, id') →
     id ≠ id' →
     {{{
-      inf_array_inv mutex data ∗
+      inf_array_inv data ∗
       inv ι (inf_cl_deque_inv_inner l γ ι data p) ∗
       inf_cl_deque_front_lb γ front ∗
       inf_cl_deque_prophet.(wise_prophet_lb) γ.(inf_cl_deque_meta_prophet) prophs_lb
@@ -942,7 +942,7 @@ Section inf_cl_deque_G.
     head $ filter (λ '(front', _), front' = front) prophs_lb = Some (_front, id') →
     id ≠ id' →
     {{{
-      inf_array_inv mutex data ∗
+      inf_array_inv data ∗
       inv ι (inf_cl_deque_inv_inner l γ ι data p) ∗
       inf_cl_deque_ctl₂ γ front priv ∗
       inf_cl_deque_front_lb γ front ∗

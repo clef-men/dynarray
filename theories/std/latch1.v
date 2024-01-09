@@ -6,9 +6,10 @@ From heap_lang.iris.base_logic Require Import
 From heap_lang.language Require Import
   notations
   diaframe.
-From heap_lang.std Require Import
-  record3.
 From heap_lang.std Require Export
+  base.
+From heap_lang.std Require Import
+  record3
   condition.
 
 Implicit Types b : bool.
@@ -39,38 +40,36 @@ Implicit Types l : loc.
 ( at level 5
 ) : expr_scope.
 
-Section condition.
-  Context `{heap_GS : !heapGS Σ} {mutex : mutex Σ} (condition : condition mutex).
+Definition latch1_create : val :=
+  λ: <>,
+    let: "t" := record3_make #false #() #() in
+    "t".[mutex] <- mutex_create #() ;;
+    "t".[condition] <- condition_create #() ;;
+    "t".
 
-  Definition latch1_create : val :=
-    λ: <>,
-      let: "t" := record3_make #false #() #() in
-      "t".[mutex] <- mutex.(mutex_create) #() ;;
-      "t".[condition] <- condition.(condition_create) #() ;;
-      "t".
+Definition latch1_signal : val :=
+  λ: "t",
+    mutex_protect !"t".[mutex] (λ: <>,
+      "t".[flag] <- #true
+    ) ;;
+    condition_signal !"t".[condition].
 
-  Definition latch1_signal : val :=
-    λ: "t",
-      mutex.(mutex_protect) !"t".[mutex] (λ: <>,
-        "t".[flag] <- #true
-      ) ;;
-      condition.(condition_signal) !"t".[condition].
-
-  Definition latch1_wait : val :=
-    λ: "t",
-      let: "mtx" := !"t".[mutex] in
-      let: "cond" := !"t".[condition] in
-      mutex.(mutex_protect) "mtx" (λ: <>,
-        condition.(condition_wait_until) "cond" "mtx" (λ: <>, !"t".[flag])
-      ).
-End condition.
+Definition latch1_wait : val :=
+  λ: "t",
+    let: "mtx" := !"t".[mutex] in
+    let: "cond" := !"t".[condition] in
+    mutex_protect "mtx" (λ: <>,
+      condition_wait_until "cond" "mtx" (λ: <>, !"t".[flag])
+    ).
 
 Class Latch1G Σ `{heap_GS : !heapGS Σ} := {
+  #[local] latch1_G_mutex_G :: MutexG Σ ;
   #[local] latch1_G_producer_G :: OneshotG Σ unit unit ;
   #[local] latch1_G_consumer_G :: ExclG Σ unitO ;
 }.
 
 Definition latch1_Σ := #[
+  mutex_Σ ;
   oneshot_Σ unit unit ;
   excl_Σ unitO
 ].
@@ -83,7 +82,6 @@ Qed.
 
 Section latch1_G.
   Context `{latch1_G : Latch1G Σ}.
-  Context {mutex : mutex Σ} (condition : condition mutex).
 
   Record latch1_meta := {
     latch1_meta_producer : gname ;
@@ -122,9 +120,9 @@ Section latch1_G.
     ⌜t = #l⌝ ∗
     meta l nroot γ ∗
     l.[mutex] ↦□ mtx ∗
-    mutex.(mutex_inv) mtx (latch1_inv_inner l γ P) ∗
+    mutex_inv mtx (latch1_inv_inner l γ P) ∗
     l.[condition] ↦□ cond ∗
-    condition.(condition_inv) cond.
+    condition_inv cond.
 
   Definition latch1_producer t : iProp Σ :=
     ∃ l γ,
@@ -176,7 +174,7 @@ Section latch1_G.
 
   Lemma latch1_create_spec P :
     {{{ True }}}
-      latch1_create condition #()
+      latch1_create #()
     {{{ t,
       RET t;
       latch1_inv t P ∗
@@ -203,7 +201,7 @@ Section latch1_G.
     |}.
     iMod (meta_set _ _ γ nroot with "Hmeta") as "#Hmeta"; first done.
 
-    wp_smart_apply (mutex_create_spec _ (latch1_inv_inner l γ P) with "[Hflag Hpending2]") as "%mtx #Hmtx_inv"; first iSteps.
+    wp_smart_apply (mutex_create_spec (latch1_inv_inner l γ P) with "[Hflag Hpending2]") as "%mtx #Hmtx_inv"; first iSteps.
     wp_store.
     iMod (mapsto_persist with "Hmtx") as "Hmtx".
 
@@ -220,7 +218,7 @@ Section latch1_G.
       latch1_producer t ∗
       P
     }}}
-      latch1_signal condition t
+      latch1_signal t
     {{{
       RET #(); True
     }}}.
@@ -229,7 +227,7 @@ Section latch1_G.
     iDestruct (meta_agree with "Hmeta _Hmeta") as %<-. iClear "_Hmeta".
     wp_rec.
     wp_load.
-    wp_apply (mutex_protect_spec _ (λ _, True%I) with "[$Hmtx_inv Hpending HP]") as "% _".
+    wp_apply (mutex_protect_spec (λ _, True%I) with "[$Hmtx_inv Hpending HP]") as "% _".
     { iIntros "Hmtx_locked (%b & Hflag & Hb)". destruct b.
       - iDestruct "Hb" as "(Hshot & _)".
         iDestruct (oneshot_pending_shot with "Hpending Hshot") as %[].
@@ -248,7 +246,7 @@ Section latch1_G.
       latch1_inv t P ∗
       latch1_consumer t
     }}}
-      latch1_wait condition t
+      latch1_wait t
     {{{
       RET #();
       P
@@ -258,7 +256,7 @@ Section latch1_G.
     iDestruct (meta_agree with "Hmeta _Hmeta") as %<-. iClear "_Hmeta".
     wp_rec.
     do 2 wp_load.
-    wp_smart_apply (mutex_protect_spec _ (λ res, ⌜res = #()⌝ ∗ P)%I with "[$Hmtx_inv Hexcl]").
+    wp_smart_apply (mutex_protect_spec (λ res, ⌜res = #()⌝ ∗ P)%I with "[$Hmtx_inv Hexcl]").
     { iIntros "Hmtx_locked Hsignal_inv".
       pose (Ψ b := (
         if b then
@@ -266,7 +264,7 @@ Section latch1_G.
         else
           excl γ.(latch1_meta_consumer) ()
       )%I).
-      wp_smart_apply (condition_wait_until_spec _ Ψ with "[$Hcond_inv $Hmtx_inv $Hmtx_locked $Hsignal_inv $Hexcl]").
+      wp_smart_apply (condition_wait_until_spec Ψ with "[$Hcond_inv $Hmtx_inv $Hmtx_locked $Hsignal_inv $Hexcl]").
       { clear. iStep 15 as (Φ b) "Hb Hexcl Hflag".
         destruct b; last iSteps.
         iDestruct "Hb" as "(Hshot & [Hmodel | Hexcl'])"; first iSmash.

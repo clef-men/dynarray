@@ -14,7 +14,7 @@ From heap_lang.std Require Import
   opt
   latch1
   unix.
-From heap_lang.eio Require Import
+From heap_lang.eio Require Export
   base.
 
 Implicit Types b closing : bool.
@@ -223,16 +223,16 @@ Definition rcfd_close : val :=
         #false
     end.
 
-Definition rcfd_remove `{heap_GS : !heapGS Σ} {mutex : mutex Σ} (condition : condition mutex) : val :=
+Definition rcfd_remove : val :=
   λ: "t",
     let: "prev" := !"t".[fd] in
     match: !"prev" with
     | Open "fd" =>
         let: "flag" := ref #false in
-        let: "chan" := latch1_create condition #() in
-        let: "next" := ref (&Closing (λ: <>, latch1_signal condition "chan")) in
+        let: "chan" := latch1_create #() in
+        let: "next" := ref (&Closing (λ: <>, latch1_signal "chan")) in
         if: CAS "t".[fd] "prev" "next" then (
-          latch1_wait condition "chan" ;;
+          latch1_wait "chan" ;;
           &Some "fd"
         ) else (
           &&None
@@ -289,15 +289,15 @@ Inductive rcfd_lstep : relation rcfd_lstate :=
 #[local] Hint Constructors rcfd_lstep : core.
 
 Class RcfdG Σ `{heap_GS : !heapGS Σ} := {
+  #[local] rcfd_G_latch1_G :: Latch1G Σ ;
   #[local] rcfd_G_tokens_G :: AuthGmultisetG Σ Qp ;
   #[local] rcfd_G_lstate_G :: MonoStateG rcfd_lstep Σ ;
-  #[local] rcfd_G_latch1_G :: Latch1G Σ ;
 }.
 
 Definition rcfd_Σ := #[
+  latch1_Σ ;
   auth_gmultiset_Σ Qp ;
-  mono_state_Σ rcfd_lstep ;
-  latch1_Σ
+  mono_state_Σ rcfd_lstep
 ].
 #[global] Instance subG_rcfd_Σ `{heap_GS : !heapGS Σ} :
   subG rcfd_Σ Σ →
@@ -893,7 +893,7 @@ Section rcfd_G.
     iSteps.
   Qed.
 
-  #[local] Lemma rcfd_remove_spec' closing {mutex : mutex Σ} (condition : condition mutex) t fd chars :
+  #[local] Lemma rcfd_remove_spec' closing t fd chars :
     {{{
       rcfd_inv t fd chars ∗
       if closing then
@@ -901,7 +901,7 @@ Section rcfd_G.
       else
         True
     }}}
-      rcfd_remove condition t
+      rcfd_remove t
     {{{ o,
       RET (o : val);
       if closing then
@@ -937,7 +937,7 @@ Section rcfd_G.
 
       wp_load.
       wp_alloc flag as "Hflag".
-      wp_smart_apply (latch1_create_spec _ (unix_fd_model fd (DfracOwn 1) chars) with "[//]") as "%chan (#Hchan_inv & Hchan_producer & Hchan_consumer)".
+      wp_smart_apply (latch1_create_spec (unix_fd_model fd (DfracOwn 1) chars) with "[//]") as "%chan (#Hchan_inv & Hchan_producer & Hchan_consumer)".
       wp_alloc l_state as "Hstate". iMod (mapsto_persist with "Hstate") as "#Hstate".
       wp_pures.
 
@@ -990,11 +990,11 @@ Section rcfd_G.
       iSplitR "HΦ". { iExists (RcfdStateClosing _). iSteps. }
       iSteps. iApply ("HΦ" $! None). destruct closing; iSteps.
   Qed.
-  Lemma rcfd_remove_spec {mutex : mutex Σ} (condition : condition mutex) t fd chars :
+  Lemma rcfd_remove_spec t fd chars :
     {{{
       rcfd_inv t fd chars
     }}}
-      rcfd_remove condition t
+      rcfd_remove t
     {{{ o,
       RET (o : val);
       rcfd_closing t ∗
@@ -1011,12 +1011,12 @@ Section rcfd_G.
     wp_apply (rcfd_remove_spec' false with "[$Hinv]").
     iSteps.
   Qed.
-  Lemma rcfd_remove_spec_closing closing {mutex : mutex Σ} (condition : condition mutex) t fd chars :
+  Lemma rcfd_remove_spec_closing closing t fd chars :
     {{{
       rcfd_inv t fd chars ∗
       rcfd_closing t
     }}}
-      rcfd_remove condition t
+      rcfd_remove t
     {{{
       RET &&None; True
     }}}.
