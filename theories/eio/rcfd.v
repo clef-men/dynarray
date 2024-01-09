@@ -4,7 +4,7 @@ From heap_lang.common Require Import
   gmultiset.
 From heap_lang.iris.base_logic Require Import
   lib.auth_gmultiset
-  lib.mono_state.
+  lib.auth_mono.
 From heap_lang.language Require Import
   tactics
   notations
@@ -291,13 +291,13 @@ Inductive rcfd_lstep : relation rcfd_lstate :=
 Class RcfdG Σ `{heap_GS : !heapGS Σ} := {
   #[local] rcfd_G_latch1_G :: Latch1G Σ ;
   #[local] rcfd_G_tokens_G :: AuthGmultisetG Σ Qp ;
-  #[local] rcfd_G_lstate_G :: MonoStateG rcfd_lstep Σ ;
+  #[local] rcfd_G_lstate_G :: AuthMonoG rcfd_lstep Σ ;
 }.
 
 Definition rcfd_Σ := #[
   latch1_Σ ;
   auth_gmultiset_Σ Qp ;
-  mono_state_Σ rcfd_lstep
+  auth_mono_Σ rcfd_lstep
 ].
 #[global] Instance subG_rcfd_Σ `{heap_GS : !heapGS Σ} :
   subG rcfd_Σ Σ →
@@ -342,11 +342,11 @@ Section rcfd_G.
     auth_gmultiset_frag γ.(rcfd_meta_tokens) {[+q+]}.
 
   #[local] Definition rcfd_lstate_auth' γ_lstate lstate :=
-    mono_state_auth rcfd_lstep γ_lstate (DfracOwn 1) lstate.
+    auth_mono_auth rcfd_lstep γ_lstate (DfracOwn 1) lstate.
   #[local] Definition rcfd_lstate_auth γ lstate :=
     rcfd_lstate_auth' γ.(rcfd_meta_lstate) lstate.
   #[local] Definition rcfd_lstate_lb γ lstate :=
-    mono_state_lb rcfd_lstep γ.(rcfd_meta_lstate) lstate.
+    auth_mono_lb rcfd_lstep γ.(rcfd_meta_lstate) lstate.
 
   #[local] Definition rcfd_inv_inner l γ fd chars : iProp Σ :=
     ∃ state lstate ops l_state,
@@ -452,27 +452,27 @@ Section rcfd_G.
       ∃ γ_lstate,
       rcfd_lstate_auth' γ_lstate RcfdLstateOpen.
   Proof.
-    apply mono_state_alloc.
+    apply auth_mono_alloc.
   Qed.
   #[local] Lemma rcfd_lstate_lb_get γ lstate :
     rcfd_lstate_auth γ lstate ⊢
     rcfd_lstate_lb γ lstate.
   Proof.
-    apply mono_state_lb_get.
+    apply auth_mono_lb_get.
   Qed.
   #[local] Lemma rcfd_lstate_lb_mono {γ lstate} lstate' :
     rcfd_lstep lstate' lstate →
     rcfd_lstate_lb γ lstate ⊢
     rcfd_lstate_lb γ lstate'.
   Proof.
-    apply mono_state_lb_mono'.
+    apply auth_mono_lb_mono'.
   Qed.
   #[local] Lemma rcfd_lstate_valid γ lstate lstate' :
     rcfd_lstate_auth γ lstate -∗
     rcfd_lstate_lb γ lstate' -∗
     ⌜rtc rcfd_lstep lstate' lstate⌝.
   Proof.
-    apply mono_state_valid.
+    apply auth_mono_valid.
   Qed.
   #[local] Lemma rcfd_lstate_valid_closing_users γ lstate :
     rcfd_lstate_auth γ lstate -∗
@@ -503,7 +503,7 @@ Section rcfd_G.
     rcfd_lstate_auth γ lstate ⊢ |==>
     rcfd_lstate_auth γ lstate'.
   Proof.
-    apply mono_state_update'.
+    apply auth_mono_update'.
   Qed.
 
   Lemma rcfd_make_spec fd chars :
