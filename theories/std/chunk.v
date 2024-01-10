@@ -722,6 +722,8 @@ Section heap_GS.
   End chunk_span.
 
   Section chunk_cslice.
+    Implicit Types sz : nat.
+
     Definition chunk_cslice l sz i dq vs : iProp Σ :=
       [∗ list] k ↦ v ∈ vs, l.[(i + k) `mod` sz] ↦{dq} v.
 
@@ -861,6 +863,21 @@ Section heap_GS.
       l.[(i + k)%nat `mod` sz] ↦{dq} v.
     Proof.
       rewrite Nat2Z.inj_add. apply: big_sepL_lookup.
+    Qed.
+
+    Lemma chunk_cslice_shift l sz i dq vs :
+      chunk_cslice l sz i dq vs ⊢
+      chunk_cslice l sz (i + sz) dq vs.
+    Proof.
+      rewrite /chunk_cslice.
+      setoid_rewrite <- Nat2Z.inj_add at 2.
+      setoid_rewrite (comm Nat.add) at 2.
+      setoid_rewrite <- (assoc Nat.add).
+      do 2 setoid_rewrite Nat2Z.inj_add.
+      setoid_rewrite <- Zplus_mod_idemp_l at 2.
+      setoid_rewrite Z_mod_same_full.
+      setoid_rewrite Z.add_0_l at 7.
+      done.
     Qed.
 
     Lemma chunk_cslice_valid l sz i dq vs :

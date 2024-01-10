@@ -910,6 +910,15 @@ Section heap_GS.
       iSteps.
     Qed.
 
+    Lemma array_cslice_shift t sz i dq vs :
+      array_cslice t sz i dq vs ⊢
+      array_cslice t sz (i + sz) dq vs.
+    Proof.
+      rewrite /array_cslice.
+      setoid_rewrite chunk_cslice_shift at 1.
+      done.
+    Qed.
+
     Lemma array_cslice_valid t sz i dq vs :
       0 < length vs →
       array_cslice t sz i dq vs ⊢
