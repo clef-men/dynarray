@@ -24,6 +24,8 @@ Qed.
 Section auth_mono_G.
   Context `(R : relation A) `{auth_mono_G : !AuthMonoG Σ R}.
 
+  Implicit Types a : A.
+
   Definition auth_mono_auth γ dq a :=
     own γ (auth_mono_auth R dq a).
   Definition auth_mono_lb γ a :=
@@ -160,10 +162,10 @@ Section auth_mono_G.
     intros. apply auth_mono_lb_mono, rtc_once. done.
   Qed.
 
-  Lemma auth_mono_valid γ dq a b :
+  Lemma auth_mono_valid γ dq a a' :
     auth_mono_auth γ dq a -∗
-    auth_mono_lb γ b -∗
-    ⌜rtc R b a⌝.
+    auth_mono_lb γ a' -∗
+    ⌜rtc R a' a⌝.
   Proof.
     iIntros "Hauth1 Hauth2".
     iDestruct (own_valid_2 with "Hauth1 Hauth2") as %?%auth_mono_both_dfrac_valid.
