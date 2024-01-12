@@ -59,7 +59,7 @@ Proof.
   destruct (decide (x1 = x2)) as [<- |].
   - rewrite subst_subst' subst_rec'; first naive_solver.
     solve_pure_exec.
-  - rewrite subst_subst_ne' // subst_rec_ne'; [naive_solver.. |].
+  - rewrite (subst_subst_ne' _ x1 x2) // subst_rec_ne'; [naive_solver.. |].
     solve_pure_exec.
 Qed.
 #[global] Instance pure_exec_subst2_lam x1 v1 x2 v2 x3 v3 e :
@@ -71,9 +71,16 @@ Proof.
   - rewrite subst_subst' subst_rec'; first naive_solver.
     solve_pure_exec.
   - rewrite (subst_subst_ne' _ x2 x3) // subst_rec_ne'; [naive_solver.. |].
-    destruct (decide (x1 = x3)) as [<- |].
-    + rewrite subst_subst' subst_rec'; first naive_solver.
-      solve_pure_exec.
-    + rewrite (subst_subst_ne' _ x1 x3) // subst_rec_ne'; [naive_solver.. |].
-      solve_pure_exec.
+    solve_pure_exec.
+Qed.
+#[global] Instance pure_exec_subst3_lam x1 v1 x2 v2 x3 v3 x4 v4 e :
+  PureExec True 2
+    ((subst' x1 v1 (subst' x2 v2 (subst' x3 v3 (λ: x4, e)))) v4)
+    (subst' x1 v1 (subst' x2 v2 (subst' x3 v3 (subst' x4 v4 e)))).
+Proof.
+  destruct (decide (x3 = x4)) as [<- |].
+  - rewrite subst_subst' subst_rec'; first naive_solver.
+    solve_pure_exec.
+  - rewrite (subst_subst_ne' _ x3 x4) // subst_rec_ne'; [naive_solver.. |].
+    solve_pure_exec.
 Qed.
