@@ -166,7 +166,7 @@ Definition store_capture : val :=
   λ: "t",
     let: "g" := !"t".[gen] in
     "t".[gen] <- #1 + "g" ;;
-    record3_make "t" !"t".[root] "g".
+    ("t", !"t".[root], "g").
 
 #[local] Definition store_reroot : val :=
   rec: "store_reroot" "node" :=
