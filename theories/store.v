@@ -7,7 +7,9 @@ From heap_lang.std Require Import
   record2
   record3.
 
-Implicit Types v : val.
+Implicit Types r : loc.
+Implicit Types v t s : val.
+Implicit Types σ : gmap loc val.
 
 #[local] Notation "t '.[root]'" :=
   t.[0]%stdpp
@@ -43,28 +45,16 @@ Implicit Types v : val.
 ( at level 5
 ) : expr_scope.
 
-#[local] Notation "snap '.[snap_store]'" :=
-  snap.[0]%stdpp
-( at level 5
-) : stdpp_scope.
-#[local] Notation "snap '.[snap_root]'" :=
-  snap.[1]%stdpp
-( at level 5
-) : stdpp_scope.
-#[local] Notation "snap '.[snap_gen]'" :=
-  snap.[2]%stdpp
-( at level 5
-) : stdpp_scope.
-#[local] Notation "snap '.[snap_store]'" :=
-  snap.[#0]%E
+#[local] Notation "s '.[snap_store]'" :=
+  s.𝟙.𝟙%E
 ( at level 5
 ) : expr_scope.
-#[local] Notation "snap '.[snap_root]'" :=
-  snap.[#1]%E
+#[local] Notation "s '.[snap_root]'" :=
+  s.𝟙.𝟚%E
 ( at level 5
 ) : expr_scope.
-#[local] Notation "snap '.[snap_gen]'" :=
-  snap.[#2]%E
+#[local] Notation "s '.[snap_gen]'" :=
+  s.𝟚%E
 ( at level 5
 ) : expr_scope.
 
@@ -213,19 +203,127 @@ Definition store_capture : val :=
     end.
 
 Definition store_restore : val :=
-  λ: "t" "snap",
-    if: "t" ≠ !"snap".[snap_store] then (
+  λ: "t" "s",
+    if: "t" ≠ !"s".[snap_store] then (
       Fail
     ) else (
-      let: "root" := !"snap".[snap_root] in
+      let: "root" := !"s".[snap_root] in
       if: !"root" = &&Root then (
         #()
       ) else (
         store_reroot "root" ;;
         "t".[root] <- "root" ;;
-        "t".[gen] <- #1 + !"snap".[snap_gen]
+        "t".[gen] <- #1 + !"s".[snap_gen]
       )
     ).
+
+Class StoreG Σ `{heap_GS : !heapGS Σ} := {
+}.
+
+Definition store_Σ := #[
+].
+Lemma subG_store_Σ Σ `{heap_GS : !heapGS Σ} :
+  subG store_Σ Σ →
+  StoreG Σ.
+Proof.
+  solve_inG.
+Qed.
+
+Section store_G.
+  Context `{store_G : StoreG Σ}.
+
+  Definition store_store σ0 σ :=
+    union_with (λ _, Some) σ0 σ.
+
+  Definition store_model t σ0 σ : iProp Σ.
+  Proof. Admitted.
+
+  Definition store_snapshot_model s t σ : iProp Σ.
+  Proof. Admitted.
+
+  #[global] Instance store_model_timeless t σ0 σ :
+    Timeless (store_model t σ0 σ).
+  Proof.
+  Abort.
+  #[global] Instance store_snapshot_persistent s t σ :
+    Persistent (store_snapshot_model s t σ).
+  Proof.
+  Abort.
+
+  Lemma store_create_spec :
+    {{{ True }}}
+      store_create #()
+    {{{ t,
+      RET t;
+      store_model t ∅ ∅
+    }}}.
+  Proof.
+  Abort.
+
+  Lemma store_ref_spec t σ0 σ v :
+    {{{
+      store_model t σ0 σ
+    }}}
+      store_ref t v
+    {{{ r,
+      RET #r;
+      store_model t (<[r := v]> σ0) σ
+    }}}.
+  Proof.
+  Abort.
+
+  Lemma store_get_spec {t σ0 σ r} v :
+    store_store σ0 σ !! r = Some v →
+    {{{
+      store_model t σ0 σ
+    }}}
+      store_get t #r
+    {{{
+      RET v;
+      store_model t σ0 σ
+    }}}.
+  Proof.
+  Abort.
+
+  Lemma store_set_spec t σ0 σ r v :
+    r ∈ dom σ0 →
+    {{{
+      store_model t σ0 σ
+    }}}
+      store_set t #r v
+    {{{
+      RET #();
+      store_model t σ0 (<[r := v]> σ)
+    }}}.
+  Proof.
+  Abort.
+
+  Lemma store_catpure_spec t σ0 σ :
+    {{{
+      store_model t σ0 σ
+    }}}
+      store_capture t
+    {{{ s,
+      RET s;
+      store_model t σ0 σ ∗
+      store_snapshot_model s t σ
+    }}}.
+  Proof.
+  Abort.
+
+  Lemma store_restore_spec t σ0 σ s σ' :
+    {{{
+      store_model t σ0 σ ∗
+      store_snapshot_model s t σ'
+    }}}
+      store_restore t s
+    {{{
+      RET #();
+      store_model t σ0 σ'
+    }}}.
+  Proof.
+  Abort.
+End store_G.
 
 #[global] Opaque store_create.
 #[global] Opaque store_ref.
@@ -233,3 +331,6 @@ Definition store_restore : val :=
 #[global] Opaque store_set.
 #[global] Opaque store_capture.
 #[global] Opaque store_restore.
+
+#[global] Opaque store_model.
+#[global] Opaque store_snapshot_model.
