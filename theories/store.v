@@ -204,16 +204,16 @@ Definition store_capture : val :=
 
 Definition store_restore : val :=
   λ: "t" "s",
-    if: "t" ≠ !"s".[snap_store] then (
+    if: "t" ≠ "s".[snap_store] then (
       Fail
     ) else (
-      let: "root" := !"s".[snap_root] in
+      let: "root" := "s".[snap_root] in
       if: !"root" = &&Root then (
         #()
       ) else (
         store_reroot "root" ;;
         "t".[root] <- "root" ;;
-        "t".[gen] <- #1 + !"s".[snap_gen]
+        "t".[gen] <- #1 + "s".[snap_gen]
       )
     ).
 
