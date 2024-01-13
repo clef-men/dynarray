@@ -151,15 +151,15 @@ Definition store_get : val :=
 
 Definition store_set : val :=
   λ: "t" "r" "v",
-    if: !"t".[gen] = !"r".[ref_gen] then (
+    let: "g" := !"t".[gen] in
+    if: "g" = !"r".[ref_gen] then (
       "r".[ref_value] <- "v"
     ) else (
-      let: "new_root" := ref &&Root in
-      let: "old_root" := &Diff "r" !"r".[ref_value] !"r".[ref_gen] "new_root" in
+      let: "root" := ref &&Root in
+      !"t".[root] <- &Diff "r" !"r".[ref_value] !"r".[ref_gen] "root" ;;
+      "t".[root] <- "root" ;;
       "r".[ref_value] <- "v" ;;
-      "r".[ref_gen] <- !"t".[gen] ;;
-      !"t".[root] <- "old_root" ;;
-      "t".[root] <- "new_root"
+      "r".[ref_gen] <- "g"
     ).
 
 Definition store_capture : val :=
